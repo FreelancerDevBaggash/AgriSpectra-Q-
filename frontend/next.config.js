@@ -11,20 +11,26 @@
 //   • Vercel build CI    (npm run build → node next.config.js evaluation)
 //   • Railway / Render   (same)
 //
-// The file is also committed to git under /public as a hard fallback.
-;(function copyMaplibreWorker() {
+// Both files are also committed to git under /public as a hard fallback.
+;(function copyMaplibreAssets() {
   const fs   = require('fs')
   const path = require('path')
-  const src  = path.resolve(__dirname, 'node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs')
-  const dest = path.resolve(__dirname, 'public/maplibre-gl-worker.mjs')
+  const dist = path.resolve(__dirname, 'node_modules/maplibre-gl/dist')
+  const pub  = path.resolve(__dirname, 'public')
+  // maplibre-gl v6 requires TWO files to be served as static assets:
+  //   maplibre-gl-worker.mjs  — the Web Worker entry point
+  //   maplibre-gl-shared.mjs  — shared code imported by the worker at runtime
+  const files = ['maplibre-gl-worker.mjs', 'maplibre-gl-shared.mjs']
   try {
-    if (fs.existsSync(src)) {
-      fs.mkdirSync(path.dirname(dest), { recursive: true })
-      fs.copyFileSync(src, dest)
+    fs.mkdirSync(pub, { recursive: true })
+    for (const file of files) {
+      const src  = path.join(dist, file)
+      const dest = path.join(pub, file)
+      if (fs.existsSync(src)) fs.copyFileSync(src, dest)
     }
   } catch (e) {
-    // Non-fatal: the committed file in /public serves as fallback
-    console.warn('[next.config] maplibre worker copy skipped:', e.message)
+    // Non-fatal: committed files in /public serve as fallback
+    console.warn('[next.config] maplibre assets copy skipped:', e.message)
   }
 })()
 

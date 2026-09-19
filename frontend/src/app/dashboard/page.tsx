@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import * as maplibregl from 'maplibre-gl'
+import proj4 from 'proj4'
 import { API_BASE } from '@/lib/config'
 import {
   MapPin, AlertTriangle, Download, RefreshCw,
@@ -92,6 +93,60 @@ function riskBarColor(val: number) {
   return '#22c55e'
 }
 
+// ── CRS conversion ────────────────────────────────────────────────────────────
+// The engine outputs GeoJSON in the scene's native CRS (e.g. EPSG:32653 UTM).
+// MapLibre requires WGS84 (EPSG:4326). We reproject every coordinate on load.
+
+// EPSG definitions needed for UAE/Gulf EnMAP scenes:
+//   32637 = UTM Zone 37N  (UAE mainland — Al Ain area)
+//   32638 = UTM Zone 38N
+//   32640 = UTM Zone 40N
+//   32653 = UTM Zone 53N
+//   32753 = UTM Zone 53S
+proj4.defs('EPSG:32637', '+proj=utm +zone=37 +datum=WGS84 +units=m +no_defs')
+proj4.defs('EPSG:32638', '+proj=utm +zone=38 +datum=WGS84 +units=m +no_defs')
+proj4.defs('EPSG:32640', '+proj=utm +zone=40 +datum=WGS84 +units=m +no_defs')
+proj4.defs('EPSG:32653', '+proj=utm +zone=53 +datum=WGS84 +units=m +no_defs')
+proj4.defs('EPSG:32753', '+proj=utm +zone=53 +south +datum=WGS84 +units=m +no_defs')
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function reprojectGeoJSON(geojson: any): any {
+  if (!geojson) return geojson
+
+  // Detect source CRS from GeoJSON crs property (EPSG:XXXXX)
+  const crsName: string = geojson?.crs?.properties?.name ?? 'EPSG:4326'
+  if (crsName === 'EPSG:4326' || crsName.includes('4326')) return geojson // already WGS84
+
+  // Check proj4 knows this CRS — if not, return as-is (MapLibre will show nothing but won't crash)
+  let converter: ((coord: number[]) => number[]) | null = null
+  try {
+    const fromProj = proj4(crsName)
+    converter = (c: number[]) => proj4(crsName, 'EPSG:4326', [c[0], c[1]])
+    void fromProj // suppress unused warning
+  } catch {
+    console.warn('[dashboard] Unknown CRS:', crsName, '— skipping reprojection')
+    return geojson
+  }
+
+  // Deep-clone and reproject all coordinate arrays
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function reprojectCoords(coords: any): any {
+    if (typeof coords[0] === 'number') return converter!(coords)
+    return coords.map(reprojectCoords)
+  }
+
+  return {
+    ...geojson,
+    crs: { type: 'name', properties: { name: 'EPSG:4326' } },
+    features: geojson.features.map((f: any) => ({
+      ...f,
+      geometry: f.geometry
+        ? { ...f.geometry, coordinates: reprojectCoords(f.geometry.coordinates) }
+        : f.geometry,
+    })),
+  }
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 // Set worker URL once at module level so all Map instances share the same worker.
@@ -155,9 +210,9 @@ function DashboardContent() {
           const statsRes = await fetch(`${API_BASE}/api/runs/${runId}/files/${scene}/scene_statistics.json`)
           if (statsRes.ok) setSceneStats(await statsRes.json())
 
-          // Fetch zones.geojson for the interactive map
+          // Fetch zones.geojson for the interactive map — reproject to WGS84 if needed
           const geoRes = await fetch(`${API_BASE}/api/runs/${runId}/files/${scene}/zones.geojson`)
-          if (geoRes.ok) setGeojson(await geoRes.json())
+          if (geoRes.ok) setGeojson(reprojectGeoJSON(await geoRes.json()))
         }
       }
 

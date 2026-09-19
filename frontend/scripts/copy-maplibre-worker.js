@@ -1,22 +1,32 @@
 /**
- * Copies maplibre-gl-worker.mjs from node_modules to /public so it can be
- * served statically and referenced via maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs').
+ * Copies maplibre-gl v6 static assets from node_modules to /public.
  *
- * maplibre-gl v6 no longer bundles the worker inline — it must be an external file.
- * This script runs automatically via `postinstall` and before `next build`.
+ * maplibre-gl v6 requires TWO files served as static assets:
+ *   /public/maplibre-gl-worker.mjs  — Web Worker entry point
+ *   /public/maplibre-gl-shared.mjs  — shared module imported by the worker at runtime
+ *
+ * Both are registered via maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs').
+ * The worker then fetches maplibre-gl-shared.mjs relative to itself at runtime.
+ *
+ * This script is called by next.config.js at config-load time (all environments).
  */
 
-const fs = require('fs')
+const fs   = require('fs')
 const path = require('path')
 
-const src  = path.resolve(__dirname, '../node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs')
-const dest = path.resolve(__dirname, '../public/maplibre-gl-worker.mjs')
+const dist  = path.resolve(__dirname, '../node_modules/maplibre-gl/dist')
+const pub   = path.resolve(__dirname, '../public')
+const files = ['maplibre-gl-worker.mjs', 'maplibre-gl-shared.mjs']
 
-if (!fs.existsSync(src)) {
-  console.warn('[copy-maplibre-worker] Source not found:', src)
-  process.exit(0)
+fs.mkdirSync(pub, { recursive: true })
+
+for (const file of files) {
+  const src  = path.join(dist, file)
+  const dest = path.join(pub, file)
+  if (fs.existsSync(src)) {
+    fs.copyFileSync(src, dest)
+    console.log(`[copy-maplibre] ✓ ${file}`)
+  } else {
+    console.warn(`[copy-maplibre] ✗ not found: ${src}`)
+  }
 }
-
-fs.mkdirSync(path.dirname(dest), { recursive: true })
-fs.copyFileSync(src, dest)
-console.log('[copy-maplibre-worker] Copied worker →', dest)
