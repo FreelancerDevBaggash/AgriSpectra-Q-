@@ -59,7 +59,15 @@ RESULTS = ROOT / "results" / "live_matrix"
 # ── Pre-computed demo run — produced from real EnMAP GeoTIFF scenes
 # This run contains results for all three verified scenes.
 DEMO_RUN_ID = "AGRQ-LIVE-20260916-132530-587fc9"
-DEMO_RUN_DIR = RESULTS / DEMO_RUN_ID
+
+# Demo data lives in api/demo_data/ so it is NOT affected by .dockerignore rules
+# that exclude results/ — this guarantees it reaches the Docker build context.
+# Falls back to results/live_matrix/ for local development where the original
+# run directory already exists.
+_api_dir     = Path(__file__).resolve().parent
+_embedded    = _api_dir / "demo_data" / DEMO_RUN_ID
+_fallback    = RESULTS / DEMO_RUN_ID
+DEMO_RUN_DIR = _embedded if _embedded.exists() else _fallback
 
 # Map scene_id → sub-directory name inside the demo run
 SCENE_DIR_MAP = {

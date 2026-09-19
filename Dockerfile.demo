@@ -5,9 +5,9 @@ RUN pip install --no-cache-dir flask flask-cors
 
 WORKDIR /app
 
-# Copy only the demo API and its pre-computed results
-COPY api/demo_api.py api/demo_api.py
-COPY results/live_matrix/AGRQ-LIVE-20260916-132530-587fc9 results/live_matrix/AGRQ-LIVE-20260916-132530-587fc9/
+# Copy the demo API + embedded pre-computed results
+# api/demo_data/ is NOT excluded by .dockerignore (only results/ rules apply there)
+COPY api/ api/
 
 # Railway injects $PORT; fall back to 8765 for local runs
 ENV PORT=8765

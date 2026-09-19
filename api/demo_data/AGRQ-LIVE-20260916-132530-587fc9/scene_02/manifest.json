@@ -1,0 +1,18 @@
+{
+  "run_id": "AGRQ-LIVE-20260916-132530-587fc9",
+  "scene": "scene_02",
+  "source": "/home/ubuntu/AgriSpectra-Q/data/raw/enmap_three_scenes/scene_02.TIF",
+  "live": true,
+  "leakage_control": "no labels; relative thresholds computed from full scene unsupervised anomaly reference; not benchmark test evaluation",
+  "crs": "EPSG:32645",
+  "outputs": [
+    "risk_map.tif",
+    "priority_map.tif",
+    "zones.geojson",
+    "zones.csv",
+    "spectral_evidence.csv",
+    "inspection_budget.csv",
+    "scene_statistics.json",
+    "metrics.json"
+  ]
+}
