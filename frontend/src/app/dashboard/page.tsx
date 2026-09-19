@@ -22,7 +22,8 @@ interface Zone {
   recommendation: string
   threshold_type?: string
   high_priority_pct?: number
-  area_m2?: number
+  area_m2?: number          // frontend alias
+  approx_area_m2?: number   // actual CSV column name from engine
 }
 
 interface InspectionBudget {
@@ -304,8 +305,8 @@ function DashboardContent() {
                       <span>Mean Risk: <strong className="text-gray-800">{typeof zone.mean_risk === 'number' ? zone.mean_risk.toFixed(3) : '—'}</strong></span>
                       <span>Max Risk: <strong className="text-gray-800">{typeof zone.max_risk === 'number' ? zone.max_risk.toFixed(3) : '—'}</strong></span>
                       <span>Pixels: <strong className="text-gray-800">{zone.pixel_count ?? '—'}</strong></span>
-                      {zone.area_m2 != null && (
-                        <span>Area: <strong className="text-gray-800">{(zone.area_m2 / 10000).toFixed(2)} ha</strong></span>
+                      {(zone.approx_area_m2 ?? zone.area_m2) != null && (
+                        <span>Area: <strong className="text-gray-800">{((zone.approx_area_m2 ?? zone.area_m2)! / 10000).toFixed(2)} ha</strong></span>
                       )}
                     </div>
                   </div>
