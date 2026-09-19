@@ -4,30 +4,31 @@ import './globals.css'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
   title: 'AgriSpectra-Q | Hyperspectral Crop Intelligence',
-  description: 'Transform hyperspectral Earth observation data into actionable agricultural insights using AI-powered geospatial intelligence.',
-  keywords: ['hyperspectral', 'agriculture', 'AI', 'remote sensing', 'crop monitoring', 'EnMAP', 'UAE', 'satellite imagery'],
+  description: 'Transform real EnMAP hyperspectral Earth observation data into georeferenced spectral-priority zones and actionable field inspection intelligence.',
+  keywords: ['hyperspectral', 'agriculture', 'AI', 'remote sensing', 'crop monitoring', 'EnMAP', 'UAE', 'satellite imagery', 'quantum', 'Space42', 'GIQ'],
   authors: [{ name: 'AgriSpectra-Q Team' }],
   openGraph: {
-    title: 'AgriSpectra-Q - Hyperspectral Crop Intelligence',
-    description: 'AI-powered platform for hyperspectral agricultural analysis',
+    title: 'AgriSpectra-Q — Hyperspectral Crop Intelligence',
+    description: 'AI-powered hyperspectral analysis platform for agricultural inspection prioritisation',
     type: 'website',
   },
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} antialiased bg-gray-50`}>
+      <body className={`${inter.variable} font-sans antialiased bg-surface-50 text-surface-900`}>
         <Navigation />
-        <main className="min-h-screen">
+        {/* pt accounts for fixed nav height */}
+        <main className="min-h-screen pt-[var(--nav-height)]">
           {children}
         </main>
         <Footer />

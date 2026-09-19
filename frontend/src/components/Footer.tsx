@@ -1,135 +1,97 @@
 import Link from 'next/link'
-import { Github, Mail, Satellite } from 'lucide-react'
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear()
-
+  const year = new Date().getFullYear()
   return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+    <footer className="bg-surface-900 text-surface-300 border-t border-surface-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+
           {/* Brand */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-primary-600 text-white flex items-center justify-center">
-                <Satellite className="w-6 h-6" />
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-glow-blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
               <div>
-                <div className="font-bold text-white text-lg">AgriSpectra-Q</div>
-                <div className="text-sm text-gray-400">Hyperspectral Crop Intelligence</div>
+                <div className="font-bold text-white text-base tracking-tight">
+                  AgriSpectra<span className="text-primary-400">-Q</span>
+                </div>
+                <div className="text-xs text-surface-500">Hyperspectral Crop Intelligence</div>
               </div>
             </div>
-            <p className="text-gray-400 mb-4">
-              Transform real EnMAP Earth observation data into actionable agricultural insights 
-              using AI-powered geospatial intelligence.
+            <p className="text-sm text-surface-400 leading-relaxed mb-5 max-w-sm">
+              Transforming real EnMAP hyperspectral satellite data into ranked inspection priorities 
+              for agricultural field teams across the Arab region.
             </p>
-            <div className="flex items-center gap-4">
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white transition-colors"
-                aria-label="GitHub"
-              >
-                <Github className="w-5 h-5" />
-              </a>
-              <a
-                href="mailto:info@agrispectra-q.com"
-                className="text-gray-400 hover:text-white transition-colors"
-                aria-label="Email"
-              >
-                <Mail className="w-5 h-5" />
-              </a>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="badge badge-live text-xs">
+                <span className="dot-live" /> Live Engine
+              </span>
+              <span className="badge badge-quantum text-xs">Quantum-Inspired</span>
+              <span className="badge bg-surface-700 text-surface-300 border border-surface-600 text-xs">Arab Youth Space Hackathon 2026</span>
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-semibold text-white mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/project" className="hover:text-white transition-colors">
-                  About Project
-                </Link>
-              </li>
-              <li>
-                <Link href="/intelligence" className="hover:text-white transition-colors">
-                  Run Analysis
-                </Link>
-              </li>
-              <li>
-                <Link href="/results" className="hover:text-white transition-colors">
-                  View Results
-                </Link>
-              </li>
-              <li>
-                <Link href="/technology" className="hover:text-white transition-colors">
-                  Technology
-                </Link>
-              </li>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-surface-500 mb-4">Navigation</h3>
+            <ul className="space-y-2.5 text-sm">
+              {[
+                { href: '/',             label: 'Home' },
+                { href: '/project',      label: 'About Project' },
+                { href: '/intelligence', label: 'Run Analysis' },
+                { href: '/results',      label: 'Results' },
+                { href: '/technology',   label: 'Technology' },
+                { href: '/dashboard',    label: 'Dashboard' },
+              ].map(({ href, label }) => (
+                <li key={href}>
+                  <Link href={href} className="text-surface-400 hover:text-white transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Resources */}
           <div>
-            <h3 className="font-semibold text-white mb-4">Resources</h3>
-            <ul className="space-y-2">
-              <li>
-                <a 
-                  href="https://spaceacademy-hackathons.space.gov.ae" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:text-white transition-colors"
-                >
-                  Hackathon 2026
-                </a>
-              </li>
-              <li>
-                <a 
-                  href="https://www.enmap.org" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:text-white transition-colors"
-                >
-                  EnMAP Mission
-                </a>
-              </li>
-              <li>
-                <a 
-                  href="https://space.gov.ae" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:text-white transition-colors"
-                >
-                  UAE Space Agency
-                </a>
-              </li>
-              <li>
-                <a 
-                  href="https://space42.ai" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:text-white transition-colors"
-                >
-                  Space42 GIQ
-                </a>
-              </li>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-surface-500 mb-4">Resources</h3>
+            <ul className="space-y-2.5 text-sm">
+              {[
+                { href: 'https://spaceacademy-hackathons.space.gov.ae', label: 'Hackathon 2026' },
+                { href: 'https://www.enmap.org', label: 'EnMAP Mission' },
+                { href: 'https://space.gov.ae', label: 'UAE Space Agency' },
+                { href: 'https://space42.ai', label: 'Space42 / GIQ' },
+              ].map(({ href, label }) => (
+                <li key={label}>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-surface-400 hover:text-white transition-colors inline-flex items-center gap-1.5"
+                  >
+                    {label}
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-8 border-t border-gray-800">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-gray-400">
-              © {currentYear} AgriSpectra-Q. Built for Arab Youth Space Hackathon 2026.
-            </p>
-            <div className="flex items-center gap-6 text-sm">
-              <span className="text-gray-400">
-                Made with 💚 for sustainable agriculture in the Arab region
-              </span>
-            </div>
-          </div>
+        {/* Bottom bar */}
+        <div className="pt-8 border-t border-surface-800 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-surface-500">
+            © {year} AgriSpectra-Q. Built for the Arab Youth Space Hackathon 2026.
+          </p>
+          <p className="text-xs text-surface-600">
+            Spectral-anomaly priority candidates only — all zones require field verification.
+          </p>
         </div>
       </div>
     </footer>

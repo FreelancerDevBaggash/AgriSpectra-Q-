@@ -32,7 +32,7 @@ const TECH_STACK = [
   {
     layer: 'Processing Engine',
     icon: Cpu,
-    color: 'text-violet-700 bg-violet-50 border-violet-200',
+    color: 'text-quantum-700 bg-quantum-50 border-quantum-200',
     items: [
       { name: 'Rasterio 1.3',   desc: 'Georeferenced GeoTIFF I/O with windowed streaming' },
       { name: 'NumPy 1.26',     desc: 'Vectorised spectral band arithmetic' },
@@ -64,7 +64,7 @@ const TECH_STACK = [
   {
     layer: 'DevOps & Deploy',
     icon: GitBranch,
-    color: 'text-gray-700 bg-gray-50 border-gray-200',
+    color: 'text-surface-700 bg-surface-50 border-surface-200',
     items: [
       { name: 'Git / GitHub',  desc: 'Version control and CI/CD trigger' },
       { name: 'Vercel',        desc: 'Frontend deployment (Next.js first-class)' },
@@ -85,13 +85,13 @@ const ARCHITECTURE_STEPS = [
     step: '2',
     title: 'Flask API dispatches engine',
     detail: 'Spawns live_matrix_engine.py subprocess with unique run ID',
-    color: 'bg-violet-600',
+    color: 'bg-quantum-600',
   },
   {
     step: '3',
     title: 'Engine runs two-pass streaming analysis',
     detail: 'Pass 1: online mean/variance over 32 bands. Pass 2: RMS spectral deviation risk raster',
-    color: 'bg-violet-600',
+    color: 'bg-quantum-600',
   },
   {
     step: '4',
@@ -142,17 +142,17 @@ const SCIENTIFIC_DESIGN = [
 
 export default function TechnologyPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-50">
 
       {/* Header */}
-      <div className="bg-gradient-to-br from-violet-700 to-violet-900 text-white">
+      <div className="bg-gradient-to-br from-surface-900 via-quantum-950 to-surface-900 text-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="flex items-center gap-3 mb-3">
-            <Cpu className="w-8 h-8 text-violet-300" />
-            <span className="text-violet-200 font-medium text-sm uppercase tracking-widest">Technology</span>
+            <Cpu className="w-8 h-8 text-quantum-300" />
+            <span className="text-quantum-300 font-medium text-sm uppercase tracking-widest">Technology</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">System Architecture</h1>
-          <p className="text-xl text-violet-100 max-w-3xl leading-relaxed">
+          <p className="text-xl text-quantum-100/80 max-w-3xl leading-relaxed">
             A full-stack hyperspectral intelligence platform built on open-source geospatial
             science, a lean Python backend, and a modern Next.js frontend.
           </p>
@@ -163,8 +163,8 @@ export default function TechnologyPage() {
 
         {/* Architecture Flow */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Zap className="w-6 h-6 text-violet-600" /> Request Lifecycle
+          <h2 className="text-2xl font-bold text-surface-900 mb-6 flex items-center gap-2">
+            <Zap className="w-6 h-6 text-quantum-600" /> Request Lifecycle
           </h2>
           <div className="relative">
             <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-gray-200" />
@@ -174,9 +174,9 @@ export default function TechnologyPage() {
                   <div className={`w-10 h-10 rounded-full ${color} text-white font-bold text-sm flex items-center justify-center flex-shrink-0 z-10`}>
                     {step}
                   </div>
-                  <div className="bg-white rounded-xl border border-gray-200 p-4 flex-1">
-                    <h3 className="font-semibold text-gray-900 text-sm mb-0.5">{title}</h3>
-                    <p className="text-xs text-gray-500 leading-relaxed">{detail}</p>
+                  <div className="bg-white rounded-xl border border-surface-200 p-4 flex-1">
+                    <h3 className="font-semibold text-surface-900 text-sm mb-0.5">{title}</h3>
+                    <p className="text-xs text-surface-500 leading-relaxed">{detail}</p>
                   </div>
                 </div>
               ))}
@@ -186,7 +186,7 @@ export default function TechnologyPage() {
 
         {/* Directory Layout */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-surface-900 mb-6 flex items-center gap-2">
             <Code2 className="w-6 h-6 text-primary-600" /> Project Directory Structure
           </h2>
           <div className="bg-gray-900 text-gray-100 rounded-xl p-6 font-mono text-sm leading-relaxed overflow-x-auto">
@@ -233,8 +233,8 @@ export default function TechnologyPage() {
 
         {/* Tech Stack */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Layers className="w-6 h-6 text-secondary-600" /> Full Technology Stack
+          <h2 className="text-2xl font-bold text-surface-900 mb-6 flex items-center gap-2">
+            <Layers className="w-6 h-6 text-spectral-600" /> Full Technology Stack
           </h2>
           <div className="space-y-5">
             {TECH_STACK.map(({ layer, icon: Icon, color, items }) => (
@@ -246,8 +246,8 @@ export default function TechnologyPage() {
                 <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {items.map(({ name, desc }) => (
                     <div key={name} className="bg-white rounded-lg border border-white/60 px-3 py-2 shadow-sm">
-                      <div className="font-semibold text-gray-900 text-sm">{name}</div>
-                      <div className="text-xs text-gray-500 leading-snug mt-0.5">{desc}</div>
+                      <div className="font-semibold text-surface-900 text-sm">{name}</div>
+                      <div className="text-xs text-surface-500 leading-snug mt-0.5">{desc}</div>
                     </div>
                   ))}
                 </div>
@@ -258,17 +258,17 @@ export default function TechnologyPage() {
 
         {/* Scientific Design Principles */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-surface-900 mb-6 flex items-center gap-2">
             <FlaskConical className="w-6 h-6 text-amber-600" /> Scientific Design Principles
           </h2>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
             {SCIENTIFIC_DESIGN.map(({ title, desc }) => (
-              <div key={title} className="bg-white rounded-xl border border-gray-200 p-5">
+              <div key={title} className="bg-white rounded-xl border border-surface-200 p-5">
                 <div className="flex items-start gap-2 mb-2">
                   <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                  <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
+                  <h3 className="font-semibold text-surface-900 text-sm">{title}</h3>
                 </div>
-                <p className="text-xs text-gray-600 leading-relaxed">{desc}</p>
+                <p className="text-xs text-surface-600 leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
@@ -282,7 +282,7 @@ export default function TechnologyPage() {
           <Link href="/results" className="btn-outline inline-flex items-center gap-2">
             Benchmark Results <ArrowRight className="w-4 h-4" />
           </Link>
-          <Link href="/project" className="btn-secondary inline-flex items-center gap-2">
+          <Link href="/project" className="btn-outline inline-flex items-center gap-2">
             About the Project <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

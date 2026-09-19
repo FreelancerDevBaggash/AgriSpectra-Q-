@@ -45,11 +45,11 @@ interface RunSummary {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8765'
 
 function priorityColor(cat: string) {
-  if (!cat) return 'bg-gray-100 text-gray-700'
+  if (!cat) return 'bg-surface-100 text-surface-700'
   const c = cat.toLowerCase()
-  if (c.includes('high')) return 'bg-red-100 text-red-700'
+  if (c.includes('high')) return 'bg-red-100 text-risk-700'
   if (c.includes('medium')) return 'bg-amber-100 text-amber-700'
-  if (c.includes('low')) return 'bg-green-100 text-green-700'
+  if (c.includes('low')) return 'bg-green-100 text-spectral-700'
   return 'bg-blue-100 text-blue-700'
 }
 
@@ -143,11 +143,11 @@ function DashboardContent() {
 
   // ── Error State ──
   if (error) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+    <div className="min-h-screen bg-surface-50 flex items-center justify-center p-8">
       <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-red-200 p-8 text-center">
         <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Dashboard Error</h2>
-        <p className="text-gray-600 mb-6">{error}</p>
+        <h2 className="text-xl font-semibold text-surface-900 mb-2">Dashboard Error</h2>
+        <p className="text-surface-600 mb-6">{error}</p>
         <div className="flex gap-3 justify-center">
           <button onClick={() => router.push('/intelligence')} className="btn-outline inline-flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" /> New Analysis
@@ -162,36 +162,36 @@ function DashboardContent() {
 
   // ── Loading State ──
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="min-h-screen bg-surface-50 flex items-center justify-center">
       <div className="text-center">
         <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-gray-600 font-medium">Loading analysis results…</p>
-        <p className="text-gray-400 text-sm mt-1">Fetching zones and inspection data</p>
+        <p className="text-surface-600 font-medium">Loading analysis results…</p>
+        <p className="text-surface-400 text-sm mt-1">Fetching zones and inspection data</p>
       </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-16 z-40">
+      <div className="bg-white border-b border-surface-200 sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push('/intelligence')}
-                className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-lg text-surface-500 hover:bg-surface-100 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-bold text-gray-900">Analysis Dashboard</h1>
+                  <h1 className="text-lg font-bold text-surface-900">Analysis Dashboard</h1>
                   <span className="badge badge-live text-xs inline-flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> LIVE
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 font-mono">Run: {runId} · Scene: {scene}</p>
+                <p className="text-xs text-surface-500 font-mono">Run: {runId} · Scene: {scene}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -221,31 +221,31 @@ function DashboardContent() {
             { icon: Layers, label: 'Total Zones', value: zones.length, sub: 'detected', color: 'text-primary-600', bg: 'bg-primary-50' },
             { icon: AlertTriangle, label: 'High Priority', value: highCount, sub: 'zones', color: 'text-red-600', bg: 'bg-red-50' },
             { icon: TrendingUp, label: 'Medium Priority', value: medCount, sub: 'zones', color: 'text-amber-600', bg: 'bg-amber-50' },
-            { icon: BarChart3, label: 'Avg Risk Score', value: avgRisk, sub: 'σ units', color: 'text-secondary-600', bg: 'bg-secondary-50' },
+            { icon: BarChart3, label: 'Avg Risk Score', value: avgRisk, sub: 'σ units', color: 'text-spectral-600', bg: 'bg-spectral-50' },
           ].map(({ icon: Icon, label, value, sub, color, bg }) => (
-            <div key={label} className="bg-white rounded-xl border border-gray-200 p-5">
+            <div key={label} className="bg-white rounded-xl border border-surface-200 p-5">
               <div className={`inline-flex items-center justify-center w-10 h-10 rounded-lg ${bg} ${color} mb-3`}>
                 <Icon className="w-5 h-5" />
               </div>
-              <div className="text-2xl font-bold text-gray-900">{value}</div>
-              <div className="text-sm font-medium text-gray-700">{label}</div>
-              <div className="text-xs text-gray-400">{sub}</div>
+              <div className="text-2xl font-bold text-surface-900">{value}</div>
+              <div className="text-sm font-medium text-surface-700">{label}</div>
+              <div className="text-xs text-surface-400">{sub}</div>
             </div>
           ))}
         </div>
 
         {/* Run Metadata */}
         {summary && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+          <div className="bg-white rounded-xl border border-surface-200 p-5 mb-6">
             <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span className="text-gray-500">Run Mode:</span>
+              <span className="text-surface-500">Run Mode:</span>
               <span className="font-medium text-gray-800">{summary.mode}</span>
               <span className="text-gray-300">|</span>
-              <span className="text-gray-500">Scenes:</span>
+              <span className="text-surface-500">Scenes:</span>
               <span className="font-medium text-gray-800">{summary.scenes?.join(', ')}</span>
               {summary.timestamp && <>
                 <span className="text-gray-300">|</span>
-                <span className="text-gray-500">Time:</span>
+                <span className="text-surface-500">Time:</span>
                 <span className="font-medium text-gray-800">{new Date(summary.timestamp).toLocaleString()}</span>
               </>}
             </div>
@@ -253,7 +253,7 @@ function DashboardContent() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-white rounded-xl border border-gray-200 p-1 w-fit">
+        <div className="flex gap-1 mb-6 bg-white rounded-xl border border-surface-200 p-1 w-fit">
           {([
             { id: 'zones', label: 'Priority Zones', icon: MapPin },
             { id: 'chart', label: 'Risk Chart', icon: BarChart3 },
@@ -265,7 +265,7 @@ function DashboardContent() {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === id
                   ? 'bg-primary-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  : 'text-surface-600 hover:bg-surface-100'
               }`}
             >
               <Icon className="w-4 h-4" /> {label}
@@ -277,7 +277,7 @@ function DashboardContent() {
         {activeTab === 'zones' && (
           <div className="space-y-3">
             {zones.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400">
+              <div className="bg-white rounded-xl border border-surface-200 p-12 text-center text-surface-400">
                 <MapPin className="w-10 h-10 mx-auto mb-3 opacity-40" />
                 <p>No zones found for this scene.</p>
               </div>
@@ -285,22 +285,22 @@ function DashboardContent() {
               zones.map((zone, idx) => (
                 <div
                   key={zone.zone_id || idx}
-                  className={`bg-white rounded-xl border-l-4 border border-gray-200 ${priorityBorder(zone.priority_category)} p-5 flex flex-col sm:flex-row sm:items-center gap-4`}
+                  className={`bg-white rounded-xl border-l-4 border border-surface-200 ${priorityBorder(zone.priority_category)} p-5 flex flex-col sm:flex-row sm:items-center gap-4`}
                 >
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-600">
+                    <div className="w-10 h-10 rounded-full bg-surface-100 flex items-center justify-center text-lg font-bold text-surface-600">
                       #{zone.rank ?? idx + 1}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900 text-sm">{zone.zone_id}</h3>
+                      <h3 className="font-semibold text-surface-900 text-sm">{zone.zone_id}</h3>
                       <span className={`badge text-xs ${priorityColor(zone.priority_category)}`}>
                         {zone.priority_category || 'Unknown'}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-600 mb-2 leading-relaxed">{zone.recommendation || 'No recommendation available.'}</p>
-                    <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                    <p className="text-xs text-surface-600 mb-2 leading-relaxed">{zone.recommendation || 'No recommendation available.'}</p>
+                    <div className="flex flex-wrap gap-4 text-xs text-surface-500">
                       <span>Mean Risk: <strong className="text-gray-800">{typeof zone.mean_risk === 'number' ? zone.mean_risk.toFixed(3) : '—'}</strong></span>
                       <span>Max Risk: <strong className="text-gray-800">{typeof zone.max_risk === 'number' ? zone.max_risk.toFixed(3) : '—'}</strong></span>
                       <span>Pixels: <strong className="text-gray-800">{zone.pixel_count ?? '—'}</strong></span>
@@ -323,12 +323,12 @@ function DashboardContent() {
         )}
 
         {activeTab === 'chart' && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <div className="bg-white rounded-xl border border-surface-200 p-6">
+            <h3 className="font-semibold text-surface-900 mb-4 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-primary-600" /> Zone Risk Scores (Top 20)
             </h3>
             {zones.length === 0 ? (
-              <div className="text-center text-gray-400 py-16">No data available</div>
+              <div className="text-center text-surface-400 py-16">No data available</div>
             ) : (
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={zones.slice(0, 20)} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
@@ -357,43 +357,43 @@ function DashboardContent() {
         )}
 
         {activeTab === 'budget' && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <div className="bg-white rounded-xl border border-surface-200 p-6">
+            <h3 className="font-semibold text-surface-900 mb-4 flex items-center gap-2">
               <List className="w-5 h-5 text-primary-600" /> Inspection Budget Allocation
             </h3>
             {budget.length === 0 ? (
-              <div className="text-center text-gray-400 py-16">No budget data available</div>
+              <div className="text-center text-surface-400 py-16">No budget data available</div>
             ) : (
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wide">Budget %</th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wide">Selected Pixels</th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wide">Positive Recall</th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wide">Coverage</th>
+                      <tr className="border-b border-surface-200">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-surface-500 uppercase tracking-wide">Budget %</th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-surface-500 uppercase tracking-wide">Selected Pixels</th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-surface-500 uppercase tracking-wide">Positive Recall</th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-surface-500 uppercase tracking-wide">Coverage</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-surface-100">
                       {budget.map((row, i) => (
-                        <tr key={i} className="hover:bg-gray-50 transition-colors">
-                          <td className="py-3 px-4 font-medium text-gray-900">{typeof row.budget_fraction === 'number' ? `${(row.budget_fraction * 100).toFixed(0)}%` : '—'}</td>
-                          <td className="py-3 px-4 text-gray-600">{row.selected_pixels ?? '—'}</td>
+                        <tr key={i} className="hover:bg-surface-50 transition-colors">
+                          <td className="py-3 px-4 font-medium text-surface-900">{typeof row.budget_fraction === 'number' ? `${(row.budget_fraction * 100).toFixed(0)}%` : '—'}</td>
+                          <td className="py-3 px-4 text-surface-600">{row.selected_pixels ?? '—'}</td>
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 rounded-full bg-gray-100">
+                              <div className="flex-1 h-2 rounded-full bg-surface-100">
                                 <div
                                   className="h-full rounded-full bg-primary-500"
                                   style={{ width: `${Math.min(100, (row.positive_recall ?? 0) * 100)}%` }}
                                 />
                               </div>
-                              <span className="text-gray-700 text-xs w-10 text-right">
+                              <span className="text-surface-700 text-xs w-10 text-right">
                                 {typeof row.positive_recall === 'number' ? `${(row.positive_recall * 100).toFixed(1)}%` : '—'}
                               </span>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-gray-600">
+                          <td className="py-3 px-4 text-surface-600">
                             {typeof row.coverage_percentage === 'number' ? `${row.coverage_percentage.toFixed(1)}%` : '—'}
                           </td>
                         </tr>
@@ -431,7 +431,7 @@ function DashboardContent() {
 export default function DashboardPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-surface-50 flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
       </div>
     }>

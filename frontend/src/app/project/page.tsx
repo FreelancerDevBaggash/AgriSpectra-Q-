@@ -35,7 +35,7 @@ const ROADMAP = [
 
 export default function ProjectPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-50">
 
       {/* Header */}
       <div className="bg-gradient-to-br from-primary-700 to-primary-900 text-white">
@@ -53,17 +53,17 @@ export default function ProjectPage() {
 
         {/* Core Philosophy */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-surface-900 mb-6 flex items-center gap-2">
             <Satellite className="w-6 h-6 text-primary-600" /> Core Operating Philosophy
           </h2>
           <div className="grid md:grid-cols-4 gap-4">
             {WORKFLOW.map((w, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 relative">
+              <div key={i} className="bg-white rounded-xl border border-surface-200 p-5 relative">
                 <div className="absolute -top-3 left-5 bg-primary-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                   Step {i + 1}
                 </div>
                 <h3 className="text-lg font-bold text-primary-700 mt-2 mb-2">{w.step}</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">{w.desc}</p>
+                <p className="text-sm text-surface-600 leading-relaxed">{w.desc}</p>
               </div>
             ))}
           </div>
@@ -71,21 +71,21 @@ export default function ProjectPage() {
 
         {/* Two Modes */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Layers className="w-6 h-6 text-secondary-600" /> Two Separate Result Modes
+          <h2 className="text-2xl font-bold text-surface-900 mb-6 flex items-center gap-2">
+            <Layers className="w-6 h-6 text-spectral-600" /> Two Separate Result Modes
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl border-2 border-green-300 p-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold mb-4">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> LIVE ANALYSIS
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Live Matrix</h3>
-              <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              <h3 className="text-lg font-bold text-surface-900 mb-2">Live Matrix</h3>
+              <p className="text-sm text-surface-600 mb-4 leading-relaxed">
                 A real-time, windowed, georeferenced spectral-anomaly analysis run directly on 
                 three EnMAP GeoTIFF scenes. Creates risk rasters, priority rasters, connected zones, 
                 GeoJSON, spectral evidence, and inspection-budget outputs.
               </p>
-              <ul className="space-y-1 text-xs text-gray-600">
+              <ul className="space-y-1 text-xs text-surface-600">
                 {['Risk map (GeoTIFF)', 'Priority map (GeoTIFF)', 'Zone table (CSV + GeoJSON)', 'Spectral evidence (CSV)', 'Inspection budget (CSV)'].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <CheckCircle className="w-3 h-3 text-green-500" /> {item}
@@ -98,13 +98,13 @@ export default function ProjectPage() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold mb-4">
                 FROZEN SCIENTIFIC BENCHMARK
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Industrial Validation Study</h3>
-              <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              <h3 className="text-lg font-bold text-surface-900 mb-2">Industrial Validation Study</h3>
+              <p className="text-sm text-surface-600 mb-4 leading-relaxed">
                 A locked six-model comparison evaluated on 3 EnMAP scenes using spatially separated 
                 train/validation/test splits, 5 random seeds, frozen test predictions, and 
                 paired bootstrap analysis (n = 10,000 replicates).
               </p>
-              <ul className="space-y-1 text-xs text-gray-600">
+              <ul className="space-y-1 text-xs text-surface-600">
                 {['6 models × 3 scenes × 5 seeds = 90 runs', 'F1, PR-AUC, ROC-AUC, ECE metrics', 'Calibrated probability estimates', 'Inspection budget analysis', 'Ablation study (quantum component)'].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <CheckCircle className="w-3 h-3 text-blue-500" /> {item}
@@ -117,28 +117,28 @@ export default function ProjectPage() {
 
         {/* Live Scene Table */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-surface-900 mb-6 flex items-center gap-2">
             <Globe className="w-6 h-6 text-green-600" /> EnMAP Scenes Processed
           </h2>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-surface-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
+                  <tr className="bg-surface-50 border-b border-surface-200">
                     {['Scene', 'Dimensions', 'Valid Pixels', 'NoData %', 'CRS', 'Proc. Time', 'HP Zones'].map(h => (
-                      <th key={h} className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                      <th key={h} className="text-left py-3 px-4 text-xs font-semibold text-surface-500 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-surface-100">
                   {LIVE_SCENES.map((s, i) => (
-                    <tr key={i} className="hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium text-gray-900">{s.scene}</td>
-                      <td className="py-3 px-4 text-gray-600 font-mono text-xs">{s.dims}</td>
-                      <td className="py-3 px-4 text-gray-600">{s.valid.toLocaleString()}</td>
-                      <td className="py-3 px-4 text-gray-600">{s.nodata}</td>
-                      <td className="py-3 px-4 text-gray-600 font-mono text-xs">{s.crs}</td>
-                      <td className="py-3 px-4 text-gray-600">{s.time}</td>
+                    <tr key={i} className="hover:bg-surface-50">
+                      <td className="py-3 px-4 font-medium text-surface-900">{s.scene}</td>
+                      <td className="py-3 px-4 text-surface-600 font-mono text-xs">{s.dims}</td>
+                      <td className="py-3 px-4 text-surface-600">{s.valid.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-surface-600">{s.nodata}</td>
+                      <td className="py-3 px-4 text-surface-600 font-mono text-xs">{s.crs}</td>
+                      <td className="py-3 px-4 text-surface-600">{s.time}</td>
                       <td className="py-3 px-4 font-semibold text-primary-700">{s.zones}</td>
                     </tr>
                   ))}
@@ -146,12 +146,12 @@ export default function ProjectPage() {
               </table>
             </div>
           </div>
-          <p className="text-xs text-gray-400 mt-2">Total live processing time: ~197.66 s. Run ID: <code className="font-mono">AGRQ-LIVE-20260916-132530-587fc9</code></p>
+          <p className="text-xs text-surface-400 mt-2">Total live processing time: ~197.66 s. Run ID: <code className="font-mono">AGRQ-LIVE-20260916-132530-587fc9</code></p>
         </section>
 
         {/* Zone Categories */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-surface-900 mb-6 flex items-center gap-2">
             <MapPin className="w-6 h-6 text-red-600" /> Priority Zone Categories
           </h2>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -162,7 +162,7 @@ export default function ProjectPage() {
               </div>
             ))}
           </div>
-          <div className="mt-4 text-xs text-gray-500 bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <div className="mt-4 text-xs text-surface-500 bg-amber-50 border border-amber-200 rounded-lg p-3">
             <strong>Important:</strong> Zone categories are scene-relative percentile thresholds for operational screening. 
             They are not validated biological severity levels.
           </div>
@@ -170,30 +170,30 @@ export default function ProjectPage() {
 
         {/* AI Architecture Summary */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <FlaskConical className="w-6 h-6 text-violet-600" /> AI Architecture
+          <h2 className="text-2xl font-bold text-surface-900 mb-6 flex items-center gap-2">
+            <FlaskConical className="w-6 h-6 text-quantum-600" /> AI Architecture
           </h2>
-          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+          <div className="bg-white rounded-xl border border-surface-200 p-6 space-y-5">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">AgriSpectra-Q Model</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
+              <h3 className="font-semibold text-surface-900 mb-2">AgriSpectra-Q Model</h3>
+              <p className="text-sm text-surface-600 leading-relaxed">
                 RF-first residual architecture with grouped out-of-fold residual learning, compact spectral 
                 intelligence, Mahalanobis-oriented research components, and an adaptive residual gate. 
                 The nonlinear feature map uses quantum-inspired computational logic within a hybrid 
                 quantum-classical research layer.
               </p>
             </div>
-            <div className="border-t border-gray-100 pt-5">
-              <h3 className="font-semibold text-gray-900 mb-3">Quantum Component Clarity</h3>
-              <div className="bg-violet-50 border border-violet-200 rounded-lg p-4 text-sm text-violet-800">
+            <div className="border-t border-surface-100 pt-5">
+              <h3 className="font-semibold text-surface-900 mb-3">Quantum Component Clarity</h3>
+              <div className="bg-quantum-50 border border-quantum-200 rounded-lg p-4 text-sm text-quantum-800">
                 <strong>Correct framing:</strong> "Quantum-inspired feature transformation within a hybrid 
                 quantum-classical research layer." No quantum hardware result, no quantum speedup, 
                 no demonstrated quantum advantage.
               </div>
             </div>
-            <div className="border-t border-gray-100 pt-5">
-              <h3 className="font-semibold text-gray-900 mb-2">Statistical Position</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
+            <div className="border-t border-surface-100 pt-5">
+              <h3 className="font-semibold text-surface-900 mb-2">Statistical Position</h3>
+              <p className="text-sm text-surface-600 leading-relaxed">
                 AgriSpectra-Q achieves the highest numerical mean F1 (0.963985) among all six evaluated systems. 
                 However, its advantage over HSI-RF is only +0.0008447 with a 95% CI of [–0.0012, +0.0027], 
                 which crosses zero. Statistical superiority is therefore <em>not</em> established.
@@ -204,18 +204,18 @@ export default function ProjectPage() {
 
         {/* Roadmap */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-surface-900 mb-6 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-primary-600" /> Future Roadmap
           </h2>
           <div className="space-y-3">
             {ROADMAP.map(({ phase, title, desc }) => (
-              <div key={phase} className="bg-white rounded-xl border border-gray-200 p-5 flex gap-4">
+              <div key={phase} className="bg-white rounded-xl border border-surface-200 p-5 flex gap-4">
                 <div className="w-9 h-9 rounded-full bg-primary-100 text-primary-700 font-bold text-sm flex items-center justify-center flex-shrink-0">
                   {phase}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 text-sm mb-0.5">Phase {phase}: {title}</h3>
-                  <p className="text-sm text-gray-600">{desc}</p>
+                  <h3 className="font-semibold text-surface-900 text-sm mb-0.5">Phase {phase}: {title}</h3>
+                  <p className="text-sm text-surface-600">{desc}</p>
                 </div>
               </div>
             ))}
@@ -224,8 +224,8 @@ export default function ProjectPage() {
 
         {/* Who Uses It */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Users className="w-6 h-6 text-secondary-600" /> Intended Users
+          <h2 className="text-2xl font-bold text-surface-900 mb-6 flex items-center gap-2">
+            <Users className="w-6 h-6 text-spectral-600" /> Intended Users
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
@@ -234,7 +234,7 @@ export default function ProjectPage() {
               'Irrigation & Land Monitoring Operators', 'Government Agricultural Programmes',
               'Agricultural Consultancies', 'Geospatial AI Engineers',
             ].map(user => (
-              <div key={user} className="bg-white rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-700 flex items-center gap-2">
+              <div key={user} className="bg-white rounded-lg border border-surface-200 px-4 py-3 text-sm text-surface-700 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" /> {user}
               </div>
             ))}
@@ -245,8 +245,8 @@ export default function ProjectPage() {
         <div className="flex items-start gap-4 bg-amber-50 border border-amber-300 rounded-xl p-6">
           <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-bold text-gray-900 mb-2">Scientific Boundaries</h3>
-            <p className="text-sm text-gray-700 leading-relaxed">
+            <h3 className="font-bold text-surface-900 mb-2">Scientific Boundaries</h3>
+            <p className="text-sm text-surface-700 leading-relaxed">
               AgriSpectra-Q identifies <strong>spectral-anomaly priority candidates</strong> for field inspection. 
               It does not diagnose disease, pests, or biological stress. It does not claim field validation, 
               measured financial ROI, statistically significant superiority over HSI-RF, or quantum advantage. 
@@ -263,7 +263,7 @@ export default function ProjectPage() {
           <Link href="/results" className="btn-outline inline-flex items-center gap-2">
             View Benchmark Results <ArrowRight className="w-4 h-4" />
           </Link>
-          <Link href="/technology" className="btn-secondary inline-flex items-center gap-2">
+          <Link href="/technology" className="btn-outline inline-flex items-center gap-2">
             Technology Stack <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
