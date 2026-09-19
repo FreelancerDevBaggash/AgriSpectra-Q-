@@ -5,6 +5,29 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8765'
 
+// ── Upload types ─────────────────────────────────────────────────────────────
+
+export interface UploadProgressEvent {
+  /** 0–100 upload percentage (null when length is not computable) */
+  uploadPct:   number | null
+  /** Bytes transferred so far */
+  loaded:      number
+  /** Total bytes (0 if unknown) */
+  total:       number
+  /** Current transfer speed in bytes/s (rolling 2-second window) */
+  speedBps:    number
+  /** Estimated seconds remaining (Infinity when unknown) */
+  etaSec:      number
+}
+
+export interface UploadHandle {
+  /** Promise that resolves with the AnalysisResponse or rejects with an Error */
+  promise: Promise<AnalysisResponse>
+  /** Call this to cancel the in-flight XHR (upload phase only).
+   *  For cancelling a processing run use apiClient.abortRun(runId). */
+  abort:   () => void
+}
+
 export interface ApiError {
   error: string
   details?: Record<string, unknown>
@@ -160,37 +183,91 @@ class ApiClient {
 
   /**
    * Upload a GeoTIFF file and run the live engine on it.
-   * Uses multipart/form-data — do NOT set Content-Type header manually.
+   * Returns an UploadHandle with both the result promise and an abort() method.
+   *
+   * abort() cancels the XHR during the upload phase.  If called after the upload
+   * has completed but the engine is still processing, call abortRun(runId) instead.
    */
-  async uploadAndAnalyse(
+  uploadAndAnalyse(
     file: File,
-    onProgress?: (pct: number) => void,
-  ): Promise<AnalysisResponse> {
-    return new Promise((resolve, reject) => {
+    onProgress?: (evt: UploadProgressEvent) => void,
+  ): UploadHandle {
+    let xhrRef: XMLHttpRequest | null = null
+
+    const promise = new Promise<AnalysisResponse>((resolve, reject) => {
       const form = new FormData()
       form.append('file', file)
 
       const xhr = new XMLHttpRequest()
+      xhrRef = xhr
       xhr.open('POST', `${this.baseUrl}/api/upload`)
 
+      // ── Speed tracking (rolling 2-second window) ───────────────────────────
+      let lastLoaded  = 0
+      let lastTime    = Date.now()
+      let rollingBps  = 0
+
       xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable && onProgress) {
-          onProgress(Math.round((e.loaded / e.total) * 100))
+        if (!onProgress) return
+        const now     = Date.now()
+        const dtMs    = now - lastTime
+        const dBytes  = e.loaded - lastLoaded
+
+        if (dtMs >= 200) {                        // update at most every 200 ms
+          rollingBps = dBytes / (dtMs / 1000)
+          lastLoaded = e.loaded
+          lastTime   = now
         }
+
+        const pct     = e.lengthComputable ? Math.round((e.loaded / e.total) * 100) : null
+        const etaSec  = (e.lengthComputable && rollingBps > 0)
+          ? Math.round((e.total - e.loaded) / rollingBps)
+          : Infinity
+
+        onProgress({
+          uploadPct: pct,
+          loaded:    e.loaded,
+          total:     e.lengthComputable ? e.total : 0,
+          speedBps:  rollingBps,
+          etaSec,
+        })
       }
 
       xhr.onload = () => {
-        const data = JSON.parse(xhr.responseText)
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(data as AnalysisResponse)
-        } else {
-          reject(new Error(data?.error ?? `HTTP ${xhr.status}`))
+        xhrRef = null
+        try {
+          const data = JSON.parse(xhr.responseText)
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(data as AnalysisResponse)
+          } else {
+            reject(new Error(data?.error ?? `HTTP ${xhr.status}`))
+          }
+        } catch {
+          reject(new Error(`Invalid JSON response (HTTP ${xhr.status})`))
         }
       }
 
-      xhr.onerror = () => reject(new Error('Network error — cannot reach API server.'))
+      xhr.onerror   = () => { xhrRef = null; reject(new Error('Network error — cannot reach API server.')) }
+      xhr.ontimeout = () => { xhrRef = null; reject(new Error('Request timed out.')) }
+      xhr.onabort   = () => { xhrRef = null; reject(new Error('UPLOAD_ABORTED')) }
+
       xhr.send(form)
     })
+
+    return {
+      promise,
+      abort: () => { if (xhrRef) { xhrRef.abort(); xhrRef = null } },
+    }
+  }
+
+  /**
+   * Signal the backend to abort an in-progress processing run.
+   * Use this after the upload is done but processing hasn't completed yet.
+   */
+  async abortRun(runId: string): Promise<void> {
+    await fetch(`${this.baseUrl}/api/upload/abort/${encodeURIComponent(runId)}`, {
+      method: 'POST',
+    }).catch(() => { /* best-effort */ })
   }
 
   /**

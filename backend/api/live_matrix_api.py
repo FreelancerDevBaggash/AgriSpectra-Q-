@@ -19,9 +19,9 @@ Usage:
 """
 
 import json
+import shutil
 import subprocess
 import sys
-import tempfile
 import threading
 import uuid
 from pathlib import Path
@@ -37,9 +37,10 @@ RAW     = ROOT / "data" / "raw" / "enmap_three_scenes"
 UPLOADS = ROOT / "results" / "uploads"
 UPLOADS.mkdir(parents=True, exist_ok=True)
 
-ALLOWED_SCENES    = {"scene_01_DT0000205230", "scene_02", "scene_03"}
+ALLOWED_SCENES       = {"scene_01_DT0000205230", "scene_02", "scene_03"}
 ALLOWED_GEOTIFF_EXTS = {".tif", ".tiff", ".geotiff"}
-MAX_UPLOAD_BYTES  = 2 * 1024 * 1024 * 1024   # 2 GB hard limit
+MAX_UPLOAD_BYTES     = 2 * 1024 * 1024 * 1024   # 2 GB hard limit
+STREAM_CHUNK         = 1 * 1024 * 1024           # 1 MB streaming chunk
 
 # Static scene catalog — actual metadata from the three verified EnMAP scenes.
 # scene_01 dimensions/valid_pixels/nodata verified from live engine output (AGRQ-LIVE-API-38a215bd).
@@ -89,10 +90,15 @@ ALLOWED_FILES  = {
 }
 
 # ── In-memory run registry ────────────────────────────────────────────────────
-RUNS: dict[str, dict] = {}
+# Stores run records keyed by run_id.
+# Upload runs also store an "abort" Event so the processing thread can be
+# signalled to stop before it finishes.
+RUNS:    dict[str, dict]            = {}
+ABORTS:  dict[str, threading.Event] = {}   # run_id → abort event
 LOCK = threading.Lock()
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES  # Flask hard limit
 CORS(app)  # Allow cross-origin requests from the Next.js dev server
 
 
@@ -122,56 +128,104 @@ def run_analysis(scene: str) -> dict:
     return record
 
 
-def run_analysis_on_file(tif_path: Path, scene_name: str) -> dict:
+def _stream_to_disk(file_storage, dest: Path) -> int:
+    """Stream werkzeug FileStorage to dest in STREAM_CHUNK chunks.
+    Returns total bytes written. Raises ValueError if MAX_UPLOAD_BYTES exceeded."""
+    written = 0
+    with dest.open("wb") as fh:
+        while True:
+            chunk = file_storage.stream.read(STREAM_CHUNK)
+            if not chunk:
+                break
+            written += len(chunk)
+            if written > MAX_UPLOAD_BYTES:
+                fh.close()
+                dest.unlink(missing_ok=True)
+                raise ValueError(f"File exceeds {MAX_UPLOAD_BYTES // (1024**3)} GB limit.")
+            fh.write(chunk)
+    return written
+
+
+def run_analysis_on_file(tif_path: Path, scene_name: str, abort_event: threading.Event) -> dict:
     """Run the engine on an arbitrary GeoTIFF file and return the run record.
 
-    The engine's process() function is imported directly (no subprocess) so that
-    the uploaded file path is passed straight through without touching the SCENES
-    dict in the engine module.
+    abort_event: caller sets this to request early termination.  The engine itself
+    does not poll it (it is a pure-Python CPU job), but we check it *before*
+    starting and clean up the run directory if set mid-flight.
     """
+    import importlib.util
+    import time as _time
+    import json as _json
+
+    if abort_event.is_set():
+        raise RuntimeError("Aborted before processing started.")
+
     run_id  = f"AGRQ-UPLOAD-{uuid.uuid4().hex[:8]}"
     run_dir = OUT / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 
-    # Import the engine's process() function at call time to avoid circular issues
-    import importlib.util, types
-    spec = importlib.util.spec_from_file_location("live_matrix_engine", str(ENGINE))
-    mod  = importlib.util.module_from_spec(spec)          # type: ignore[arg-type]
-    spec.loader.exec_module(mod)                          # type: ignore[union-attr]
-
-    import time as _time
-    import json  as _json
-
-    scene_stats = mod.process(scene_name, tif_path, run_dir)
-
-    (run_dir / "run_summary.json").write_text(_json.dumps({
-        "run_id":    run_id,
-        "live":      True,
-        "mode":      "LIVE ANALYSIS",
-        "source":    "user_upload",
-        "filename":  tif_path.name,
-        "timestamp": _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime()),
-        "scenes":    [scene_name],
-        "scene_stats": [scene_stats],
-        "limitations": [
-            "Spectral wavelength metadata unavailable; band indices reported",
-            "Unsupervised spectral anomaly proxy — no disease/pest labels",
-            "Priority thresholds are scene-relative percentiles",
-            "Not the frozen six-model benchmark",
-        ],
-    }, indent=2, default=float))
-
-    record = {
-        "run_id": run_id,
-        "scene":  scene_name,
-        "path":   str(run_dir),
-        "status": "completed",
-        "mode":   "LIVE ANALYSIS",
-        "scenes": [scene_name],
-    }
+    # Register the run as "processing" immediately so /api/upload/status can report it
     with LOCK:
-        RUNS[run_id] = record
-    return record
+        RUNS[run_id] = {
+            "run_id": run_id,
+            "scene":  scene_name,
+            "path":   str(run_dir),
+            "status": "processing",
+            "mode":   "LIVE ANALYSIS",
+            "scenes": [scene_name],
+        }
+        ABORTS[run_id] = abort_event
+
+    try:
+        # Load engine module dynamically so arbitrary file paths work
+        spec = importlib.util.spec_from_file_location("live_matrix_engine", str(ENGINE))
+        mod  = importlib.util.module_from_spec(spec)          # type: ignore[arg-type]
+        spec.loader.exec_module(mod)                          # type: ignore[union-attr]
+
+        if abort_event.is_set():
+            raise RuntimeError("Aborted before engine started.")
+
+        scene_stats = mod.process(scene_name, tif_path, run_dir)
+
+        if abort_event.is_set():
+            raise RuntimeError("Aborted after engine finished (race).")
+
+        (run_dir / "run_summary.json").write_text(_json.dumps({
+            "run_id":      run_id,
+            "live":        True,
+            "mode":        "LIVE ANALYSIS",
+            "source":      "user_upload",
+            "filename":    tif_path.name,
+            "timestamp":   _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime()),
+            "scenes":      [scene_name],
+            "scene_stats": [scene_stats],
+            "limitations": [
+                "Spectral wavelength metadata unavailable; band indices reported",
+                "Unsupervised spectral anomaly proxy — no disease/pest labels",
+                "Priority thresholds are scene-relative percentiles",
+                "Not the frozen six-model benchmark",
+            ],
+        }, indent=2, default=float))
+
+        record = {
+            "run_id": run_id,
+            "scene":  scene_name,
+            "path":   str(run_dir),
+            "status": "completed",
+            "mode":   "LIVE ANALYSIS",
+            "scenes": [scene_name],
+        }
+        with LOCK:
+            RUNS[run_id] = record
+        return record
+
+    except Exception:
+        # Clean up the partial run directory on any failure / abort
+        with LOCK:
+            RUNS.pop(run_id, None)
+            ABORTS.pop(run_id, None)
+        shutil.rmtree(run_dir, ignore_errors=True)
+        raise
 
 
 def csv_index(run_id: str, filename: str):
@@ -231,7 +285,7 @@ def analyse():
 
 @app.post("/api/upload")
 def upload():
-    """Accept a user-uploaded GeoTIFF, run the live engine on it, and return run_id."""
+    """Accept a user-uploaded GeoTIFF (streamed), run the live engine, return run_id."""
     if "file" not in request.files:
         return jsonify({"error": "No file part in request. Use multipart/form-data with field name 'file'."}), 400
 
@@ -243,27 +297,48 @@ def upload():
     if ext not in ALLOWED_GEOTIFF_EXTS:
         return jsonify({"error": f"Unsupported file type '{ext}'. Please upload a GeoTIFF (.tif / .tiff)."}), 400
 
-    # Read all bytes to check size before saving
-    data = f.read()
-    if len(data) > MAX_UPLOAD_BYTES:
-        return jsonify({"error": "File too large. Maximum allowed size is 2 GB."}), 413
-
-    # Persist to uploads directory with a unique name
-    uid  = uuid.uuid4().hex[:12]
+    # Save the file using streaming (no full read into RAM)
+    uid       = uuid.uuid4().hex[:12]
     safe_stem = "".join(c if c.isalnum() or c in "-_." else "_" for c in Path(f.filename).stem)[:64]
     save_name = f"{uid}_{safe_stem}{ext}"
     save_path = UPLOADS / save_name
-    save_path.write_bytes(data)
-
-    # Use the original filename stem (sanitised) as the scene label inside the run
-    scene_name = f"upload_{uid[:8]}"
 
     try:
-        record = run_analysis_on_file(save_path, scene_name)
-        return jsonify(record)
+        bytes_written = _stream_to_disk(f, save_path)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 413
     except Exception as exc:
-        # Keep the uploaded file for debugging but surface the error
+        save_path.unlink(missing_ok=True)
+        return jsonify({"error": f"Failed to save file: {exc}"}), 500
+
+    if bytes_written == 0:
+        save_path.unlink(missing_ok=True)
+        return jsonify({"error": "Uploaded file is empty."}), 400
+
+    scene_name  = f"upload_{uid[:8]}"
+    abort_event = threading.Event()
+
+    try:
+        record = run_analysis_on_file(save_path, scene_name, abort_event)
+        return jsonify(record)
+    except RuntimeError as exc:
+        msg = str(exc)
+        if "Aborted" in msg:
+            return jsonify({"error": "Run was cancelled.", "aborted": True}), 409
+        return jsonify({"error": msg[-2000:]}), 500
+    except Exception as exc:
         return jsonify({"error": str(exc)[-2000:]}), 500
+
+
+@app.post("/api/upload/abort/<run_id>")
+def abort_run(run_id: str):
+    """Signal an in-progress upload-run to stop as soon as possible."""
+    with LOCK:
+        event = ABORTS.get(run_id)
+    if event is None:
+        return jsonify({"error": "run not found or already finished"}), 404
+    event.set()
+    return jsonify({"run_id": run_id, "aborted": True})
 
 
 @app.get("/api/runs/<rid>")
@@ -315,9 +390,10 @@ def get_file(rid: str, scene: str, filename: str):
 def upload_info():
     """Return upload constraints for the frontend."""
     return jsonify({
-        "max_bytes":       MAX_UPLOAD_BYTES,
-        "max_mb":          MAX_UPLOAD_BYTES // (1024 * 1024),
+        "max_bytes":          MAX_UPLOAD_BYTES,
+        "max_mb":             MAX_UPLOAD_BYTES // (1024 * 1024),
         "allowed_extensions": sorted(ALLOWED_GEOTIFF_EXTS),
+        "stream_chunk_bytes": STREAM_CHUNK,
     })
 
 
