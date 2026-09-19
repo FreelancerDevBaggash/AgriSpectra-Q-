@@ -14,7 +14,7 @@ import {
 // Must identify each artifact as LIVE ANALYSIS.
 // Must not create download links to missing files.
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8765'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://agrispectra-q-production-7bd0.up.railway.app'
 
 // ─── File-type metadata ───────────────────────────────────────────────────────
 type ArtifactEntry = {

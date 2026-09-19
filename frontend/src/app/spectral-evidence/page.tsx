@@ -34,7 +34,7 @@ interface ZoneRecord {
   threshold_type?: string
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8765'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://agrispectra-q-production-7bd0.up.railway.app'
 
 function priorityColor(cat: string) {
   const c = (cat || '').toLowerCase()

@@ -91,7 +91,7 @@ type UploadStage = 'idle' | 'uploading' | 'processing' | 'cancelling' | 'done' |
 // 2 GB client-side guard (mirrors server MAX_UPLOAD_BYTES)
 const MAX_FILE_BYTES = 2 * 1024 * 1024 * 1024
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8765'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://agrispectra-q-production-7bd0.up.railway.app'
 
 // ── Backend status types ──────────────────────────────────────────────────────
 type BackendState =
@@ -371,7 +371,7 @@ export default function IntelligencePage() {
     }
 
     try {
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8765'}/api/analyse`, {
+      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://agrispectra-q-production-7bd0.up.railway.app'}/api/analyse`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scene: selected }),

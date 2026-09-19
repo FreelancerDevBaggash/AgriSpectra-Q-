@@ -64,7 +64,7 @@ interface SceneStatistics {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8765'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://agrispectra-q-production-7bd0.up.railway.app'
 
 function priorityColor(cat: string) {
   if (!cat) return 'bg-surface-100 text-surface-700'
