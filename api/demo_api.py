@@ -380,12 +380,12 @@ if __name__ == "__main__":
     args = ap.parse_args()
 
     if not DEMO_RUN_DIR.exists():
-        print(f"\n⚠  WARNING: Demo run not found at {DEMO_RUN_DIR}")
+        print(f"\nWARNING: Demo run not found at {DEMO_RUN_DIR}")
         print("   Run the engine once locally to generate results, then deploy.")
         print(f"   Expected: results/live_matrix/{DEMO_RUN_ID}/\n")
     else:
         scenes_found = [s for s in SCENE_DIR_MAP if (DEMO_RUN_DIR / SCENE_DIR_MAP[s]).exists()]
-        print(f"\n✓  Demo run loaded: {DEMO_RUN_ID}")
+        print(f"\nDemo run loaded: {DEMO_RUN_ID}")
         print(f"   Scenes available: {', '.join(scenes_found)}\n")
 
     app.run(host=args.host, port=args.port, debug=args.debug)

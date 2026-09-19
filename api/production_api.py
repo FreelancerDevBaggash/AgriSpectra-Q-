@@ -366,9 +366,10 @@ if __name__ == "__main__":
     ap.add_argument("--debug", action="store_true")
     args = ap.parse_args()
 
-    print(f"\n✓  AgriSpectra-Q Production API (Upload-Only)")
-    print(f"   Mode:    upload-only (no pre-loaded EnMAP scenes)")
-    print(f"   Engine:  {'found' if ENGINE.exists() else 'NOT FOUND — check backend/engine/live_matrix_engine.py'}")
+    print("\nAgriSpectra-Q Production API (Upload-Only)")
+    print("   Mode:    upload-only (no pre-loaded EnMAP scenes)")
+    engine_status = "found" if ENGINE.exists() else "NOT FOUND - check backend/engine/live_matrix_engine.py"
+    print(f"   Engine:  {engine_status}")
     print(f"   Uploads: {UPLOADS}")
     print(f"   Results: {OUT}\n")
 
