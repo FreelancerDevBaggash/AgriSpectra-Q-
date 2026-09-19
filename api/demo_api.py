@@ -170,9 +170,29 @@ def _demo_run_summary(scene: str, synthetic_run_id: str) -> dict:
     }
 
 
+# ── Scene slug → scene_id mapping ─────────────────────────────────────────────
+# Embedded into run_ids so the scene can be recovered after server restarts.
+# Format: AGRQ-DEMO-<slug>-<hex8>  e.g. AGRQ-DEMO-scene01-3f4a1b2c
+_SCENE_SLUG: dict[str, str] = {
+    "scene01": "scene_01_DT0000205230",
+    "scene02": "scene_02",
+    "scene03": "scene_03",
+}
+
+
+def _scene_from_demo_id(rid: str) -> str:
+    """Extract scene_id from an AGRQ-DEMO-* run_id, defaulting to scene_01."""
+    for slug, scene_id in _SCENE_SLUG.items():
+        if f"-{slug}-" in rid:
+            return scene_id
+    return "scene_01_DT0000205230"  # legacy hex-only IDs or unknown → default
+
+
 # ── In-memory registry: synthetic run_id → (scene, real_run_dir) ──────────────
 # We issue a fresh run_id on every /api/analyse call but point it at the
 # real pre-computed data.  This preserves the full URL-based dashboard flow.
+# NOTE: this dict is lost on server restart — _resolve_run() handles that via
+# the AGRQ-DEMO-* prefix fallback so old URLs still work.
 DEMO_RUNS: dict[str, dict] = {}
 
 
@@ -246,8 +266,11 @@ def analyse():
             )
         }), 503
 
-    # Issue a fresh run_id that maps to the pre-computed data
-    synthetic_id = f"AGRQ-DEMO-{uuid.uuid4().hex[:8]}"
+    # Issue a fresh run_id that encodes the scene slug — survives server restarts.
+    # Format: AGRQ-DEMO-<scene_slug>-<hex8>
+    # _resolve_run() can recover the scene from the run_id after a cold start.
+    scene_slug = next((k for k, v in _SCENE_SLUG.items() if v == scene), "scene01")
+    synthetic_id = f"AGRQ-DEMO-{scene_slug}-{uuid.uuid4().hex[:8]}"
     DEMO_RUNS[synthetic_id] = {
         "scene":    scene,
         "run_dir":  DEMO_RUN_DIR,
@@ -268,12 +291,22 @@ def analyse():
 
 
 def _resolve_run(rid: str) -> tuple[str | None, Path | None]:
-    """Return (scene, run_dir) for a run_id, checking both demo registry and real disk."""
+    """Return (scene, run_dir) for a run_id, checking registry then disk then demo fallback."""
     # 1. In-memory demo registry (fresh synthetic IDs from this session)
     if rid in DEMO_RUNS:
         entry = DEMO_RUNS[rid]
         return str(entry["scene"]), Path(entry["run_dir"])
-    # 2. Real run on disk (run_id matches a directory in results/live_matrix/)
+
+    # 2. Any AGRQ-DEMO-* id: map to the pre-computed demo run dir.
+    #    This handles server restarts — DEMO_RUNS is empty but the data is still on disk.
+    if rid.startswith("AGRQ-DEMO-") and DEMO_RUN_DIR.exists():
+        scene = _scene_from_demo_id(rid)
+        # Re-register so subsequent calls hit path 1 (faster)
+        DEMO_RUNS[rid] = {"scene": scene, "run_dir": DEMO_RUN_DIR,
+                          "scene_dir": DEMO_RUN_DIR / SCENE_DIR_MAP[scene]}
+        return scene, DEMO_RUN_DIR
+
+    # 3. Real run on disk (run_id matches a directory in results/live_matrix/)
     run_dir = RESULTS / rid
     if run_dir.exists():
         summary_path = run_dir / "run_summary.json"
@@ -282,8 +315,8 @@ def _resolve_run(rid: str) -> tuple[str | None, Path | None]:
             scenes = summary.get("scenes", [])
             # scenes may be list of strings or list of dicts
             first = scenes[0] if scenes else None
-            scene: str | None = first if isinstance(first, str) else (first.get("scene") if isinstance(first, dict) else None)
-            return scene, run_dir
+            scene_val: str | None = first if isinstance(first, str) else (first.get("scene") if isinstance(first, dict) else None)
+            return scene_val, run_dir
     return None, None
 
 
