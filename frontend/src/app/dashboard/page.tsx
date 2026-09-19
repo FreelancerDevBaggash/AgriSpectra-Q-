@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import * as maplibregl from 'maplibre-gl'
 import { API_BASE } from '@/lib/config'
 import {
   MapPin, AlertTriangle, Download, RefreshCw,
@@ -92,6 +93,13 @@ function riskBarColor(val: number) {
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
+
+// Set worker URL once at module level so all Map instances share the same worker.
+// maplibre-gl v6 no longer bundles the worker inline — it must be served as a
+// separate file and pointed at via setWorkerUrl before any Map is created.
+if (typeof window !== 'undefined') {
+  maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs')
+}
 
 function DashboardContent() {
   const searchParams = useSearchParams()
@@ -299,34 +307,34 @@ function DashboardContent() {
             <span className="text-surface-600 font-medium">Dashboard</span>
           </nav>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={() => router.push('/intelligence')}
-                className="p-2 rounded-lg text-surface-500 hover:bg-surface-100 transition-colors"
+                className="p-2 rounded-lg text-surface-500 hover:bg-surface-100 transition-colors flex-shrink-0"
                 aria-label="Back to Intelligence — select a new scene"
               >
                 <ArrowLeft className="w-5 h-5" aria-hidden="true" />
               </button>
-              <div>
-                <div className="flex items-center gap-2">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-lg font-bold text-surface-900">Decision Dashboard</h1>
                   <span className="badge badge-live text-xs inline-flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" aria-hidden="true" /> LIVE ANALYSIS
                   </span>
                 </div>
-                <p className="text-xs text-surface-500 font-mono">Run: {runId} · Scene: {scene}</p>
+                <p className="text-xs text-surface-500 font-mono truncate">Run: {runId} · Scene: {scene}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={load} className="btn-outline py-2 px-4 text-sm inline-flex items-center gap-2" aria-label="Refresh dashboard data">
-                <RefreshCw className="w-4 h-4" aria-hidden="true" /> Refresh
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button onClick={load} className="btn-outline py-2 px-3 sm:px-4 text-sm inline-flex items-center gap-1.5" aria-label="Refresh dashboard data">
+                <RefreshCw className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">Refresh</span>
               </button>
               <a
                 href={`/export?run_id=${runId}&scene=${scene}`}
-                className="btn-primary py-2 px-4 text-sm inline-flex items-center gap-2"
+                className="btn-primary py-2 px-3 sm:px-4 text-sm inline-flex items-center gap-1.5"
                 aria-label="Export all run artifacts"
               >
-                <Download className="w-4 h-4" aria-hidden="true" /> Export All
+                <Download className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">Export All</span>
               </a>
             </div>
           </div>
@@ -345,7 +353,7 @@ function DashboardContent() {
               the configured relative threshold.
             </p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 pb-6 border-b border-surface-100">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6 pb-6 border-b border-surface-100">
               {[
                 { label: 'High-priority zones',  value: highCount,                                              unit: '' },
                 { label: 'Top inspection focus', value: topZone?.zone_id ?? '—',                               unit: '' },
@@ -381,7 +389,7 @@ function DashboardContent() {
         {/* ── 2. GEOSPATIAL OUTPUTS — download links to actual files ── */}
         <section>
           <p className="section-label mb-4">GEOSPATIAL OUTPUTS</p>
-          <div className="grid sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               {
                 label: 'Zone Boundaries',
@@ -428,9 +436,9 @@ function DashboardContent() {
 
         {/* ── 3. RANKED ZONES ── */}
         <section>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <p className="section-label">RANKED SPECTRAL-PRIORITY ZONES</p>
-            <div className="flex gap-1 bg-surface-50 border border-surface-200 rounded-lg p-0.5">
+            <div className="flex gap-1 bg-surface-50 border border-surface-200 rounded-lg p-0.5 self-start sm:self-auto overflow-x-auto">
               {([
                 { id: 'zones',  label: 'Zones',   icon: MapPin    },
                 { id: 'map',    label: 'Map',     icon: MapIcon   },
@@ -440,7 +448,7 @@ function DashboardContent() {
                 <button
                   key={id}
                   onClick={() => setActiveTab(id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors whitespace-nowrap ${
                     activeTab === id
                       ? 'bg-white border border-surface-200 text-surface-900 shadow-sm'
                       : 'text-surface-500 hover:text-surface-700'
@@ -753,7 +761,7 @@ function DashboardContent() {
               id="tech-drawer"
               className="border border-surface-200 rounded-lg bg-white p-5 mt-1 animate-fade-up-sm"
             >
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-4 text-xs">
 
                 {/* Run identity */}
                 <div>

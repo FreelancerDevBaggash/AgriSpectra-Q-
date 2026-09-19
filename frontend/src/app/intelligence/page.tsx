@@ -520,7 +520,7 @@ export default function IntelligencePage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {/* ── Mode tab switcher ─────────────────────────────────────────────── */}
-        <div className="flex gap-1 mb-8 bg-surface-100 rounded-lg p-1 w-fit" role="tablist" aria-label="Analysis input mode">
+        <div className="flex gap-1 mb-8 bg-surface-100 rounded-lg p-1 w-fit max-w-full overflow-x-auto" role="tablist" aria-label="Analysis input mode">
           <button
             role="tab"
             aria-selected={mode === 'scene'}
@@ -638,7 +638,7 @@ export default function IntelligencePage() {
         </div>
 
         {/* Analysis and model selectors — spec §6.3 required controls */}
-        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           {/* Analysis selector */}
           <div>
             <p className="text-xs font-semibold text-surface-500 uppercase tracking-widest mb-1.5">Analysis</p>

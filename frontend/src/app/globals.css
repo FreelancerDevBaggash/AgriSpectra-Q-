@@ -127,11 +127,11 @@
   }
 
   .section-title {
-    @apply text-3xl md:text-4xl font-bold text-surface-900 tracking-tight;
+    @apply text-2xl sm:text-3xl md:text-4xl font-bold text-surface-900 tracking-tight;
   }
 
   .section-subtitle {
-    @apply text-lg text-surface-500 leading-relaxed;
+    @apply text-base sm:text-lg text-surface-500 leading-relaxed;
   }
 
   /* Dividers */
@@ -155,11 +155,12 @@
   }
 
   /* Table */
-  .data-table { @apply w-full text-sm; }
+  .table-responsive { @apply overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0; }
+  .data-table { @apply w-full text-sm min-w-[480px]; }
   .data-table thead tr { @apply border-b border-surface-200 bg-surface-50; }
-  .data-table thead th { @apply text-left py-3 px-5 text-2xs font-bold text-surface-400 uppercase tracking-widest; }
+  .data-table thead th { @apply text-left py-3 px-4 sm:px-5 text-2xs font-bold text-surface-400 uppercase tracking-widest whitespace-nowrap; }
   .data-table tbody tr { @apply border-b border-surface-100 transition-colors hover:bg-surface-50; }
-  .data-table tbody td { @apply py-3.5 px-5 text-surface-700; }
+  .data-table tbody td { @apply py-3 sm:py-3.5 px-4 sm:px-5 text-surface-700; }
 
   /* Glow rings */
   .ring-glow-blue   { box-shadow: 0 0 0 3px rgba(32, 144, 255, .25); }

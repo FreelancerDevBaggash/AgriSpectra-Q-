@@ -59,7 +59,7 @@ export default function ResearchPage() {
             <span aria-hidden="true">›</span>
             <span className="text-surface-600 font-medium">Research &amp; Evidence</span>
           </nav>
-          <div className="flex items-center gap-2.5 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="badge badge-frozen">FROZEN SCIENTIFIC BENCHMARK</span>
           </div>
           <h1 className="text-3xl font-bold text-surface-900 mb-2">Research &amp; Evidence</h1>
@@ -76,7 +76,7 @@ export default function ResearchPage() {
         <section>
           <p className="section-label mb-2">DATASET &amp; EVALUATION EVIDENCE</p>
           <h2 className="text-lg font-semibold text-surface-900 mb-5">What Evidence Exists</h2>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {EVIDENCE_ITEMS.map(({ label, sub }) => (
               <div key={label} className="bg-white border border-surface-200 rounded-lg px-4 py-3">
                 <div className="text-sm font-bold text-surface-900 mb-0.5">{label}</div>
@@ -92,7 +92,7 @@ export default function ResearchPage() {
           <h2 className="text-lg font-semibold text-surface-900 mb-4">Key Numerical Results</h2>
           <div className="bg-white rounded-lg border border-surface-200 overflow-hidden divide-y divide-surface-100">
             {BENCHMARK_METRICS.map(({ metric, value, note }) => (
-              <div key={metric} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 px-5 py-3.5">
+              <div key={metric} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 px-4 sm:px-5 py-3.5">
                 <span className="text-sm font-semibold text-surface-800 sm:w-48 flex-shrink-0">{metric}</span>
                 <span className="text-sm font-bold text-primary-700 tabular-nums sm:w-36">{value}</span>
                 <span className="text-xs text-surface-500 leading-relaxed">{note}</span>

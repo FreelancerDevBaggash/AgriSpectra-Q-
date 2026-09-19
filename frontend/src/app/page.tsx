@@ -103,7 +103,7 @@ export default function HomePage() {
             </div>
 
             {/* Headline — single clear value proposition, no qualifier in the hero */}
-            <h1 className="text-4xl lg:text-5xl font-bold text-white leading-[1.15] tracking-tight mb-5 animate-fade-up delay-100">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-[1.15] tracking-tight mb-5 animate-fade-up delay-100">
               Turn satellite data into{' '}
               <span className="text-white/80">field inspection priorities.</span>
             </h1>

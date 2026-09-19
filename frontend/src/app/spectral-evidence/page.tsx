@@ -285,8 +285,8 @@ function SpectralEvidenceContent() {
               <h2 className="text-sm font-semibold text-surface-700 uppercase tracking-wide mb-3">
                 Band-Level Evidence
               </h2>
-              <div className="overflow-x-auto border border-surface-200 rounded-lg">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto border border-surface-200 rounded-lg -mx-4 sm:mx-0">
+                <table className="w-full text-sm min-w-[560px]">
                   <thead className="bg-surface-50 border-b border-surface-200">
                     <tr>
                       {['Band index', 'Observed mean', 'Reference mean', 'Deviation', 'Wavelength status'].map(h => (

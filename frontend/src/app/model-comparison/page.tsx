@@ -87,7 +87,7 @@ export default function ModelComparisonPage() {
             <span className="text-surface-600 font-medium">Model Comparison</span>
           </nav>
 
-          <div className="flex items-center gap-2.5 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="badge badge-frozen">FROZEN SCIENTIFIC BENCHMARK</span>
             <span className="badge bg-surface-100 text-surface-500 border border-surface-200">6 Models · 90 Runs</span>
           </div>
@@ -120,7 +120,7 @@ export default function ModelComparisonPage() {
         {/* Metric selector */}
         <div>
           <p className="section-label mb-3">METRIC</p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {(Object.keys(METRIC_LABELS) as MetricKey[]).map(k => (
               <button
                 key={k}
@@ -195,13 +195,14 @@ export default function ModelComparisonPage() {
 
         {/* Sortable table */}
         <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-surface-100 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-surface-100 flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="section-label text-xs mb-0.5">TABLE 1</p>
               <h2 className="text-base font-semibold text-surface-900">Six-Model Benchmark — Click header to sort</h2>
             </div>
-            <span className="chip">Mean over 5 seeds × 3 scenes</span>
+            <span className="chip hidden sm:inline-flex">Mean over 5 seeds × 3 scenes</span>
           </div>
+          <div className="table-responsive">
           <table className="data-table">
             <thead>
               <tr>
@@ -253,6 +254,7 @@ export default function ModelComparisonPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* CTA */}

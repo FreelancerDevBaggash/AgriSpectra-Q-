@@ -173,7 +173,7 @@ export default function TechnologyPage() {
             {TECH_STACK.map(({ layer, items }) => (
               <div key={layer} className="px-5 py-4">
                 <p className="text-xs font-bold text-surface-400 uppercase tracking-wide mb-3">{layer}</p>
-                <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
                   {items.map(({ name, desc }) => (
                     <div key={name} className="flex gap-3">
                       <span className="font-semibold text-surface-900 text-sm w-36 flex-shrink-0">{name}</span>

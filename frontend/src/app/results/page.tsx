@@ -54,7 +54,7 @@ export default function ResultsPage() {
             <span aria-hidden="true">›</span>
             <span className="text-surface-600 font-medium">Benchmark Results</span>
           </nav>
-          <div className="flex items-center gap-2.5 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="badge badge-frozen">FROZEN SCIENTIFIC BENCHMARK</span>
             <span className="badge bg-surface-100 text-surface-500 border border-surface-200">90 Runs · 6 Models · 3 Scenes</span>
           </div>
@@ -73,7 +73,7 @@ export default function ResultsPage() {
         {/* Interpretation — flat, no unnecessary card box */}
         <div>
           <p className="text-xs font-bold text-surface-400 uppercase tracking-wide mb-4">SCIENTIFIC INTERPRETATION</p>
-          <div className="grid sm:grid-cols-2 gap-5 pb-5 border-b border-surface-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pb-5 border-b border-surface-100">
             <div className="flex items-start gap-3">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-spectral-500 flex-shrink-0 mt-0.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
               <div>
@@ -95,7 +95,7 @@ export default function ResultsPage() {
         </div>
 
         {/* KPI row — flat numbers */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-10 gap-y-6 pb-8 border-b border-surface-100">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 sm:gap-x-10 gap-y-6 pb-8 border-b border-surface-100">
           {[
             { val: '96.40%', lbl: 'Mean F1',       sub: '3 scenes × 5 seeds'  },
             { val: '99.47%', lbl: 'PR-AUC',         sub: 'Precision-Recall'    },
@@ -112,13 +112,14 @@ export default function ResultsPage() {
 
         {/* Six-model benchmark table — spec §6.10 models list */}
         <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-surface-100 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-surface-100 flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="section-label text-xs mb-0.5">TABLE 1</p>
               <h2 className="text-base font-semibold text-surface-900">Six-Model Benchmark</h2>
             </div>
-            <span className="chip">Mean over 5 seeds × 3 scenes</span>
+            <span className="chip hidden sm:inline-flex">Mean over 5 seeds × 3 scenes</span>
           </div>
+          <div className="table-responsive">
           <table className="data-table">
             <thead>
               <tr>
@@ -148,6 +149,7 @@ export default function ResultsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Per-scene results */}
@@ -156,6 +158,7 @@ export default function ResultsPage() {
             <p className="section-label text-xs mb-0.5">TABLE 2</p>
             <h2 className="text-base font-semibold text-surface-900">AgriSpectra-Q — Per-Scene Results</h2>
           </div>
+          <div className="table-responsive">
           <table className="data-table">
             <thead>
               <tr>
@@ -178,6 +181,7 @@ export default function ResultsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Key findings — spec §6.11 detailed tables follow interpretation */}
