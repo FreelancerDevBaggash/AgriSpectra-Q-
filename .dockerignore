@@ -5,12 +5,21 @@
 # Frontend (not needed in backend image)
 frontend/
 
-# Large data / results files
+# Large data files — never included in any image
 data/
-results/
 *.TIF
 *.tif
 *.tiff
+
+# Results — exclude everything EXCEPT the pre-computed demo run
+# The demo run (AGRQ-LIVE-20260916-132530-587fc9) must be present for demo_api.py
+results/uploads/
+results/live_matrix/AGRQ-LIVE-API-38a215bd/
+results/live_matrix/AGRQ-LIVE-API-620f3522/
+results/live_matrix/AGRQ-LIVE-API-73b71110/
+results/live_matrix/AGRQ-LIVE-API-ceb0d53f/
+results/live_matrix/AGRQ-LIVE-API-e620df9a/
+results/live_matrix/AGRQ-LIVE-API-f7f9cd60/
 
 # Python cache
 __pycache__/

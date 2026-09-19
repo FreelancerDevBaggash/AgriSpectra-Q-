@@ -259,12 +259,12 @@ def analyse():
     })
 
 
-def _resolve_run(rid: str):
+def _resolve_run(rid: str) -> tuple[str | None, Path | None]:
     """Return (scene, run_dir) for a run_id, checking both demo registry and real disk."""
     # 1. In-memory demo registry (fresh synthetic IDs from this session)
     if rid in DEMO_RUNS:
         entry = DEMO_RUNS[rid]
-        return entry["scene"], entry["run_dir"]
+        return str(entry["scene"]), Path(entry["run_dir"])
     # 2. Real run on disk (run_id matches a directory in results/live_matrix/)
     run_dir = RESULTS / rid
     if run_dir.exists():
@@ -274,7 +274,7 @@ def _resolve_run(rid: str):
             scenes = summary.get("scenes", [])
             # scenes may be list of strings or list of dicts
             first = scenes[0] if scenes else None
-            scene = first if isinstance(first, str) else (first.get("scene") if isinstance(first, dict) else None)
+            scene: str | None = first if isinstance(first, str) else (first.get("scene") if isinstance(first, dict) else None)
             return scene, run_dir
     return None, None
 
@@ -284,6 +284,7 @@ def get_run(rid: str):
     scene, run_dir = _resolve_run(rid)
     if run_dir is None:
         return jsonify({"error": "run not found"}), 404
+    assert run_dir is not None  # narrow type for pyright
 
     # For demo synthetic IDs return a fresh summary
     if rid in DEMO_RUNS and scene:
@@ -297,9 +298,10 @@ def get_run(rid: str):
 
 
 def _csv_index(rid: str, filename: str):
-    scene, run_dir = _resolve_run(rid)
+    _, run_dir = _resolve_run(rid)
     if run_dir is None:
         return jsonify({"error": "run not found"}), 404
+    assert run_dir is not None  # narrow type for pyright
 
     files = []
     for scene_dir in sorted(p for p in run_dir.iterdir() if p.is_dir()):
@@ -333,6 +335,7 @@ def get_report(rid: str):
     scene, run_dir = _resolve_run(rid)
     if run_dir is None:
         return jsonify({"error": "run not found"}), 404
+    assert run_dir is not None  # narrow type for pyright
 
     if rid in DEMO_RUNS and scene:
         summary = _demo_run_summary(scene, rid)
@@ -358,6 +361,7 @@ def get_file(rid: str, scene: str, filename: str):
     _, run_dir = _resolve_run(rid)
     if run_dir is None:
         return jsonify({"error": "run not found"}), 404
+    assert run_dir is not None  # narrow type for pyright
 
     target = run_dir / scene / filename
     if not target.exists():
