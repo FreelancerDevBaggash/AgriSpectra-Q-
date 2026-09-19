@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import {
-  MapPin, AlertTriangle, CheckCircle, Download, RefreshCw,
-  BarChart3, List, ArrowLeft, Satellite, TrendingUp, Layers
+  MapPin, AlertTriangle, Download, RefreshCw,
+  BarChart3, List, ArrowLeft, ExternalLink
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts'
+import { parseCSV } from '@/lib/utils'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,20 +70,6 @@ function riskBarColor(val: number) {
   return '#22c55e'
 }
 
-function parseCSV<T>(text: string): T[] {
-  const lines = text.trim().split('\n')
-  const headers = lines[0].split(',').map(h => h.trim())
-  return lines.slice(1).filter(l => l.trim()).map(line => {
-    const values = line.split(',')
-    const obj: Record<string, string | number> = {}
-    headers.forEach((h, i) => {
-      const v = values[i]?.trim() ?? ''
-      obj[h] = isNaN(Number(v)) || v === '' ? v : Number(v)
-    })
-    return obj as unknown as T
-  })
-}
-
 // ── Main Component ────────────────────────────────────────────────────────────
 
 function DashboardContent() {
@@ -98,10 +85,12 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'zones' | 'budget' | 'chart'>('zones')
+  // frozen: true means the backend was unreachable — we are showing a frozen demo fallback (spec §23.6)
+  const [frozen, setFrozen] = useState(false)
 
   const load = useCallback(async () => {
     if (!runId) { setError('No run ID provided. Run an analysis first.'); setLoading(false); return }
-    setLoading(true); setError(null)
+    setLoading(true); setError(null); setFrozen(false)
     try {
       const [summaryRes, zonesRes, budgetRes] = await Promise.all([
         fetch(`${API_BASE}/api/runs/${runId}`),
@@ -130,7 +119,15 @@ function DashboardContent() {
         }
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error occurred')
+      const msg = e instanceof Error ? e.message : 'Unknown error occurred'
+      // Detect network / CORS / fetch failures — backend unreachable → frozen fallback (spec §23.5–23.6)
+      const isNetworkError = e instanceof TypeError || msg.toLowerCase().includes('offline') || msg.toLowerCase().includes('fetch')
+      if (isNetworkError) {
+        setFrozen(true)
+        setError(null)
+      } else {
+        setError(msg)
+      }
     } finally {
       setLoading(false)
     }
@@ -142,19 +139,46 @@ function DashboardContent() {
   const medCount = zones.filter(z => z.priority_category?.toLowerCase().includes('medium')).length
   const avgRisk = zones.length ? (zones.reduce((a, z) => a + (z.mean_risk || 0), 0) / zones.length).toFixed(2) : '—'
 
+  // ── Frozen Fallback State — spec §23.5 + §23.6 ──
+  if (frozen) return (
+    <div className="min-h-screen bg-surface-50 flex items-center justify-center p-8">
+      <div className="max-w-md w-full bg-white rounded-lg border border-surface-200 p-8 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-100 border border-surface-300 text-xs font-semibold text-surface-600 mb-5">
+          <span className="w-2 h-2 rounded-full bg-surface-400" aria-hidden="true" />
+          FROZEN DEMONSTRATION RESULT
+        </div>
+        <h2 className="text-lg font-semibold text-surface-900 mb-2">Live Analysis Unavailable</h2>
+        <p className="text-surface-500 text-sm mb-1">
+          The backend is not reachable. No new computation was executed.
+        </p>
+        <p className="text-surface-400 text-xs mb-6">
+          This view displays a previously generated result for demonstration only. It is not a new live analysis.
+        </p>
+        <div className="flex gap-3 justify-center">
+          <button onClick={() => router.push('/intelligence')} className="btn-outline inline-flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" /> New Analysis
+          </button>
+          <button onClick={load} className="btn-primary inline-flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" aria-hidden="true" /> Retry
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
   // ── Error State ──
   if (error) return (
     <div className="min-h-screen bg-surface-50 flex items-center justify-center p-8">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-red-200 p-8 text-center">
-        <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+      <div className="max-w-md w-full bg-white rounded-lg shadow-sm border border-red-200 p-8 text-center">
+        <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" aria-hidden="true" />
         <h2 className="text-xl font-semibold text-surface-900 mb-2">Dashboard Error</h2>
         <p className="text-surface-600 mb-6">{error}</p>
         <div className="flex gap-3 justify-center">
           <button onClick={() => router.push('/intelligence')} className="btn-outline inline-flex items-center gap-2">
-            <ArrowLeft className="w-4 h-4" /> New Analysis
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" /> New Analysis
           </button>
           <button onClick={load} className="btn-primary inline-flex items-center gap-2">
-            <RefreshCw className="w-4 h-4" /> Retry
+            <RefreshCw className="w-4 h-4" aria-hidden="true" /> Retry
           </button>
         </div>
       </div>
@@ -164,43 +188,51 @@ function DashboardContent() {
   // ── Loading State ──
   if (loading) return (
     <div className="min-h-screen bg-surface-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4" />
+      <div className="text-center" role="status" aria-label="Loading analysis results">
+        <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4" aria-hidden="true" />
         <p className="text-surface-600 font-medium">Loading analysis results…</p>
         <p className="text-surface-400 text-sm mt-1">Fetching zones and inspection data</p>
       </div>
     </div>
   )
 
+  // Top zone for the "inspect first" decision summary
+  const topZone = zones.length > 0 ? zones[0] : null
+
   return (
-    <div className="min-h-screen bg-surface-50">
-      {/* Header */}
-      <div className="bg-white border-b border-surface-200 sticky top-16 z-40">
+    <div className="min-h-screen bg-white">
+
+      {/* ── Page Header — sticky below fixed nav ── */}
+      <div className="bg-white border-b border-surface-200 sticky top-[var(--nav-height)] z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1 text-xs text-surface-400 mb-2" aria-label="Breadcrumb">
+            <a href="/intelligence" className="hover:text-surface-700 transition-colors">Intelligence</a>
+            <span aria-hidden="true">›</span>
+            <span className="text-surface-600 font-medium">Dashboard</span>
+          </nav>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push('/intelligence')}
                 className="p-2 rounded-lg text-surface-500 hover:bg-surface-100 transition-colors"
+                aria-label="Back to Intelligence — select a new scene"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-5 h-5" aria-hidden="true" />
               </button>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-bold text-surface-900">Analysis Dashboard</h1>
+                  <h1 className="text-lg font-bold text-surface-900">Decision Dashboard</h1>
                   <span className="badge badge-live text-xs inline-flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> LIVE
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" aria-hidden="true" /> LIVE ANALYSIS
                   </span>
                 </div>
                 <p className="text-xs text-surface-500 font-mono">Run: {runId} · Scene: {scene}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={load}
-                className="btn-outline py-2 px-4 text-sm inline-flex items-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" /> Refresh
+              <button onClick={load} className="btn-outline py-2 px-4 text-sm inline-flex items-center gap-2" aria-label="Refresh dashboard data">
+                <RefreshCw className="w-4 h-4" aria-hidden="true" /> Refresh
               </button>
               <a
                 href={`${API_BASE}/api/runs/${runId}/report`}
@@ -208,222 +240,292 @@ function DashboardContent() {
                 rel="noopener noreferrer"
                 className="btn-primary py-2 px-4 text-sm inline-flex items-center gap-2"
               >
-                <Download className="w-4 h-4" /> Export
+                <Download className="w-4 h-4" aria-hidden="true" /> Export
               </a>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { icon: Layers, label: 'Total Zones', value: zones.length, sub: 'detected', color: 'text-primary-600', bg: 'bg-primary-50' },
-            { icon: AlertTriangle, label: 'High Priority', value: highCount, sub: 'zones', color: 'text-red-600', bg: 'bg-red-50' },
-            { icon: TrendingUp, label: 'Medium Priority', value: medCount, sub: 'zones', color: 'text-amber-600', bg: 'bg-amber-50' },
-            { icon: BarChart3, label: 'Avg Risk Score', value: avgRisk, sub: 'σ units', color: 'text-spectral-600', bg: 'bg-spectral-50' },
-          ].map(({ icon: Icon, label, value, sub, color, bg }) => (
-            <div key={label} className="bg-white rounded-xl border border-surface-200 p-5">
-              <div className={`inline-flex items-center justify-center w-10 h-10 rounded-lg ${bg} ${color} mb-3`}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <div className="text-2xl font-bold text-surface-900">{value}</div>
-              <div className="text-sm font-medium text-surface-700">{label}</div>
-              <div className="text-xs text-surface-400">{sub}</div>
-            </div>
-          ))}
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        {/* Run Metadata */}
+        {/* ── 1. DECISION SUMMARY — must come first per spec §10 ── */}
+        <section>
+          <p className="section-label mb-4">WHERE SHOULD I INSPECT FIRST?</p>
+          {zones.length === 0 ? (
+            <p className="text-sm text-surface-500">
+              No high-priority spectral zones were generated for this run.
+              This does not indicate biological health. It means that no connected region crossed
+              the configured relative threshold.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pb-6 border-b border-surface-100">
+              {[
+                { label: 'High-priority zones',   value: highCount,       unit: '' },
+                { label: 'Top inspection focus',   value: topZone?.zone_id ?? '—', unit: '' },
+                { label: 'Total spectral zones',   value: zones.length,   unit: '' },
+                { label: 'Avg anomaly score',      value: avgRisk,        unit: 'σ' },
+              ].map(({ label, value, unit }) => (
+                <div key={label}>
+                  <div className="text-xl font-bold text-surface-900">{value}{unit}</div>
+                  <div className="text-xs text-surface-500 mt-0.5">{label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Run metadata — compact inline, below decision */}
         {summary && (
-          <div className="bg-white rounded-xl border border-surface-200 p-5 mb-6">
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span className="text-surface-500">Run Mode:</span>
-              <span className="font-medium text-gray-800">{summary.mode}</span>
-              <span className="text-gray-300">|</span>
-              <span className="text-surface-500">Scenes:</span>
-              <span className="font-medium text-gray-800">{summary.scenes?.join(', ')}</span>
-              {summary.timestamp && <>
-                <span className="text-gray-300">|</span>
-                <span className="text-surface-500">Time:</span>
-                <span className="font-medium text-gray-800">{new Date(summary.timestamp).toLocaleString()}</span>
-              </>}
-            </div>
-          </div>
-        )}
-
-        {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-white rounded-xl border border-surface-200 p-1 w-fit">
-          {([
-            { id: 'zones', label: 'Priority Zones', icon: MapPin },
-            { id: 'chart', label: 'Risk Chart', icon: BarChart3 },
-            { id: 'budget', label: 'Inspection Budget', icon: List },
-          ] as const).map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === id
-                  ? 'bg-primary-600 text-white shadow-sm'
-                  : 'text-surface-600 hover:bg-surface-100'
-              }`}
-            >
-              <Icon className="w-4 h-4" /> {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'zones' && (
-          <div className="space-y-3">
-            {zones.length === 0 ? (
-              <div className="bg-white rounded-xl border border-surface-200 p-12 text-center text-surface-400">
-                <MapPin className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                <p>No zones found for this scene.</p>
-              </div>
-            ) : (
-              zones.map((zone, idx) => (
-                <div
-                  key={zone.zone_id || idx}
-                  className={`bg-white rounded-xl border-l-4 border border-surface-200 ${priorityBorder(zone.priority_category)} p-5 flex flex-col sm:flex-row sm:items-center gap-4`}
-                >
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-surface-100 flex items-center justify-center text-lg font-bold text-surface-600">
-                      #{zone.rank ?? idx + 1}
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-surface-900 text-sm">{zone.zone_id}</h3>
-                      <span className={`badge text-xs ${priorityColor(zone.priority_category)}`}>
-                        {zone.priority_category || 'Unknown'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-surface-600 mb-2 leading-relaxed">{zone.recommendation || 'No recommendation available.'}</p>
-                    <div className="flex flex-wrap gap-4 text-xs text-surface-500">
-                      <span>Mean Risk: <strong className="text-gray-800">{typeof zone.mean_risk === 'number' ? zone.mean_risk.toFixed(3) : '—'}</strong></span>
-                      <span>Max Risk: <strong className="text-gray-800">{typeof zone.max_risk === 'number' ? zone.max_risk.toFixed(3) : '—'}</strong></span>
-                      <span>Pixels: <strong className="text-gray-800">{zone.pixel_count ?? '—'}</strong></span>
-                      {(zone.approx_area_m2 ?? zone.area_m2) != null && (
-                        <span>Area: <strong className="text-gray-800">{((zone.approx_area_m2 ?? zone.area_m2)! / 10000).toFixed(2)} ha</strong></span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <div
-                      className="w-4 h-12 rounded-full"
-                      style={{ background: riskBarColor(zone.mean_risk) }}
-                      title={`Risk: ${zone.mean_risk}`}
-                    />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {activeTab === 'chart' && (
-          <div className="bg-white rounded-xl border border-surface-200 p-6">
-            <h3 className="font-semibold text-surface-900 mb-4 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-primary-600" /> Zone Risk Scores (Top 20)
-            </h3>
-            {zones.length === 0 ? (
-              <div className="text-center text-surface-400 py-16">No data available</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={zones.slice(0, 20)} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis
-                    dataKey="zone_id"
-                    tick={{ fontSize: 10 }}
-                    angle={-40}
-                    textAnchor="end"
-                    interval={0}
-                  />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip
-                    formatter={(v: number) => [v.toFixed(4), 'Mean Risk']}
-                    labelClassName="font-mono text-xs"
-                  />
-                  <Bar dataKey="mean_risk" radius={[4, 4, 0, 0]}>
-                    {zones.slice(0, 20).map((z, i) => (
-                      <Cell key={i} fill={riskBarColor(z.mean_risk)} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'budget' && (
-          <div className="bg-white rounded-xl border border-surface-200 p-6">
-            <h3 className="font-semibold text-surface-900 mb-4 flex items-center gap-2">
-              <List className="w-5 h-5 text-primary-600" /> Inspection Budget Allocation
-            </h3>
-            {budget.length === 0 ? (
-              <div className="text-center text-surface-400 py-16">No budget data available</div>
-            ) : (
+          <div className="flex flex-wrap items-center gap-3 text-xs text-surface-500 -mt-4 pb-4 border-b border-surface-100">
+            <span>Run mode: <strong className="text-surface-700">{summary.mode}</strong></span>
+            <span className="text-surface-200">|</span>
+            <span>Scenes: <strong className="text-surface-700">{summary.scenes?.join(', ')}</strong></span>
+            {summary.timestamp && (
               <>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-surface-200">
-                        <th className="text-left py-3 px-4 text-xs font-medium text-surface-500 uppercase tracking-wide">Budget %</th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-surface-500 uppercase tracking-wide">Selected Pixels</th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-surface-500 uppercase tracking-wide">Positive Recall</th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-surface-500 uppercase tracking-wide">Coverage</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-surface-100">
-                      {budget.map((row, i) => (
-                        <tr key={i} className="hover:bg-surface-50 transition-colors">
-                          <td className="py-3 px-4 font-medium text-surface-900">{typeof row.budget_fraction === 'number' ? `${(row.budget_fraction * 100).toFixed(0)}%` : '—'}</td>
-                          <td className="py-3 px-4 text-surface-600">{row.selected_pixels ?? '—'}</td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 rounded-full bg-surface-100">
-                                <div
-                                  className="h-full rounded-full bg-primary-500"
-                                  style={{ width: `${Math.min(100, (row.positive_recall ?? 0) * 100)}%` }}
-                                />
-                              </div>
-                              <span className="text-surface-700 text-xs w-10 text-right">
-                                {typeof row.positive_recall === 'number' ? `${(row.positive_recall * 100).toFixed(1)}%` : '—'}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-surface-600">
-                            {typeof row.coverage_percentage === 'number' ? `${row.coverage_percentage.toFixed(1)}%` : '—'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <ResponsiveContainer width="100%" height={200} className="mt-6">
-                  <BarChart data={budget} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="budget_fraction" tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} />
-                    <Tooltip formatter={(v: number) => [`${(v * 100).toFixed(1)}%`, 'Recall']} />
-                    <Bar dataKey="positive_recall" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <span className="text-surface-200">|</span>
+                <span>Time: <strong className="text-surface-700">{new Date(summary.timestamp).toLocaleString()}</strong></span>
               </>
             )}
           </div>
         )}
 
-        {/* Scientific note */}
-        <div className="mt-8 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">
-          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <p className="text-amber-800">
-            <strong>Decision Support Only:</strong> Priority zones require field verification.
-            Spectral-anomaly scores are not a confirmed disease or pest diagnosis.
+        {/* ── 2. GEOSPATIAL OUTPUTS — download links to actual files ── */}
+        <section>
+          <p className="section-label mb-4">GEOSPATIAL OUTPUTS</p>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {[
+              {
+                label: 'Zone Boundaries',
+                sub:   'GeoJSON · georeferenced polygons',
+                href:  `${API_BASE}/api/runs/${runId}/zones`,
+                icon:  (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                ),
+              },
+              {
+                label: 'Inspection Budget',
+                sub:   'CSV · recall vs budget fraction',
+                href:  `${API_BASE}/api/runs/${runId}/inspection`,
+                icon:  (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                ),
+              },
+              {
+                label: 'Full Run Report',
+                sub:   'JSON · run summary & metadata',
+                href:  `${API_BASE}/api/runs/${runId}/report`,
+                icon:  (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                ),
+              },
+            ].map(({ label, sub, href, icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-4 py-3 bg-white border border-surface-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-colors group"
+              >
+                <span className="text-surface-400 group-hover:text-primary-600 transition-colors flex-shrink-0">{icon}</span>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-surface-800 group-hover:text-primary-700 transition-colors">{label}</div>
+                  <div className="text-xs text-surface-400">{sub}</div>
+                </div>
+                <Download className="w-3.5 h-3.5 text-surface-300 group-hover:text-primary-500 transition-colors ml-auto flex-shrink-0" aria-hidden="true" />
+              </a>
+            ))}
+          </div>
+        </section>
+
+        {/* ── 3. RANKED ZONES ── */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <p className="section-label">RANKED SPECTRAL-PRIORITY ZONES</p>
+            <div className="flex gap-1 bg-surface-50 border border-surface-200 rounded-lg p-0.5">
+              {([
+                { id: 'zones',  label: 'Zones',   icon: MapPin  },
+                { id: 'chart',  label: 'Chart',   icon: BarChart3 },
+                { id: 'budget', label: 'Budget',  icon: List    },
+              ] as const).map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    activeTab === id
+                      ? 'bg-white border border-surface-200 text-surface-900 shadow-sm'
+                      : 'text-surface-500 hover:text-surface-700'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" /> {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Zones tab */}
+          {activeTab === 'zones' && (
+            <div className="space-y-2">
+              {zones.length === 0 ? (
+                <div className="border border-surface-200 rounded-lg p-10 text-center text-surface-400 text-sm">
+                  No spectral-priority zones found for this scene.
+                </div>
+              ) : zones.map((zone, idx) => (
+                <div
+                  key={zone.zone_id || idx}
+                  className={`border-l-4 border border-surface-200 ${priorityBorder(zone.priority_category)} rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3 bg-white`}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full bg-surface-100 flex items-center justify-center text-sm font-bold text-surface-600 flex-shrink-0"
+                    aria-label={`Rank ${zone.rank ?? idx + 1}`}
+                  >
+                    <span aria-hidden="true">{zone.rank ?? idx + 1}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-semibold text-surface-900 text-sm font-mono">{zone.zone_id}</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${priorityColor(zone.priority_category)}`}>
+                        {zone.priority_category || 'Unknown'}
+                      </span>
+                      {(zone.priority_category || '').toLowerCase().includes('high') && (
+                        <span className="text-xs text-red-600 font-medium">INSPECT FIRST</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-surface-600 leading-relaxed">{zone.recommendation || 'Spectral anomaly relative to scene baseline. Field verification required.'}</p>
+                    <div className="flex flex-wrap gap-3 text-xs text-surface-500 mt-1.5">
+                      <span>Mean risk <strong className="text-surface-800">{typeof zone.mean_risk === 'number' ? zone.mean_risk.toFixed(3) : '—'}</strong></span>
+                      <span>Max risk <strong className="text-surface-800">{typeof zone.max_risk === 'number' ? zone.max_risk.toFixed(3) : '—'}</strong></span>
+                      <span>Pixels <strong className="text-surface-800">{zone.pixel_count ?? '—'}</strong></span>
+                      {(zone.approx_area_m2 ?? zone.area_m2) != null && (
+                        <span>Area <strong className="text-surface-800">{((zone.approx_area_m2 ?? zone.area_m2)! / 10000).toFixed(2)} ha</strong></span>
+                      )}
+                    </div>
+                  </div>
+                  <a
+                    href={`/spectral-evidence?run_id=${runId}&scene=${scene}&zone_id=${encodeURIComponent(zone.zone_id)}`}
+                    className="text-xs text-primary-600 hover:underline inline-flex items-center gap-1 flex-shrink-0"
+                    aria-label={`View spectral evidence for zone ${zone.zone_id}`}
+                  >
+                    Evidence <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Chart tab */}
+          {activeTab === 'chart' && (
+            <div className="border border-surface-200 rounded-lg p-5 bg-white">
+              {zones.length === 0 ? (
+                <div className="text-center text-surface-400 py-16 text-sm">No data available</div>
+              ) : (
+                <figure>
+                  <figcaption className="text-xs text-surface-500 mb-4">
+                    Mean spectral-anomaly score — top 20 ranked zones (σ units above scene baseline).
+                    Higher bars indicate stronger spectral deviation from the scene reference.
+                  </figcaption>
+                  {/* Screen-reader summary of top 3 zones */}
+                  <p className="sr-only">
+                    {`Bar chart showing mean risk scores. Top zone: ${zones[0]?.zone_id} with score ${zones[0]?.mean_risk?.toFixed(4) ?? '—'}. `
+                     + (zones[1] ? `Second: ${zones[1].zone_id} score ${zones[1].mean_risk?.toFixed(4)}.` : '')
+                     + (zones[2] ? ` Third: ${zones[2].zone_id} score ${zones[2].mean_risk?.toFixed(4)}.` : '')
+                     + ` ${zones.length} zones total.`}
+                  </p>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={zones.slice(0, 20)} margin={{ top: 8, right: 16, left: 0, bottom: 56 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="zone_id" tick={{ fontSize: 10 }} angle={-40} textAnchor="end" interval={0} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip formatter={(v: number) => [v.toFixed(4), 'Mean risk']} labelClassName="font-mono text-xs" />
+                      <Bar dataKey="mean_risk" radius={[3, 3, 0, 0]}>
+                        {zones.slice(0, 20).map((z, i) => (
+                          <Cell key={i} fill={riskBarColor(z.mean_risk)} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </figure>
+              )}
+            </div>
+          )}
+
+          {/* Budget tab */}
+          {activeTab === 'budget' && (
+            <div className="border border-surface-200 rounded-lg p-5 bg-white">
+              <h3 className="text-sm font-semibold text-surface-800 mb-1">Pixel-Level Proxy Inspection Coverage</h3>
+              <p className="text-xs text-surface-500 mb-4">
+                At a given inspection budget fraction, what share of high-anomaly pixels are captured?
+                This is a proxy recall metric — not disease recall or field inspection accuracy.
+              </p>
+              {budget.length === 0 ? (
+                <div className="text-center text-surface-400 py-10 text-sm">
+                  Inspection budget data unavailable for this run.
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto mb-5">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-surface-100">
+                          {['Budget', 'Selected pixels', 'Proxy recall', 'Coverage'].map(h => (
+                            <th key={h} className="text-left py-2 px-3 text-xs font-medium text-surface-500 uppercase tracking-wide">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-surface-50">
+                        {budget.map((row, i) => (
+                          <tr key={i} className="hover:bg-surface-50 transition-colors">
+                            <td className="py-2 px-3 font-medium text-surface-900">{typeof row.budget_fraction === 'number' ? `${(row.budget_fraction * 100).toFixed(0)}%` : '—'}</td>
+                            <td className="py-2 px-3 text-surface-600">{row.selected_pixels ?? '—'}</td>
+                            <td className="py-2 px-3">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-1.5 rounded-full bg-surface-100">
+                                  <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(100, (row.positive_recall ?? 0) * 100)}%` }} />
+                                </div>
+                                <span className="text-surface-700 text-xs w-10 text-right">
+                                  {typeof row.positive_recall === 'number' ? `${(row.positive_recall * 100).toFixed(1)}%` : '—'}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-2 px-3 text-surface-600">
+                              {typeof row.coverage_percentage === 'number' ? `${row.coverage_percentage.toFixed(1)}%` : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <figure>
+                    <figcaption className="sr-only">
+                      Bar chart showing pixel-level proxy recall at each inspection budget fraction.
+                      This is a proxy metric — not disease recall or field inspection accuracy.
+                    </figcaption>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <BarChart data={budget} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="budget_fraction" tickFormatter={v => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${(v * 100).toFixed(0)}%`} />
+                        <Tooltip formatter={(v: number) => [`${(v * 100).toFixed(1)}%`, 'Proxy recall']} />
+                        <Bar dataKey="positive_recall" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </figure>
+                </>
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* ── 4. SCIENTIFIC CAVEAT — always visible ── */}
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
+          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-amber-800 text-xs leading-relaxed">
+            <strong>Field verification required.</strong> High-priority spectral zones are spectral-anomaly prioritisation
+            signals — not confirmed disease, pest, or biological diagnoses. Do not act on this output without
+            on-site agronomic inspection.
           </p>
         </div>
+
       </div>
     </div>
   )

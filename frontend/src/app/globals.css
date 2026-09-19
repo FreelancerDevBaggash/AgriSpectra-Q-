@@ -7,7 +7,7 @@
 /* ── Design tokens ──────────────────────────────────────────────────────────── */
 :root {
   --nav-height: 64px;
-  --radius-card: 14px;
+  --radius-card: 8px;
   --radius-pill: 999px;
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -32,7 +32,7 @@
 
   /* Buttons */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-xl
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-md
            transition-all duration-200 focus:outline-none focus-visible:ring-2
            focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed
            select-none whitespace-nowrap;
@@ -46,10 +46,10 @@
   }
 
   .btn-primary-lg {
-    @apply btn px-7 py-3.5 text-base bg-primary-600 text-white
+    @apply btn px-6 py-2.5 text-sm bg-primary-600 text-white
            hover:bg-primary-500 active:bg-primary-700
-           focus-visible:ring-primary-500 shadow-md hover:shadow-glow-blue
-           hover:-translate-y-0.5 active:translate-y-0;
+           focus-visible:ring-primary-500 shadow-sm hover:shadow-glow-blue
+           hover:-translate-y-px active:translate-y-0;
   }
 
   .btn-outline {
@@ -64,14 +64,14 @@
   }
 
   .btn-white {
-    @apply btn px-6 py-3 text-sm bg-white text-primary-700 font-bold
+    @apply btn px-6 py-2.5 text-sm bg-white text-primary-700 font-bold
            hover:bg-primary-50 active:bg-primary-100
-           focus-visible:ring-white shadow-lg;
+           focus-visible:ring-white shadow-sm;
   }
 
   /* Cards */
   .card {
-    @apply bg-white rounded-2xl border border-surface-200 shadow-card
+    @apply bg-white rounded-lg border border-surface-200 shadow-card
            transition-all duration-200;
   }
 
@@ -80,7 +80,7 @@
   }
 
   .card-glass {
-    @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm;
+    @apply rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm;
   }
 
   /* Badges */
@@ -114,7 +114,7 @@
 
   /* Inputs */
   .input {
-    @apply w-full px-4 py-2.5 text-sm bg-white border border-surface-300 rounded-xl
+    @apply w-full px-4 py-2.5 text-sm bg-white border border-surface-300 rounded-md
            text-surface-900 placeholder:text-surface-400
            focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-400
            transition-all duration-150
@@ -165,14 +165,6 @@
   .ring-glow-blue   { box-shadow: 0 0 0 3px rgba(32, 144, 255, .25); }
   .ring-glow-green  { box-shadow: 0 0 0 3px rgba(34, 197, 94,  .25); }
   .ring-glow-risk   { box-shadow: 0 0 0 3px rgba(244, 63, 94,  .25); }
-
-  /* Stat card */
-  .stat-card {
-    @apply bg-white rounded-2xl border border-surface-200 p-5 flex flex-col gap-1;
-  }
-  .stat-value { @apply text-3xl font-bold text-surface-900 tabular-nums; }
-  .stat-label { @apply text-sm font-medium text-surface-600; }
-  .stat-sub   { @apply text-xs text-surface-400; }
 
   /* Tooltip-like chip */
   .chip {

@@ -10,7 +10,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-glow-blue">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-glow-blue">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
@@ -43,9 +43,10 @@ export default function Footer() {
                 { href: '/',             label: 'Home' },
                 { href: '/project',      label: 'About Project' },
                 { href: '/intelligence', label: 'Run Analysis' },
+                { href: '/dashboard',    label: 'Dashboard' },
                 { href: '/results',      label: 'Results' },
                 { href: '/technology',   label: 'Technology' },
-                { href: '/dashboard',    label: 'Dashboard' },
+                { href: '/team',         label: 'Team' },
               ].map(({ href, label }) => (
                 <li key={href}>
                   <Link href={href} className="text-surface-400 hover:text-white transition-colors">

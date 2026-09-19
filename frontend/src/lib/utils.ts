@@ -1,11 +1,9 @@
-import { type ClassValue, clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-
 /**
- * Merge Tailwind classes with proper precedence
+ * Merge Tailwind classes with proper precedence.
+ * Usage: className={cn('base-class', condition && 'conditional-class')}
  */
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+export function cn(...inputs: (string | undefined | null | false | 0)[]): string {
+  return inputs.filter(Boolean).join(' ')
 }
 
 /**
@@ -130,20 +128,20 @@ export function truncate(text: string, maxLength: number): string {
 }
 
 /**
- * Parse CSV text to array of objects
+ * Parse CSV text to array of objects.
+ * Numeric columns are automatically coerced to `number`; empty strings stay as `''`.
+ * This is the canonical implementation — do NOT duplicate locally in pages.
  */
-export function parseCSV<T = Record<string, string>>(csvText: string): T[] {
+export function parseCSV<T>(csvText: string): T[] {
   const lines = csvText.trim().split('\n')
   const headers = lines[0].split(',').map(h => h.trim())
-  
-  return lines.slice(1).map(line => {
+  return lines.slice(1).filter(l => l.trim()).map(line => {
     const values = line.split(',')
-    const obj: Record<string, string> = {}
-    
-    headers.forEach((header, index) => {
-      obj[header] = values[index]?.trim() || ''
+    const obj: Record<string, string | number> = {}
+    headers.forEach((h, i) => {
+      const v = values[i]?.trim() ?? ''
+      obj[h] = v !== '' && !isNaN(Number(v)) ? Number(v) : v
     })
-    
-    return obj as T
+    return obj as unknown as T
   })
 }

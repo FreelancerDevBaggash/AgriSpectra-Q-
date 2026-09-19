@@ -26,9 +26,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.variable} font-sans antialiased bg-surface-50 text-surface-900`}>
+        {/* Skip-to-content link — WCAG 2.4.1 Bypass Blocks */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-semibold focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
         <Navigation />
         {/* pt accounts for fixed nav height */}
-        <main className="min-h-screen pt-[var(--nav-height)]">
+        <main id="main-content" className="min-h-screen pt-[var(--nav-height)]">
           {children}
         </main>
         <Footer />
