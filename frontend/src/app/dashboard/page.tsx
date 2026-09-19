@@ -147,6 +147,36 @@ function reprojectGeoJSON(geojson: any): any {
   }
 }
 
+// Compute the geographic centre + rough zoom from a reprojected WGS84 GeoJSON.
+// Returns null if the GeoJSON has no valid coordinates.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function geojsonCenter(geojson: any): { longitude: number; latitude: number; zoom: number } | null {
+  if (!geojson?.features?.length) return null
+  const lngs: number[] = []
+  const lats: number[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function collect(coords: any): void {
+    if (typeof coords[0] === 'number') { lngs.push(coords[0]); lats.push(coords[1]); return }
+    for (const c of coords) collect(c)
+  }
+  for (const f of geojson.features) {
+    if (f.geometry?.coordinates) collect(f.geometry.coordinates)
+  }
+  const valid = lngs.filter((_, i) => lngs[i] >= -180 && lngs[i] <= 180 && lats[i] >= -90 && lats[i] <= 90)
+  if (!valid.length) return null
+  const validLngs = lngs.filter((v, i) => lats[i] >= -90 && lats[i] <= 90 && v >= -180 && v <= 180)
+  const validLats = lats.filter((v, i) => lngs[i] >= -180 && lngs[i] <= 180 && v >= -90 && v <= 90)
+  const minLng = Math.min(...validLngs), maxLng = Math.max(...validLngs)
+  const minLat = Math.min(...validLats), maxLat = Math.max(...validLats)
+  const span = Math.max(maxLng - minLng, maxLat - minLat)
+  const zoom = span < 0.01 ? 14 : span < 0.1 ? 11 : span < 0.5 ? 9 : span < 2 ? 8 : 6
+  return {
+    longitude: (minLng + maxLng) / 2,
+    latitude:  (minLat + maxLat) / 2,
+    zoom,
+  }
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 // Set worker URL once at module level so all Map instances share the same worker.
@@ -682,7 +712,7 @@ function DashboardContent() {
                 <Map
                   ref={mapRef}
                   mapStyle="https://tiles.openfreemap.org/styles/dark"
-                  initialViewState={{ longitude: 54.4, latitude: 24.5, zoom: 8 }}
+                  initialViewState={geojsonCenter(geojson) ?? { longitude: 54.4, latitude: 24.5, zoom: 8 }}
                   style={{ width: '100%', height: '100%' }}
                   interactiveLayerIds={['zones-fill']}
                   onMouseMove={(e: MapLayerMouseEvent) => {
