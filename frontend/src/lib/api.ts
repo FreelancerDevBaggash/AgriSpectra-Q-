@@ -1,9 +1,10 @@
 /**
  * API Client for AgriSpectra-Q Backend
- * Connects to Flask API at http://localhost:8765
+ * Production backend: https://agrispectra-q-production-7bd0.up.railway.app
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agrispectra-q-production-7bd0.up.railway.app'
+import { API_BASE } from './config'
+const API_BASE_URL = API_BASE
 
 // ── Upload types ─────────────────────────────────────────────────────────────
 

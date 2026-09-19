@@ -8,6 +8,7 @@ import {
 } from 'recharts'
 import { ArrowLeft, AlertTriangle, RefreshCw, Download, FlaskConical } from 'lucide-react'
 import { parseCSV } from '@/lib/utils'
+import { API_BASE } from '@/lib/config'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 // Data source: spectral_evidence.csv — spec §11 (Frontend Pages doc §11)
@@ -34,7 +35,7 @@ interface ZoneRecord {
   threshold_type?: string
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://agrispectra-q-production-7bd0.up.railway.app'
+// API_BASE imported from @/lib/config — single source of truth
 
 function priorityColor(cat: string) {
   const c = (cat || '').toLowerCase()

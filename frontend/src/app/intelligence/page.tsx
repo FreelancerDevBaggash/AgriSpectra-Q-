@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiClient, UploadProgressEvent, UploadHandle } from '@/lib/api'
 import { saveRun, getRunHistory, RunHistoryEntry } from '@/lib/runHistory'
+import { API_BASE } from '@/lib/config'
 
 // ── Static fallback scene data — used when /api/scenes is unavailable
 // Source: docs/AgriSpectra-Q_—_Data_and_File_Schema.md §2.2
@@ -91,7 +92,7 @@ type UploadStage = 'idle' | 'uploading' | 'processing' | 'cancelling' | 'done' |
 // 2 GB client-side guard (mirrors server MAX_UPLOAD_BYTES)
 const MAX_FILE_BYTES = 2 * 1024 * 1024 * 1024
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://agrispectra-q-production-7bd0.up.railway.app'
+// API_BASE imported from @/lib/config — single source of truth
 
 // ── Backend status types ──────────────────────────────────────────────────────
 type BackendState =
@@ -371,7 +372,7 @@ export default function IntelligencePage() {
     }
 
     try {
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://agrispectra-q-production-7bd0.up.railway.app'}/api/analyse`, {
+      const res  = await fetch(`${API_BASE}/api/analyse`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scene: selected }),
@@ -394,7 +395,7 @@ export default function IntelligencePage() {
       redirectTimerRef.current = setTimeout(() => router.push(`/dashboard?run_id=${data.run_id}&scene=${selected}`), 1500)
     } catch {
       clearAll()
-      setError('Cannot reach API server. Ensure the backend is running on port 8765.')
+      setError('Cannot reach the analysis server. Please try again in a moment.')
       setStatus('error')
     }
   }
@@ -481,16 +482,17 @@ export default function IntelligencePage() {
       )}
 
       {backendState === 'offline' && (
-        <div className="bg-red-50 border-b border-red-200" role="alert">
+        <div className="bg-amber-50 border-b border-amber-200" role="alert">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-start gap-3">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500 flex-shrink-0 mt-0.5" aria-hidden="true">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>
             </svg>
             <div className="text-xs leading-relaxed">
-              <p className="font-semibold text-red-800 mb-0.5">Backend is offline</p>
-              <p className="text-red-600">
-                Start the server: <code className="font-mono bg-red-100 px-1 rounded">python api/live_matrix_api.py</code> or{' '}
-                <code className="font-mono bg-red-100 px-1 rounded">python api/demo_api.py</code>, then refresh.
+              <p className="font-semibold text-amber-800 mb-0.5">Analysis engine is starting up</p>
+              <p className="text-amber-700">
+                The server may be waking from sleep — this can take up to 30 seconds on free-tier hosting.
+                Please wait a moment and then{' '}
+                <button onClick={() => window.location.reload()} className="underline font-medium hover:text-amber-900">refresh the page</button>.
               </p>
             </div>
           </div>

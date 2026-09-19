@@ -8,13 +8,12 @@ import {
   FileJson, FileText, Map, BarChart3, AlertTriangle,
   Package, RefreshCw,
 } from 'lucide-react'
+import { API_BASE } from '@/lib/config'
 
 // ── Reports / Export page — spec §6.14 + §17
 // Displays actual generated artifacts for a run and allows individual + bulk download.
 // Must identify each artifact as LIVE ANALYSIS.
 // Must not create download links to missing files.
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://agrispectra-q-production-7bd0.up.railway.app'
 
 // ─── File-type metadata ───────────────────────────────────────────────────────
 type ArtifactEntry = {

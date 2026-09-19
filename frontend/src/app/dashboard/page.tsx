@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { API_BASE } from '@/lib/config'
 import {
   MapPin, AlertTriangle, Download, RefreshCw,
   BarChart3, List, ArrowLeft, ExternalLink, Map as MapIcon, Layers
@@ -64,7 +65,7 @@ interface SceneStatistics {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://agrispectra-q-production-7bd0.up.railway.app'
+// API_BASE imported from @/lib/config — single source of truth
 
 function priorityColor(cat: string) {
   if (!cat) return 'bg-surface-100 text-surface-700'
