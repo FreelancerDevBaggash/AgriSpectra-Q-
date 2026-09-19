@@ -1,0 +1,33 @@
+{
+  "scene": "scene_03",
+  "source": "/home/ubuntu/AgriSpectra-Q/data/raw/enmap_three_scenes/scene_03.TIF",
+  "dimensions": [
+    1152,
+    1214
+  ],
+  "bands": 224,
+  "resolution_m": 30.0,
+  "valid_pixels": 1047911,
+  "total_pixels": 1398528,
+  "nodata_percentage": 25.07043119622918,
+  "crs": "EPSG:32636",
+  "transform": [
+    30.0,
+    0.0,
+    546195.0,
+    0.0,
+    -30.0,
+    1977675.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "thresholds": {
+    "low_medium_q50": 0.692944347858429,
+    "medium_high_q80": 1.0799556970596313,
+    "high_priority_q95": 1.6642035245895386
+  },
+  "priority_zone_count": 438,
+  "processing_seconds": 49.112615096997615,
+  "status": "LIVE ANALYSIS from actual EnMAP GeoTIFF; spectral anomaly proxy, not disease label"
+}

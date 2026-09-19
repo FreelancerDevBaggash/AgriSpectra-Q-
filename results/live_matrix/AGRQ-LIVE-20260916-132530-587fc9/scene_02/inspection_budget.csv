@@ -1,0 +1,7 @@
+budget,valid_pixels,selected_pixels,proxy_positive_coverage,label
+0.05,1006261,50313,0.9999801248161545,pixel-level proxy inspection coverage
+0.1,1006261,100626,1.0,pixel-level proxy inspection coverage
+0.2,1006261,201252,1.0,pixel-level proxy inspection coverage
+0.3,1006261,301878,1.0,pixel-level proxy inspection coverage
+0.5,1006261,503130,1.0,pixel-level proxy inspection coverage
+1.0,1006261,1006261,1.0,pixel-level proxy inspection coverage

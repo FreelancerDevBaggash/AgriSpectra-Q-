@@ -1,0 +1,6 @@
+phase,limitation,next_step
+1,No external blind geography,Blind fourth EnMAP scene
+2,No field-confirmed labels,Field validation
+3,No validated temporal persistence,Multi-date EO
+4,No cost logs,Operational pilot
+5,No ROI,Customer validation

@@ -1,0 +1,2 @@
+mean_delta_f1,ci95_low,ci95_high,replicates,n_pairs,conclusion
+0.0008447271193062322,-0.0012053608715574522,0.002680318495521405,20000,15,Statistical superiority was not established.

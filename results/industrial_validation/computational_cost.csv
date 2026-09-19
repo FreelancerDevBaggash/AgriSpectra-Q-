@@ -1,0 +1,3 @@
+component,status,note
+benchmark_training/inference,not_recorded_in_original_run,No wall-clock or peak-memory instrumentation was enabled; cannot fabricate timing.
+hybrid_utilisation,proxy_available,Routing file reports requested hybrid fractions from 1% to 100%; actual V4 inference was not selectively executed.

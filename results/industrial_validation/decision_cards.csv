@@ -1,0 +1,10 @@
+scene,zone,priority_rank,risk,confidence,n_pixels,priority,recommended_action
+scene_01_DT0000205230,700016,1,47.58156204223633,0.9776785714285713,1024,Critical,Inspect this high-priority spectral crop-stress/anomaly candidate first.
+scene_01_DT0000205230,700017,2,33.58043670654297,0.9776785714285713,1024,Critical,Inspect this high-priority spectral crop-stress/anomaly candidate first.
+scene_01_DT0000205230,1500032,3,32.88469314575195,0.9776785714285713,1024,Critical,Inspect this high-priority spectral crop-stress/anomaly candidate first.
+scene_02,2300024,1,7.075220584869385,0.9776785714285713,1024,Critical,Inspect this high-priority spectral crop-stress/anomaly candidate first.
+scene_02,1800035,2,6.515260219573975,0.9776785714285713,699,Critical,Inspect this high-priority spectral crop-stress/anomaly candidate first.
+scene_02,1300035,3,6.491783142089844,0.9776785714285713,1024,Critical,Inspect this high-priority spectral crop-stress/anomaly candidate first.
+scene_03,1200021,1,5.5313544273376465,0.9776785714285713,1024,Critical,Inspect this high-priority spectral crop-stress/anomaly candidate first.
+scene_03,3300032,2,5.192970275878906,0.9776785714285716,18,Critical,Inspect this high-priority spectral crop-stress/anomaly candidate first.
+scene_03,600012,3,4.753411293029785,0.9776785714285713,1024,Critical,Inspect this high-priority spectral crop-stress/anomaly candidate first.

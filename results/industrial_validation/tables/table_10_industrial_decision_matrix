@@ -1,0 +1,5 @@
+dimension,HSI-RF,Adaptive Classical,AgriSpectra-Q
+Detection,Strongest ranking metrics,Competitive,"Highest numerical mean F1, not significant"
+Calibration,Strong,Best measured,Slightly weaker
+Robustness,NOT VALIDATED,NOT VALIDATED,NOT VALIDATED
+Operational value,Pixel proxy,Pixel proxy,Pixel proxy; no field evidence

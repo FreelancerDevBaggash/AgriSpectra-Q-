@@ -1,0 +1,41 @@
+{
+  "project": "AgriSpectra-Q Industrial Validation",
+  "source_benchmark": "/home/ubuntu/AgriSpectra-Q/results/final_six_benchmark",
+  "scenes": "three real EnMAP scenes",
+  "seeds": [
+    11,
+    22,
+    33,
+    44,
+    55
+  ],
+  "target": "spectral anomaly proxy; no field labels",
+  "frozen_predictions": true,
+  "robustness_status": "not_validated_due_to_post_prediction_perturbation",
+  "loso_status": "prior adaptive LOSO evidence copied; full six-model LOSO not executed",
+  "operational_status": "pixel-level proxy only; no field polygons",
+  "quantum_claim": "none; classical quantum-inspired implementation",
+  "decision_intelligence_status": "completed from frozen predictions and actual zone outputs",
+  "random_baseline": "analytical unbiased expectation: recall equals inspected fraction, lift equals 1",
+  "unique_q_corrections": 29,
+  "rf_correct_q_wrong": 23,
+  "spatial_unique_correction_maps": "not validated; frozen predictions lack pixel coordinates",
+  "raw_input_robustness": "not validated",
+  "temporal_persistence": "not validated",
+  "field_validation": "not available",
+  "master_prompt_extension": "executed_on_frozen_predictions",
+  "selective_risk_status": "descriptive frozen-test analysis; deployable gate not validated",
+  "difficulty_specialisation_status": "descriptive; validation-frozen difficulty policy unavailable",
+  "voi_status": "proxy only; spectral novelty, spatial coherence, true inspection cost and posterior loss unavailable",
+  "quantum_component_ablation_status": "no statistically meaningful quantum-inspired gain demonstrated",
+  "spatial_optimisation_status": "not validated; frozen predictions lack coordinates",
+  "computational_cost_status": "not fully validated",
+  "blind_external_scene_status": "unavailable",
+  "new_outputs": [
+    "selective_risk_results.csv",
+    "difficulty_quantile_results.csv",
+    "voi_proxy_results.csv",
+    "quantum_component_ablation.csv",
+    "figures/selective_risk_curve.png"
+  ]
+}

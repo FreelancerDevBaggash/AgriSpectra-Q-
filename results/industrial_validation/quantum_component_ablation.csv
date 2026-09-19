@@ -1,0 +1,3 @@
+comparison,mean_f1_with,mean_f1_without,delta,interpretation
+V4-C with Mahalanobis vs HSI-RF,0.9765783066,0.97663975,-6.14433e-05,No measurable improvement in F1; current evidence does not demonstrate necessity.
+Current Hybrid vs HSI-RF,0.899766205,0.9631405626,-0.0633743576,Previous hybrid is substantially weaker under this proxy protocol.

@@ -1,0 +1,4 @@
+scene,unique_Q_corrections,RF_correct_Q_wrong,unique_rate,regression_rate,interpretation
+scene_01_DT0000205230,0,0,0.0,0.0,RF has more corrections or tie
+scene_02,19,21,0.004030547305897327,0.004454815443360204,RF has more corrections or tie
+scene_03,10,2,0.0018677624206200972,0.00037355248412401944,Q has more unique corrections

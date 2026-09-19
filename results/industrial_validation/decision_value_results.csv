@@ -1,0 +1,29 @@
+method,budget,recall,precision,f1,lift,uncertainty
+Random analytical expectation,0.01,0.01,scene prevalence dependent,not uniquely defined without a draw,1.0,analytical unbiased expectation; no random draw needed
+Random analytical expectation,0.05,0.05,scene prevalence dependent,not uniquely defined without a draw,1.0,analytical unbiased expectation; no random draw needed
+Random analytical expectation,0.1,0.1,scene prevalence dependent,not uniquely defined without a draw,1.0,analytical unbiased expectation; no random draw needed
+Random analytical expectation,0.2,0.2,scene prevalence dependent,not uniquely defined without a draw,1.0,analytical unbiased expectation; no random draw needed
+Random analytical expectation,0.3,0.3,scene prevalence dependent,not uniquely defined without a draw,1.0,analytical unbiased expectation; no random draw needed
+Random analytical expectation,0.5,0.5,scene prevalence dependent,not uniquely defined without a draw,1.0,analytical unbiased expectation; no random draw needed
+Random analytical expectation,1.0,1.0,scene prevalence dependent,not uniquely defined without a draw,1.0,analytical unbiased expectation; no random draw needed
+HSI-RF,0.01,0.0471074702777785,1.0,0.08989089440732576,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+HSI-RF,0.05,0.24487984513508984,1.0,0.3920393129929181,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+HSI-RF,0.1,0.49190932568547885,1.0,0.6562603757977599,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+HSI-RF,0.2,0.9232741161511593,0.9454986264718056,0.9292953831907753,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+HSI-RF,0.3,1.0,0.6912263519987436,0.8130018606657851,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+HSI-RF,0.5,1.0,0.4142046006285584,0.5830560065400279,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+HSI-RF,1.0,1.0,0.20702371057278574,0.34193053856883515,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+AgriSpectra-Q,0.01,0.0471074702777785,1.0,0.08989089440732576,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+AgriSpectra-Q,0.05,0.24487984513508984,1.0,0.3920393129929181,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+AgriSpectra-Q,0.1,0.49190932568547885,1.0,0.6562603757977599,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+AgriSpectra-Q,0.2,0.9222433931125695,0.9443016134368905,0.928190521298512,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+AgriSpectra-Q,0.3,1.0,0.6912263519987436,0.8130018606657851,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+AgriSpectra-Q,0.5,1.0,0.4142046006285584,0.5830560065400279,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+AgriSpectra-Q,1.0,1.0,0.20702371057278574,0.34193053856883515,available in inspection_budget_results.csv,mean over scene-seed frozen outputs
+RF→Q selective routing proxy,0.01,0.0471074702777785,1.0,0.9631405625971714,not equivalent to inspection lift,frozen-output routing proxy
+RF→Q selective routing proxy,0.05,0.24487984513508984,1.0,0.9631405625971714,not equivalent to inspection lift,frozen-output routing proxy
+RF→Q selective routing proxy,0.1,0.49190932568547885,1.0,0.9631405625971714,not equivalent to inspection lift,frozen-output routing proxy
+RF→Q selective routing proxy,0.2,0.9222433931125695,0.9443016134368905,0.9630864398888086,not equivalent to inspection lift,frozen-output routing proxy
+RF→Q selective routing proxy,0.3,1.0,0.6912263519987436,0.9639852897164779,not equivalent to inspection lift,frozen-output routing proxy
+RF→Q selective routing proxy,0.5,1.0,0.4142046006285584,0.9639852897164779,not equivalent to inspection lift,frozen-output routing proxy
+RF→Q selective routing proxy,1.0,1.0,0.20702371057278574,0.9639852897164779,not equivalent to inspection lift,frozen-output routing proxy

@@ -1,0 +1,12 @@
+metric,HSI-RF,AgriSpectra-Q,RF→Q
+Mean F1,0.9631405625971714,0.9639852897164779,not directly measured
+Min-scene F1,0.9493001108951182,0.9530184828961973,not directly measured
+Recall@5%,0.2448798451,0.2448798451,0.2448798451
+Recall@10%,0.4919093255,0.4919093255,0.4919093255
+Recall@20%,0.9232741162,0.9222433931,0.9222433931
+Unique Q corrections,n/a,29,same frozen correction pool
+Decision cost 5:1,available in cost_sensitive_results.csv,available in cost_sensitive_results.csv,not separately executed
+Decision cost 10:1,available in cost_sensitive_results.csv,available in cost_sensitive_results.csv,not separately executed
+Decision cost 20:1,available in cost_sensitive_results.csv,available in cost_sensitive_results.csv,not separately executed
+Q evaluations,0,15312,routing proxy only
+Inspection efficiency,not measured,not measured,not measured

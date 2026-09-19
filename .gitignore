@@ -1,0 +1,36 @@
+﻿# ── Python ────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+*.env
+
+# ── Data (large GeoTIFF files) ───────────────────
+data/raw/enmap_three_scenes/*.TIF
+data/raw/enmap_three_scenes/*.tif
+data/processed/
+
+# ── Results GeoTIFFs (large raster outputs) ──────
+results/live_matrix/**/*.tif
+results/live_matrix/**/*.TIF
+
+# ── Frontend ──────────────────────────────────────
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+
+# ── OS / IDE ──────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

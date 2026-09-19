@@ -1,0 +1,84 @@
+{
+  "n_pairs": 15,
+  "mean_delta_f1": 0.0008447271193062322,
+  "ci95_low": -0.0012053608715574522,
+  "ci95_high": 0.002680318495521405,
+  "replicates": 20000,
+  "per_pair_delta": [
+    {
+      "scene": "scene_01_DT0000205230",
+      "seed": 11,
+      "delta": 0.0
+    },
+    {
+      "scene": "scene_01_DT0000205230",
+      "seed": 22,
+      "delta": 0.0
+    },
+    {
+      "scene": "scene_01_DT0000205230",
+      "seed": 33,
+      "delta": 0.0
+    },
+    {
+      "scene": "scene_01_DT0000205230",
+      "seed": 44,
+      "delta": 0.0
+    },
+    {
+      "scene": "scene_01_DT0000205230",
+      "seed": 55,
+      "delta": 0.0
+    },
+    {
+      "scene": "scene_02",
+      "seed": 11,
+      "delta": -0.010136765888978272
+    },
+    {
+      "scene": "scene_02",
+      "seed": 22,
+      "delta": -0.0005097164702134727
+    },
+    {
+      "scene": "scene_02",
+      "seed": 33,
+      "delta": 0.0037099705458419896
+    },
+    {
+      "scene": "scene_02",
+      "seed": 44,
+      "delta": 0.001512844246713052
+    },
+    {
+      "scene": "scene_02",
+      "seed": 55,
+      "delta": -0.000497285649164958
+    },
+    {
+      "scene": "scene_03",
+      "seed": 11,
+      "delta": 0.007812081016821848
+    },
+    {
+      "scene": "scene_03",
+      "seed": 22,
+      "delta": 0.006890601891274217
+    },
+    {
+      "scene": "scene_03",
+      "seed": 33,
+      "delta": 0.0016371519552871305
+    },
+    {
+      "scene": "scene_03",
+      "seed": 44,
+      "delta": 0.0
+    },
+    {
+      "scene": "scene_03",
+      "seed": 55,
+      "delta": 0.0022520251420119486
+    }
+  ]
+}

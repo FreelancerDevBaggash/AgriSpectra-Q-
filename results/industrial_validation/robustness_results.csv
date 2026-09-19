@@ -1,0 +1,2 @@
+status,reason,validity
+NOT_VALIDATED,Existing robustness output perturbed post-model probabilities rather than raw spectral inputs; no valid raw-input rerun is claimed.,excluded_from_ranking
