@@ -1,3 +1,5 @@
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -264,5 +266,3 @@
 /* ── Focus ──────────────────────────────────────────────────────────────────── */
 :focus-visible { outline: 2px solid #2090ff; outline-offset: 2px; }
 
-/* ── MapLibre ───────────────────────────────────────────────────────────────── */
-@import 'maplibre-gl/dist/maplibre-gl.css';
