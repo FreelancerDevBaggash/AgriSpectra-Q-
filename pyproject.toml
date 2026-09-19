@@ -1,2 +1,2 @@
 [tool.vercel]
-entrypoint = "api.live_matrix_api:app"
+entrypoint = "api/live_matrix_api.py"

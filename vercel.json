@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "api/live_matrix_api.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/live_matrix_api.py"
+    }
+  ]
+}
