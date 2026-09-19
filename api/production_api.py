@@ -1,28 +1,44 @@
 #!/usr/bin/env python3
 """
-AgriSpectra-Q — Live Matrix REST API
-======================================
-Flask server that exposes the live spectral-anomaly engine over HTTP.
+AgriSpectra-Q — Production API (Upload-Only Mode)
+==================================================
+Accepts user-uploaded GeoTIFF files and runs the live spectral-anomaly engine.
+Does NOT require the three pre-loaded EnMAP scenes to be present on the server.
 
-Endpoints:
-  GET  /                                      — service info
-  POST /api/analyse                           — trigger a live analysis run
-  GET  /api/runs/<run_id>                     — run summary JSON
-  GET  /api/runs/<run_id>/zones               — zone CSV index
-  GET  /api/runs/<run_id>/spectral-evidence   — spectral evidence CSV index
-  GET  /api/runs/<run_id>/inspection          — inspection budget CSV index
-  GET  /api/runs/<run_id>/report              — download run_summary.json
-  GET  /api/runs/<run_id>/files/<scene>/<fn>  — download individual output file
+This is the deploy target for free-tier or low-storage hosting (Railway, Render,
+Fly.io, etc.) where the ~1.3 GB EnMAP TIF files cannot be stored.
 
-Usage:
-  python backend/api/live_matrix_api.py       (runs on port 8765)
+Differences from api/live_matrix_api.py
+---------------------------------------
+- /api/analyse is REMOVED  (no pre-loaded scenes to analyse)
+- /api/scenes  returns an empty list (no pre-loaded scenes)
+- /api/status  reports "upload_only" mode
+- /api/upload  is the primary entry-point — accepts any multi-band GeoTIFF
+- All run result endpoints (/api/runs/*) are present and identical
+
+Storage requirements
+--------------------
+  Docker image (python + GDAL):  ~550 MB
+  Uploaded GeoTIFF (temp):        up to 2 GB (user-provided, deleted after run)
+  Run outputs (per run):          ~1–5 MB (CSV + GeoJSON + JSON, no raster TIFs)
+  Total with 5 recent runs:       ~575 MB   ← fits in 1 GB free tier
+
+  Note: risk_map.tif and priority_map.tif outputs (~3.5 MB each) are disabled
+  in this mode to preserve disk space.  All other outputs are produced normally.
+
+Usage
+-----
+    python api/production_api.py            # port 8765
+    python api/production_api.py --port $PORT
 """
 
+import argparse
 import json
 import shutil
 import subprocess
 import sys
 import threading
+import time
 import uuid
 from pathlib import Path
 
@@ -30,107 +46,36 @@ from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-ROOT    = Path(__file__).resolve().parents[2]        # project root
+ROOT    = Path(__file__).resolve().parents[1]
 ENGINE  = ROOT / "backend" / "engine" / "live_matrix_engine.py"
 OUT     = ROOT / "results" / "live_matrix"
-RAW     = ROOT / "data" / "raw" / "enmap_three_scenes"
 UPLOADS = ROOT / "results" / "uploads"
 UPLOADS.mkdir(parents=True, exist_ok=True)
+OUT.mkdir(parents=True, exist_ok=True)
 
-ALLOWED_SCENES       = {"scene_01_DT0000205230", "scene_02", "scene_03"}
 ALLOWED_GEOTIFF_EXTS = {".tif", ".tiff", ".geotiff"}
-MAX_UPLOAD_BYTES     = 2 * 1024 * 1024 * 1024   # 2 GB hard limit
-STREAM_CHUNK         = 1 * 1024 * 1024           # 1 MB streaming chunk
+MAX_UPLOAD_BYTES     = 2 * 1024 * 1024 * 1024   # 2 GB
+STREAM_CHUNK         = 1 * 1024 * 1024           # 1 MB
 
-# Static scene catalog — actual metadata from the three verified EnMAP scenes.
-# scene_01 dimensions/valid_pixels/nodata verified from live engine output (AGRQ-LIVE-API-38a215bd).
-# scene_02 and scene_03 values from docs/AgriSpectra-Q_—_Data_and_File_Schema.md §2.2.
-SCENE_CATALOG = [
-    {
-        "scene_id":          "scene_01_DT0000205230",
-        "label":             "Scene 01",
-        "location":          "Al Ain Region, UAE",
-        "dimensions":        [1152, 1214],
-        "bands":             224,
-        "resolution_m":      30,
-        "crs":               "EPSG:32636",
-        "valid_pixels":      1047911,
-        "nodata_percentage": 25.07,
-        "available":         (RAW / "scene_01_DT0000205230.TIF").exists(),
-    },
-    {
-        "scene_id":          "scene_02",
-        "label":             "Scene 02",
-        "location":          "Arabian Gulf Coast",
-        "dimensions":        [1210, 1244],
-        "bands":             224,
-        "resolution_m":      30,
-        "crs":               "EPSG:32645",
-        "valid_pixels":      1006261,
-        "nodata_percentage": 33.15,
-        "available":         (RAW / "scene_02.TIF").exists(),
-    },
-    {
-        "scene_id":          "scene_03",
-        "label":             "Scene 03",
-        "location":          "Inland Desert Agriculture",
-        "dimensions":        [1152, 1214],
-        "bands":             224,
-        "resolution_m":      30,
-        "crs":               "EPSG:32636",
-        "valid_pixels":      1047911,
-        "nodata_percentage": 25.07,
-        "available":         (RAW / "scene_03.TIF").exists(),
-    },
-]
-ALLOWED_FILES  = {
+ALLOWED_FILES = {
     "zones.csv", "spectral_evidence.csv", "inspection_budget.csv",
-    "risk_map.tif", "priority_map.tif", "zones.geojson",
-    "scene_statistics.json", "metrics.json", "manifest.json",
+    "zones.geojson", "scene_statistics.json", "metrics.json", "manifest.json",
+    # raster TIFs intentionally omitted in production to save disk
 }
 
 # ── In-memory run registry ────────────────────────────────────────────────────
-# Stores run records keyed by run_id.
-# Upload runs also store an "abort" Event so the processing thread can be
-# signalled to stop before it finishes.
-RUNS:    dict[str, dict]            = {}
-ABORTS:  dict[str, threading.Event] = {}   # run_id → abort event
+RUNS:   dict[str, dict]            = {}
+ABORTS: dict[str, threading.Event] = {}
 LOCK = threading.Lock()
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES  # Flask hard limit
-CORS(app)  # Allow cross-origin requests from the Next.js dev server
+app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
+CORS(app)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def run_analysis(scene: str) -> dict:
-    """Synchronously run the engine subprocess and return the run record."""
-    run_id = f"AGRQ-LIVE-API-{uuid.uuid4().hex[:8]}"
-    result = subprocess.run(
-        [sys.executable, str(ENGINE), "--scene", scene, "--run-id", run_id],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(result.stderr[-2000:])
-    run_path = OUT / run_id
-    record = {
-        "run_id":  run_id,
-        "scene":   scene,
-        "path":    str(run_path),
-        "status":  "completed",
-        "mode":    "LIVE ANALYSIS",
-        "scenes":  [scene],
-    }
-    with LOCK:
-        RUNS[run_id] = record
-    return record
-
-
 def _stream_to_disk(file_storage, dest: Path) -> int:
-    """Stream werkzeug FileStorage to dest in STREAM_CHUNK chunks.
-    Returns total bytes written. Raises ValueError if MAX_UPLOAD_BYTES exceeded."""
     written = 0
     with dest.open("wb") as fh:
         while True:
@@ -147,15 +92,8 @@ def _stream_to_disk(file_storage, dest: Path) -> int:
 
 
 def run_analysis_on_file(tif_path: Path, scene_name: str, abort_event: threading.Event) -> dict:
-    """Run the engine on an arbitrary GeoTIFF file and return the run record.
-
-    abort_event: caller sets this to request early termination.  The engine itself
-    does not poll it (it is a pure-Python CPU job), but we check it *before*
-    starting and clean up the run directory if set mid-flight.
-    """
+    """Run the engine on an uploaded GeoTIFF and return the run record."""
     import importlib.util
-    import time as _time
-    import json as _json
 
     if abort_event.is_set():
         raise RuntimeError("Aborted before processing started.")
@@ -164,7 +102,6 @@ def run_analysis_on_file(tif_path: Path, scene_name: str, abort_event: threading
     run_dir = OUT / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 
-    # Register the run as "processing" immediately so /api/upload/status can report it
     with LOCK:
         RUNS[run_id] = {
             "run_id": run_id,
@@ -177,7 +114,6 @@ def run_analysis_on_file(tif_path: Path, scene_name: str, abort_event: threading
         ABORTS[run_id] = abort_event
 
     try:
-        # Load engine module dynamically so arbitrary file paths work
         spec = importlib.util.spec_from_file_location("live_matrix_engine", str(ENGINE))
         mod  = importlib.util.module_from_spec(spec)          # type: ignore[arg-type]
         spec.loader.exec_module(mod)                          # type: ignore[union-attr]
@@ -188,15 +124,24 @@ def run_analysis_on_file(tif_path: Path, scene_name: str, abort_event: threading
         scene_stats = mod.process(scene_name, tif_path, run_dir)
 
         if abort_event.is_set():
-            raise RuntimeError("Aborted after engine finished (race).")
+            raise RuntimeError("Aborted after engine finished.")
 
-        (run_dir / "run_summary.json").write_text(_json.dumps({
+        # ── Remove large raster outputs to save disk on free tier ──
+        for large_file in ["risk_map.tif", "priority_map.tif"]:
+            p = run_dir / scene_name / large_file
+            if p.exists():
+                p.unlink()
+
+        # ── Delete the uploaded source file (no longer needed) ──
+        tif_path.unlink(missing_ok=True)
+
+        (run_dir / "run_summary.json").write_text(json.dumps({
             "run_id":      run_id,
             "live":        True,
             "mode":        "LIVE ANALYSIS",
             "source":      "user_upload",
             "filename":    tif_path.name,
-            "timestamp":   _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime()),
+            "timestamp":   time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "scenes":      [scene_name],
             "scene_stats": [scene_stats],
             "limitations": [
@@ -220,16 +165,15 @@ def run_analysis_on_file(tif_path: Path, scene_name: str, abort_event: threading
         return record
 
     except Exception:
-        # Clean up the partial run directory on any failure / abort
         with LOCK:
             RUNS.pop(run_id, None)
             ABORTS.pop(run_id, None)
         shutil.rmtree(run_dir, ignore_errors=True)
+        tif_path.unlink(missing_ok=True)
         raise
 
 
 def csv_index(run_id: str, filename: str):
-    """Return a JSON index of per-scene CSV/file outputs for a given run."""
     run_path = OUT / run_id
     if not run_path.exists():
         return jsonify({"error": "run not found"}), 404
@@ -250,11 +194,12 @@ def csv_index(run_id: str, filename: str):
 @app.get("/")
 def home():
     return jsonify({
-        "service":        "AgriSpectra-Q Live Matrix API",
-        "mode":           "LIVE ANALYSIS",
-        "benchmark_note": "The frozen six-model benchmark is separate and pre-computed.",
+        "service": "AgriSpectra-Q Production API (Upload-Only)",
+        "mode":    "UPLOAD ONLY — no pre-loaded EnMAP scenes",
+        "note":    "Upload your own GeoTIFF via POST /api/upload",
         "endpoints": [
-            "POST /api/analyse",
+            "POST /api/upload",
+            "GET  /api/status",
             "GET  /api/runs/<run_id>",
             "GET  /api/runs/<run_id>/zones",
             "GET  /api/runs/<run_id>/spectral-evidence",
@@ -267,54 +212,43 @@ def home():
 
 @app.get("/api/scenes")
 def list_scenes():
-    """Return the verified EnMAP scene catalog with live availability check."""
-    return jsonify({"scenes": SCENE_CATALOG})
+    """No pre-loaded scenes in production mode."""
+    return jsonify({
+        "scenes": [],
+        "note": "This server runs in upload-only mode. No pre-loaded EnMAP scenes are available. Use POST /api/upload to analyse your own GeoTIFF.",
+    })
 
 
 @app.get("/api/status")
 def status():
-    """Return a concise health summary: which scenes are on disk, engine path, upload dir."""
-    scenes_status = []
-    for s in SCENE_CATALOG:
-        sid  = s["scene_id"]
-        path = RAW / (sid + ".TIF")
-        scenes_status.append({
-            "scene_id":  sid,
-            "label":     s["label"],
-            "available": path.exists(),
-            "path":      str(path),
-            "size_mb":   round(path.stat().st_size / (1024 * 1024), 1) if path.exists() else None,
-        })
-    engine_ok = ENGINE.exists()
-    all_available = all(s["available"] for s in scenes_status)
     return jsonify({
-        "status":           "ready" if (engine_ok and all_available) else "degraded",
-        "engine_ok":        engine_ok,
-        "scenes_on_disk":   scenes_status,
-        "all_scenes_ready": all_available,
-        "raw_data_dir":     str(RAW),
-        "uploads_dir":      str(UPLOADS),
-        "results_dir":      str(OUT),
+        "status":      "ready",
+        "mode":        "upload_only",
+        "engine_ok":   ENGINE.exists(),
+        "uploads_dir": str(UPLOADS),
+        "results_dir": str(OUT),
+        "note":        "No pre-loaded EnMAP scenes. Upload your own GeoTIFF to run an analysis.",
     })
 
 
 @app.post("/api/analyse")
 def analyse():
-    body  = request.get_json(silent=True) or {}
-    scene = body.get("scene", "scene_01_DT0000205230")
-    if scene not in ALLOWED_SCENES:
-        return jsonify({"error": f"scene must be one of: {sorted(ALLOWED_SCENES)}"}), 400
-    try:
-        return jsonify(run_analysis(scene))
-    except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
+    """Disabled in production upload-only mode."""
+    return jsonify({
+        "error": (
+            "Pre-loaded scene analysis is not available on this server. "
+            "This server runs in upload-only mode. "
+            "Upload your own GeoTIFF via POST /api/upload."
+        ),
+        "upload_endpoint": "/api/upload",
+    }), 503
 
 
 @app.post("/api/upload")
 def upload():
-    """Accept a user-uploaded GeoTIFF (streamed), run the live engine, return run_id."""
+    """Accept a user-uploaded GeoTIFF, run the live engine, return run_id."""
     if "file" not in request.files:
-        return jsonify({"error": "No file part in request. Use multipart/form-data with field name 'file'."}), 400
+        return jsonify({"error": "No file part. Use multipart/form-data with field name 'file'."}), 400
 
     f = request.files["file"]
     if not f.filename:
@@ -324,7 +258,6 @@ def upload():
     if ext not in ALLOWED_GEOTIFF_EXTS:
         return jsonify({"error": f"Unsupported file type '{ext}'. Please upload a GeoTIFF (.tif / .tiff)."}), 400
 
-    # Save the file using streaming (no full read into RAM)
     uid       = uuid.uuid4().hex[:12]
     safe_stem = "".join(c if c.isalnum() or c in "-_." else "_" for c in Path(f.filename).stem)[:64]
     save_name = f"{uid}_{safe_stem}{ext}"
@@ -359,7 +292,6 @@ def upload():
 
 @app.post("/api/upload/abort/<run_id>")
 def abort_run(run_id: str):
-    """Signal an in-progress upload-run to stop as soon as possible."""
     with LOCK:
         event = ABORTS.get(run_id)
     if event is None:
@@ -396,8 +328,8 @@ def get_report(rid: str):
     summary = OUT / rid / "run_summary.json"
     if not summary.exists():
         return jsonify({"error": "run not found"}), 404
-    return send_file(summary, mimetype="application/json", as_attachment=True,
-                     download_name=f"{rid}_report.json")
+    return send_file(summary, mimetype="application/json",
+                     as_attachment=True, download_name=f"{rid}_report.json")
 
 
 @app.route("/api/runs/<rid>/files/<scene>/<filename>", methods=["GET", "HEAD"])
@@ -415,22 +347,29 @@ def get_file(rid: str, scene: str, filename: str):
 
 @app.get("/api/upload/info")
 def upload_info():
-    """Return upload constraints for the frontend."""
     return jsonify({
         "max_bytes":          MAX_UPLOAD_BYTES,
         "max_mb":             MAX_UPLOAD_BYTES // (1024 * 1024),
         "allowed_extensions": sorted(ALLOWED_GEOTIFF_EXTS),
-        "stream_chunk_bytes": STREAM_CHUNK,
+        "mode":               "upload_only",
+        "raster_outputs":     False,
+        "note":               "risk_map.tif and priority_map.tif are not produced in upload-only mode to save disk space.",
     })
 
 
 # ── Entry-point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import argparse
-    ap = argparse.ArgumentParser(description="AgriSpectra-Q API server")
-    ap.add_argument("--host", default="0.0.0.0")
-    ap.add_argument("--port", type=int, default=8765)
+    ap = argparse.ArgumentParser(description="AgriSpectra-Q Production API (Upload-Only)")
+    ap.add_argument("--host",  default="0.0.0.0")
+    ap.add_argument("--port",  type=int, default=8765)
     ap.add_argument("--debug", action="store_true")
     args = ap.parse_args()
+
+    print(f"\n✓  AgriSpectra-Q Production API (Upload-Only)")
+    print(f"   Mode:    upload-only (no pre-loaded EnMAP scenes)")
+    print(f"   Engine:  {'found' if ENGINE.exists() else 'NOT FOUND — check backend/engine/live_matrix_engine.py'}")
+    print(f"   Uploads: {UPLOADS}")
+    print(f"   Results: {OUT}\n")
+
     app.run(host=args.host, port=args.port, debug=args.debug)

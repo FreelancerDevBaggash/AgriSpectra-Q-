@@ -1,9 +1,9 @@
 # AgriSpectra-Q — UX/UI Audit Report
 
-**Date:** 2025  
-**Scope:** Full frontend — 8 pages + Navigation + Footer + Layout  
-**Standard:** WCAG 2.2 AA, Nielsen's 10 Heuristics, Flat Minimal Professional design system  
-**Status:** All issues resolved
+**Date:** 2025 (Round 1) · 2025 (Round 2 — User Flow & Cognitive Load)
+**Scope:** Full frontend — 8 pages + Navigation + Footer + Layout
+**Standard:** WCAG 2.2 AA, Nielsen's 10 Heuristics, Flat Minimal Professional design system
+**Status:** Round 2 fixes applied — score 38/40
 
 ---
 
@@ -83,20 +83,49 @@ Dashboard → Spectral Evidence   (router.back())
 
 ## 3. Heuristic Evaluation (Nielsen's 10)
 
-| # | Heuristic | Before Score | After Score | Key Change |
+| # | Heuristic | R1 | R2 | Key Change (Round 2) |
 |---|-----------|:---:|:---:|-----------|
-| 1 | Visibility of system status | 3 | 4 | Breadcrumbs show current location; active nav `aria-current` |
-| 2 | Match between system and world | 4 | 4 | Scientific language consistent throughout |
-| 3 | User control and freedom | 2 | 4 | Back buttons with descriptive labels; breadcrumbs; mobile menu closes on route change |
-| 4 | Consistency and standards | 2 | 4 | Breadcrumbs on all pages; footer nav matches primary nav order; Team page uses btn-primary/btn-outline like other pages |
-| 5 | Error prevention | 3 | 4 | Radio ARIA prevents misunderstanding of selection state |
-| 6 | Recognition over recall | 3 | 4 | Mobile data quality preview now visible (was `hidden sm:flex`); breadcrumbs provide context |
-| 7 | Flexibility and efficiency | 3 | 3 | No change — power users already had keyboard nav |
-| 8 | Aesthetic and minimalist design | 3 | 4 | Interpretation section on Results page removed unnecessary card box; flat content-first approach |
-| 9 | Help recover from errors | 3 | 3 | No change — error states already well-designed |
-| 10 | Help and documentation | 3 | 3 | No change — scientific boundary disclaimers already in place |
+| 1 | Visibility of system status | 4 | 4 | No regression — breadcrumbs and `aria-current` retained |
+| 2 | Match between system and world | 4 | 4 | Nav labels now match user mental model ("Science" groups technical pages) |
+| 3 | User control and freedom | 4 | 4 | Dashboard removed from cold nav — no more dead-end error screens |
+| 4 | Consistency and standards | 4 | 4 | Footer nav updated to match new primary nav labels |
+| 5 | Error prevention | 4 | 4 | Dashboard cold-navigation error eliminated |
+| 6 | Recognition over recall | 4 | 4 | Science dropdown has descriptions — user recognises before clicking |
+| 7 | Flexibility and efficiency | 3 | 4 | Dropdown keyboard-accessible (Escape, outside-click, route-change close) |
+| 8 | Aesthetic and minimalist design | 4 | 4 | Hero disclaimer removed — no more contradictory visual tone in the Hero |
+| 9 | Help recover from errors | 3 | 3 | No change |
+| 10 | Help and documentation | 3 | 3 | No change |
 
-**Overall score: 35/40** (was 29/40)
+**Round 2 score: 38/40** (was 35/40 after Round 1; 29/40 originally)
+
+---
+
+## 3b. Round 2 — Hero & Messaging Fixes
+
+### Hero Disclaimer Conflict
+- **Issue:** Scientific boundary disclaimer was placed inside the Hero, between the value proposition and the CTAs. This created a contradictory first impression — the headline made a strong claim, then immediately undermined it before the user acted.
+- **Fix:** Disclaimer moved to page bottom (below the final CTA section). Renders in muted `text-xs text-surface-500` with a neutral info icon on a surface background. Remains visible on every page load at the natural scroll terminus without competing with the CTAs.
+
+### Hero Headline Clarity
+- **Before:** *"Hyperspectral intelligence for targeted inspection"* — system-centric, requires domain knowledge.
+- **After:** *"Turn satellite data into field inspection priorities"* — outcome-centric, immediately understandable.
+
+### Secondary CTA Label
+- **Before:** "Explore Results" — ambiguous.
+- **After:** "See Benchmark Results" — sets correct expectation (frozen scientific benchmark, not live data).
+
+### Live Engine Badge
+- **Before:** "Live Engine Active" badge in the Home Hero — no actionable context for a first-time visitor.
+- **After:** Moved to Intelligence page header as "LIVE ENGINE ACTIVE" — shown where the user is about to run an analysis.
+
+### Page Header Label Fixes
+
+| Page | Before | After |
+|------|--------|-------|
+| Results | "Industrial Validation Results" | "Benchmark Results" |
+| Intelligence | "Hyperspectral Scene Intelligence" | "Run a Live Analysis" |
+| Research | "Research & Validation" | "Research & Evidence" |
+| Technology | "System Architecture" | "Technology Stack" |
 
 ---
 
@@ -173,6 +202,57 @@ All changes follow the existing token system:
 **Decision-first hierarchy preserved (spec §3.1):** Dashboard still shows "Where Should I Inspect First?" summary before map placeholder, before ranked zones, before scientific caveat.
 
 ---
+
+## 10. Round 3 — Session Persistence & Upload UX
+
+### 10.1 Problem: Run ID Lost on Navigation
+
+**Issue:** The `run_id` was only stored in the redirect URL (`/dashboard?run_id=...&scene=...`). Closing the tab, pressing Back, or navigating away caused permanent loss of the analysis — the user had to re-run the entire pipeline.
+
+**Fix:** Added [`src/lib/runHistory.ts`](../../frontend/src/lib/runHistory.ts) — a localStorage persistence layer:
+- `saveRun(entry)` — writes run metadata (run_id, scene, label, timestamp, source) after every successful analysis
+- `getRunHistory()` — reads up to 5 most recent runs on page load
+- `clearRunHistory()` — user-triggered clear
+
+Both `handleRun()` (scene mode) and `handleUploadRun()` (upload mode) now call `saveRun()` on success.
+
+### 10.2 Recent Analyses Section
+
+**Issue:** No way to return to a completed analysis without the URL.
+
+**Fix:** Added "RECENT ANALYSES" section at the bottom of the Intelligence page:
+- Appears only when `localStorage` has saved runs (zero footprint for first-time users)
+- Each row shows: scene label / filename, run ID (monospace), timestamp, source badge (EnMAP Scene / Upload)
+- Clicking any row navigates directly to `/dashboard?run_id=...&scene=...` — no re-run required
+- "Clear history" button removes all saved entries and hides the section
+
+### 10.3 Upload File Destination — User Transparency
+
+**Issue:** Users uploading GeoTIFFs had no idea where the file went, what happened to it, or how to get back to the results.
+
+**Fix:** Added an info callout at the top of the Upload panel explaining the 5-step flow:
+1. GeoTIFF uploaded to server (streamed, max 2 GB)
+2. Live engine runs spectral-anomaly pipeline
+3. Results saved under unique run ID on server
+4. Redirected to Dashboard to view and download
+5. Run ID saved on this device — accessible via Recent Analyses
+
+**Additional note:** Clarifies that the original file is stored temporarily on the server; only analysis outputs are returned to the user.
+
+### 10.4 Heuristic Impact (Round 3)
+
+| # | Heuristic | R2 | R3 | Change |
+|---|-----------|:---:|:---:|--------|
+| 3 | User control and freedom | 4 | 4 | Users can now return to any completed analysis |
+| 6 | Recognition over recall | 4 | 4 | Recent runs visible by name — user doesn't need to remember run IDs |
+| 9 | Help recover from errors | 3 | 4 | Re-run is no longer the only recovery from accidental navigation |
+| 10 | Help and documentation | 3 | 4 | Upload panel now explains exactly what happens to the file |
+
+**Round 3 score: 40/40**
+
+---
+
+
 
 ## 9. WCAG 2.2 Compliance Checklist
 

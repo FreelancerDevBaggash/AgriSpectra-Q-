@@ -87,10 +87,12 @@ export default function TechnologyPage() {
           <nav className="flex items-center gap-1 text-xs text-surface-400 mb-4" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-surface-700 transition-colors">Home</Link>
             <span aria-hidden="true">›</span>
-            <span className="text-surface-600 font-medium">Technology</span>
+            <span className="text-surface-400">Science</span>
+            <span aria-hidden="true">›</span>
+            <span className="text-surface-600 font-medium">Technology Stack</span>
           </nav>
           <p className="section-label mb-3">TECHNOLOGY</p>
-          <h1 className="text-3xl font-bold text-surface-900 mb-2">System Architecture</h1>
+          <h1 className="text-3xl font-bold text-surface-900 mb-2">Technology Stack</h1>
           <p className="text-surface-500 max-w-2xl text-sm leading-relaxed">
             A full-stack hyperspectral intelligence platform built on open-source geospatial
             science, a lean Python backend, and a modern Next.js frontend.

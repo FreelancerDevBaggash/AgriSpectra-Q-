@@ -1,0 +1,50 @@
+{
+  "run_id": "AGRQ-LIVE-API-620f3522",
+  "live": true,
+  "mode": "LIVE ANALYSIS",
+  "timestamp": "2026-09-19T06:56:14Z",
+  "scenes": [
+    "scene_01_DT0000205230"
+  ],
+  "scene_stats": [
+    {
+      "scene": "scene_01_DT0000205230",
+      "source": "D:\\asia\\AgriSpectra-Q-master-industrial-poc\\data\\raw\\enmap_three_scenes\\scene_01_DT0000205230.TIF",
+      "dimensions": [
+        1152,
+        1214
+      ],
+      "bands": 224,
+      "resolution_m": 30.0,
+      "valid_pixels": 1047911,
+      "total_pixels": 1398528,
+      "nodata_percentage": 25.07043119622918,
+      "crs": "EPSG:32636",
+      "transform": [
+        30.0,
+        0.0,
+        546195.0,
+        0.0,
+        -30.0,
+        1977675.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "thresholds": {
+        "low_medium_q50": 0.692944347858429,
+        "medium_high_q80": 1.0799556970596313,
+        "high_priority_q95": 1.6642035245895386
+      },
+      "priority_zone_count": 438,
+      "processing_seconds": 45.234930099999474,
+      "status": "LIVE ANALYSIS \u2014 spectral anomaly proxy, not disease label"
+    }
+  ],
+  "limitations": [
+    "Spectral wavelength metadata unavailable; band indices reported",
+    "Unsupervised spectral anomaly proxy \u2014 no disease/pest labels",
+    "Priority thresholds are scene-relative percentiles",
+    "Not the frozen six-model benchmark"
+  ]
+}

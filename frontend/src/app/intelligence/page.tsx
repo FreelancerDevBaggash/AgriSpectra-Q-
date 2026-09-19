@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiClient, UploadProgressEvent, UploadHandle } from '@/lib/api'
+import { saveRun, getRunHistory, RunHistoryEntry } from '@/lib/runHistory'
 
 // ── Static fallback scene data — used when /api/scenes is unavailable
 // Source: docs/AgriSpectra-Q_—_Data_and_File_Schema.md §2.2
@@ -92,6 +93,15 @@ const MAX_FILE_BYTES = 2 * 1024 * 1024 * 1024
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8765'
 
+// ── Backend status types ──────────────────────────────────────────────────────
+type BackendState =
+  | 'checking'          // initial fetch in flight
+  | 'offline'           // cannot reach the API server at all
+  | 'upload_only'       // production mode — no pre-loaded scenes, upload-only
+  | 'scenes_missing'    // server reachable but TIF files not on disk
+  | 'demo'              // demo API — pre-computed real results
+  | 'ready'             // server reachable + all scenes present
+
 export default function IntelligencePage() {
   const router = useRouter()
   const [mode, setMode]         = useState<Mode>('scene')
@@ -100,13 +110,50 @@ export default function IntelligencePage() {
   const [status, setStatus]     = useState<Status>('idle')
   const [runId, setRunId]       = useState<string | null>(null)
 
-  // Try to load live scene catalog; fall back to static list silently on failure
+  // Run history — loaded from localStorage for "Recent Runs" section
+  const [recentRuns, setRecentRuns] = useState<RunHistoryEntry[]>([])
+  useEffect(() => { setRecentRuns(getRunHistory()) }, [])
+
+  // ── Backend + scene availability status ──────────────────────────────────────
+  // Checks /api/status (scenes on disk) then falls back to /api/scenes.
+  // Shows a clear banner so user knows exactly why a scene might not run.
+  const [backendState, setBackendState] = useState<BackendState>('checking')
+  const [missingScenes, setMissingScenes] = useState<string[]>([])
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/status`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) { setBackendState('offline'); return }
+
+        // Production upload-only mode
+        if (data.mode === 'upload_only') {
+          setBackendState('upload_only')
+          return
+        }
+
+        // Demo mode (pre-computed results)
+        if (data.mode === 'demo') {
+          setBackendState(data.all_scenes_ready ? 'demo' : 'scenes_missing')
+          return
+        }
+
+        // Full live mode — check which scenes are on disk
+        const scenesOnDisk = data.scenes_on_disk as Array<{ scene_id: string; label: string; available: boolean }> | undefined
+        if (!scenesOnDisk) { setBackendState('ready'); return }
+        const missing = scenesOnDisk.filter(s => !s.available).map(s => s.label)
+        setMissingScenes(missing)
+        setBackendState(missing.length > 0 ? 'scenes_missing' : 'ready')
+      })
+      .catch(() => setBackendState('offline'))
+  }, [])
+
+  // Load live scene catalog; merge availability into static fallback
   useEffect(() => {
     fetch(`${API_BASE}/api/scenes`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (!data?.scenes?.length) return
-        // Merge live availability into the static fallback to keep UI metadata
         const updated = SCENES_FALLBACK.map(s => {
           const live = data.scenes.find((l: { scene_id: string; available: boolean }) => l.scene_id === s.id)
           return live ? { ...s, available: live.available } : s
@@ -284,6 +331,15 @@ export default function IntelligencePage() {
         setUploadRunId(result.run_id)
         setUploadStage('done')
         const sceneId = result.scene ?? uploadFile.name.replace(/\.[^.]+$/, '')
+        // Persist upload run so user can return to this analysis later
+        saveRun({
+          run_id:    result.run_id,
+          scene:     sceneId,
+          label:     uploadFile.name,
+          timestamp: new Date().toISOString(),
+          source:    'upload',
+        })
+        setRecentRuns(getRunHistory())
         uploadRedirectRef.current = setTimeout(
           () => router.push(`/dashboard?run_id=${result.run_id}&scene=${sceneId}`),
           1500,
@@ -325,6 +381,16 @@ export default function IntelligencePage() {
 
       if (!res.ok) { setError(data.error || 'Analysis failed.'); setStatus('error'); return }
       setRunId(data.run_id); setStatus('done')
+      // Persist run to localStorage so user can return to this analysis later
+      const sceneEntry = scenes.find(s => s.id === selected)
+      saveRun({
+        run_id:    data.run_id,
+        scene:     selected,
+        label:     sceneEntry?.label ?? selected,
+        timestamp: new Date().toISOString(),
+        source:    'scene',
+      })
+      setRecentRuns(getRunHistory())
       redirectTimerRef.current = setTimeout(() => router.push(`/dashboard?run_id=${data.run_id}&scene=${selected}`), 1500)
     } catch {
       clearAll()
@@ -336,7 +402,7 @@ export default function IntelligencePage() {
   return (
     <div className="min-h-screen bg-surface-50">
 
-      {/* Page header — spec §6.3: LIVE ANALYSIS mode badge */}
+      {/* Page header */}
       <div className="bg-white border-b border-surface-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           {/* Breadcrumb */}
@@ -346,23 +412,108 @@ export default function IntelligencePage() {
             <span className="text-surface-600 font-medium">Intelligence</span>
           </nav>
           <div className="flex items-center gap-2.5 mb-3">
-            {/* spec §3.2: LIVE ANALYSIS badge */}
-            <span className="badge badge-live">
-              <span className="dot-live" />
-              LIVE ANALYSIS
-            </span>
-            <span className="badge badge-frozen">FROZEN BENCHMARK SEPARATE</span>
+            {backendState === 'ready' && (
+              <span className="badge badge-live"><span className="dot-live" />LIVE ENGINE ACTIVE</span>
+            )}
+            {backendState === 'demo' && (
+              <span className="badge badge-live"><span className="dot-live" />DEMO — REAL RESULTS</span>
+            )}
+            {backendState === 'upload_only' && (
+              <span className="badge bg-primary-50 text-primary-700 border border-primary-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary-500 inline-block mr-1" aria-hidden="true" />
+                UPLOAD-ONLY MODE
+              </span>
+            )}
+            {backendState === 'checking' && (
+              <span className="badge bg-surface-100 text-surface-500 border border-surface-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-surface-400 animate-pulse inline-block mr-1" aria-hidden="true" />
+                Checking engine…
+              </span>
+            )}
+            {(backendState === 'offline' || backendState === 'scenes_missing') && (
+              <span className="badge bg-amber-100 text-amber-700 border border-amber-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block mr-1" aria-hidden="true" />
+                {backendState === 'offline' ? 'ENGINE OFFLINE' : 'SCENES MISSING'}
+              </span>
+            )}
+            <span className="badge badge-frozen">BENCHMARK RESULTS SEPARATE</span>
           </div>
           <h1 className="text-3xl font-bold text-surface-900 mb-2">
-            Hyperspectral Scene Intelligence
+            {backendState === 'upload_only' ? 'Upload Your GeoTIFF' : 'Run a Live Analysis'}
           </h1>
           <p className="text-surface-500 max-w-2xl text-sm leading-relaxed">
-            Run a real spectral-anomaly prioritisation analysis.
-            Select one of the three verified EnMAP scenes, or upload your own GeoTIFF.
-            The result is a decision-support signal and requires field verification.
+            {backendState === 'upload_only'
+              ? 'This server runs in upload-only mode. Upload any multi-band GeoTIFF to analyse it with the live spectral-anomaly engine.'
+              : 'Select one of the three verified EnMAP scenes below, or upload your own GeoTIFF. The engine returns ranked spectral-priority zones in under 60 seconds.'
+            }
           </p>
         </div>
       </div>
+
+      {/* ── Status banners — shown only when relevant ─────────────────────── */}
+
+      {backendState === 'demo' && (
+        <div className="bg-primary-50 border-b border-primary-100">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2.5 text-xs text-primary-700">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>
+              <strong>Demo mode:</strong> These results were computed from real EnMAP GeoTIFF data and are served instantly for the hackathon demonstration.
+              All zone data, spectral evidence, and inspection budgets are genuine engine outputs.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {backendState === 'upload_only' && (
+        <div className="bg-primary-50 border-b border-primary-100">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2.5 text-xs text-primary-700">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>
+              <strong>Upload-only mode:</strong> This server does not host pre-loaded scenes.
+              Switch to the <strong>Upload GeoTIFF</strong> tab to analyse your own file.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {backendState === 'offline' && (
+        <div className="bg-red-50 border-b border-red-200" role="alert">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-start gap-3">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            <div className="text-xs leading-relaxed">
+              <p className="font-semibold text-red-800 mb-0.5">Backend is offline</p>
+              <p className="text-red-600">
+                Start the server: <code className="font-mono bg-red-100 px-1 rounded">python api/live_matrix_api.py</code> or{' '}
+                <code className="font-mono bg-red-100 px-1 rounded">python api/demo_api.py</code>, then refresh.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {backendState === 'scenes_missing' && (
+        <div className="bg-amber-50 border-b border-amber-200" role="alert">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-start gap-3">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500 flex-shrink-0 mt-0.5" aria-hidden="true">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>
+            </svg>
+            <div className="text-xs leading-relaxed">
+              <p className="font-semibold text-amber-800 mb-0.5">
+                Scene files missing{missingScenes.length > 0 && `: ${missingScenes.join(', ')}`}
+              </p>
+              <p className="text-amber-700">
+                Copy the TIF files to <code className="font-mono bg-amber-100 px-1 rounded">data/raw/enmap_three_scenes/</code> — or switch to <strong>Upload GeoTIFF</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
@@ -643,6 +794,27 @@ export default function IntelligencePage() {
         {/* ══════════════════ UPLOAD PANEL ═══════════════════════════════════ */}
         {mode === 'upload' && (
           <div>
+
+            {/* ── What happens to the uploaded file ─────────────────────────── */}
+            <div className="flex items-start gap-3 bg-surface-50 border border-surface-200 rounded-lg p-4 mb-6 text-xs text-surface-600 leading-relaxed">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400 flex-shrink-0 mt-0.5" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <div>
+                <p className="font-semibold text-surface-700 mb-1">What happens when you upload a file?</p>
+                <ol className="space-y-0.5 list-decimal list-inside text-surface-500">
+                  <li>Your GeoTIFF is uploaded to the analysis server (streamed — max 2 GB)</li>
+                  <li>The live engine runs the spectral-anomaly pipeline on your scene</li>
+                  <li>Results (zones, maps, budget) are saved on the server under a unique run ID</li>
+                  <li>You are redirected to the Dashboard to view and download all outputs</li>
+                  <li>Your run ID is saved on this device — you can return to it via the Recent Analyses list below</li>
+                </ol>
+                <p className="mt-1.5 text-surface-400">
+                  The uploaded file is stored temporarily on the server for processing.
+                  Your original file is not returned — only the analysis outputs are accessible.
+                </p>
+              </div>
+            </div>
 
             {/* ── Drop zone ─────────────────────────────────────────────────── */}
             {/* Disabled while a run is active; clicking it during a run shows a hint */}
@@ -951,6 +1123,82 @@ export default function IntelligencePage() {
                 Output zones are inspection priority candidates — not confirmed disease or pest detections.
                 The engine works on <strong>any multi-band GeoTIFF</strong>; results depend on scene quality.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════ RECENT RUNS ════════════════════════════════════ */}
+        {/* Shown below both panels when there are saved runs in localStorage  */}
+        {recentRuns.length > 0 && (
+          <div className="mt-10 pt-8 border-t border-surface-100">
+            <div className="flex items-center justify-between mb-4">
+              <p className="section-label">RECENT ANALYSES</p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.removeItem('agrispectra_runs')
+                    setRecentRuns([])
+                  }
+                }}
+                className="text-xs text-surface-400 hover:text-surface-600 transition-colors"
+                aria-label="Clear run history"
+              >
+                Clear history
+              </button>
+            </div>
+            <p className="text-xs text-surface-400 mb-4">
+              These analyses were run on this device. Click any row to go directly to its Dashboard.
+            </p>
+            <div className="bg-white rounded-lg border border-surface-200 divide-y divide-surface-100 overflow-hidden">
+              {recentRuns.map((run) => (
+                <a
+                  key={run.run_id}
+                  href={`/dashboard?run_id=${run.run_id}&scene=${run.scene}`}
+                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-surface-50 transition-colors group"
+                  aria-label={`Open dashboard for ${run.label}, run ${run.run_id}`}
+                >
+                  {/* Source icon */}
+                  <div className="flex-shrink-0 text-surface-300 group-hover:text-primary-500 transition-colors">
+                    {run.source === 'upload' ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/>
+                      </svg>
+                    )}
+                  </div>
+
+                  {/* Run info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-surface-900 group-hover:text-primary-700 transition-colors truncate">
+                        {run.label}
+                      </span>
+                      <span className="text-2xs font-medium px-1.5 py-0.5 rounded bg-surface-100 text-surface-500">
+                        {run.source === 'upload' ? 'Upload' : 'EnMAP Scene'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5 text-xs text-surface-400">
+                      <code className="font-mono">{run.run_id}</code>
+                      <span>·</span>
+                      <time dateTime={run.timestamp}>
+                        {new Date(run.timestamp).toLocaleString(undefined, {
+                          month: 'short', day: 'numeric',
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                      </time>
+                    </div>
+                  </div>
+
+                  {/* Arrow */}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-surface-300 group-hover:text-primary-500 transition-colors" aria-hidden="true">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </a>
+              ))}
             </div>
           </div>
         )}

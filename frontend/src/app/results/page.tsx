@@ -45,24 +45,25 @@ export default function ResultsPage() {
   return (
     <div className="min-h-screen bg-surface-50">
 
-      {/* Header — spec §6.10: FROZEN SCIENTIFIC BENCHMARK label mandatory */}
+      {/* Header */}
       <div className="bg-white border-b border-surface-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1 text-xs text-surface-400 mb-4" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-surface-700 transition-colors">Home</Link>
             <span aria-hidden="true">›</span>
-            <span className="text-surface-600 font-medium">Results</span>
+            <span className="text-surface-600 font-medium">Benchmark Results</span>
           </nav>
           <div className="flex items-center gap-2.5 mb-3">
-            {/* spec §3.2: FROZEN SCIENTIFIC BENCHMARK badge */}
             <span className="badge badge-frozen">FROZEN SCIENTIFIC BENCHMARK</span>
-            <span className="badge bg-surface-100 text-surface-500 border border-surface-200">90 Total Runs</span>
+            <span className="badge bg-surface-100 text-surface-500 border border-surface-200">90 Runs · 6 Models · 3 Scenes</span>
           </div>
-          <h1 className="text-3xl font-bold text-surface-900 mb-2">Industrial Validation Results</h1>
+          <h1 className="text-3xl font-bold text-surface-900 mb-2">Benchmark Results</h1>
           <p className="text-surface-500 max-w-2xl text-sm leading-relaxed">
             Six models evaluated across 3 real EnMAP scenes with 5 random seeds each.
-            Spatially separated splits, frozen test predictions, and paired bootstrap significance testing.
+            These are frozen scientific results — not live analysis outputs.
+            For a live run, go to{' '}
+            <Link href="/intelligence" className="text-primary-600 hover:underline">Intelligence → Run Analysis</Link>.
           </p>
         </div>
       </div>

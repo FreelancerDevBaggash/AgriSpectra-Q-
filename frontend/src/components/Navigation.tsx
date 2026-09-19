@@ -1,26 +1,43 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { Menu, X } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
+import { Menu, X, ChevronDown } from 'lucide-react'
 
-const NAV_LINKS = [
-  { href: '/',                  label: 'Home' },
-  { href: '/project',           label: 'Project' },
-  { href: '/intelligence',      label: 'Intelligence' },
-  { href: '/dashboard',         label: 'Dashboard' },
-  { href: '/results',           label: 'Results' },
-  { href: '/model-comparison',  label: 'Models' },
-  { href: '/research',          label: 'Research' },
-  { href: '/technology',        label: 'Technology' },
-  { href: '/team',              label: 'Team' },
+// ── Primary nav — max 5 items for cognitive clarity (Miller's Law)
+// Dashboard is intentionally excluded: it requires a run_id to render.
+// It is only reachable via the Intelligence → Run flow redirect.
+const PRIMARY_NAV = [
+  { href: '/',              label: 'Home'         },
+  { href: '/project',       label: 'Project'      },
+  { href: '/intelligence',  label: 'Intelligence' },
+  { href: '/results',       label: 'Results'      },
+  { href: '/team',          label: 'Team'         },
+]
+
+// ── Science dropdown — groups technical pages under one entry
+// Reduces cognitive load: user doesn't need to know the difference
+// between "Models", "Research", and "Technology" upfront.
+const SCIENCE_LINKS = [
+  { href: '/model-comparison', label: 'Model Comparison',   desc: 'Benchmark across 6 evaluated models'     },
+  { href: '/research',         label: 'Research & Evidence', desc: 'Protocol, limitations, scientific basis'  },
+  { href: '/technology',       label: 'Technology Stack',    desc: 'Architecture, quantum layer, pipeline'    },
+]
+
+// ── Mobile nav — flat list of all destinations
+const MOBILE_NAV = [
+  ...PRIMARY_NAV,
+  ...SCIENCE_LINKS.map(l => ({ href: l.href, label: l.label })),
 ]
 
 export default function Navigation() {
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [scrolled, setScrolled]     = useState(false)
-  const pathname = usePathname()
+  const [mobileOpen, setMobileOpen]   = useState(false)
+  const [scienceOpen, setScienceOpen] = useState(false)
+  const [scrolled, setScrolled]       = useState(false)
+  const pathname  = usePathname()
+  const router    = useRouter()
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 10)
@@ -31,10 +48,35 @@ export default function Navigation() {
   // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false)
+    setScienceOpen(false)
   }, [pathname])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!scienceOpen) return
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setScienceOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [scienceOpen])
+
+  // Close dropdown on Escape
+  useEffect(() => {
+    if (!scienceOpen) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setScienceOpen(false)
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [scienceOpen])
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname?.startsWith(href)
+
+  const isScienceActive = SCIENCE_LINKS.some(l => pathname?.startsWith(l.href))
 
   return (
     <header
@@ -67,7 +109,7 @@ export default function Navigation() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-0.5" aria-label="Main navigation">
-          {NAV_LINKS.map(({ href, label }) => (
+          {PRIMARY_NAV.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
@@ -84,16 +126,65 @@ export default function Navigation() {
               )}
             </Link>
           ))}
+
+          {/* Science dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setScienceOpen(o => !o)}
+              aria-expanded={scienceOpen}
+              aria-haspopup="true"
+              aria-label="Science and technology pages"
+              className={`relative flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
+                isScienceActive
+                  ? 'text-primary-700 bg-primary-50'
+                  : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
+              }`}
+            >
+              Science
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform duration-150 ${scienceOpen ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              />
+              {isScienceActive && (
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary-500" aria-hidden="true" />
+              )}
+            </button>
+
+            {scienceOpen && (
+              <div
+                role="menu"
+                aria-label="Science navigation"
+                className="absolute top-full right-0 mt-1 w-72 bg-white border border-surface-200 rounded-lg shadow-panel overflow-hidden animate-fade-up-sm"
+              >
+                {SCIENCE_LINKS.map(({ href, label, desc }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    role="menuitem"
+                    aria-current={isActive(href) ? 'page' : undefined}
+                    className={`flex flex-col px-4 py-3 transition-colors border-b border-surface-50 last:border-0 ${
+                      isActive(href)
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'hover:bg-surface-50 text-surface-700 hover:text-surface-900'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">{label}</span>
+                    <span className="text-xs text-surface-400 mt-0.5">{desc}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
-        {/* Right CTA */}
+        {/* Right CTA — single Run Analysis button only, no duplicate indicator */}
         <div className="hidden md:flex items-center gap-3">
-          {/* Live indicator */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-spectral-50 border border-spectral-200" aria-label="Live engine active">
-            <span className="w-1.5 h-1.5 rounded-full bg-spectral-500 animate-pulse-glow" aria-hidden="true" />
-            <span className="text-xs font-semibold text-spectral-700">LIVE ENGINE</span>
-          </div>
-          <Link href="/intelligence" className="btn-primary text-sm gap-1.5">
+          <Link
+            href="/intelligence"
+            className="btn-primary text-sm gap-1.5"
+            aria-label="Run a live spectral analysis"
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polygon points="5 3 19 12 5 21 5 3"/>
             </svg>
@@ -123,7 +214,7 @@ export default function Navigation() {
           aria-label="Mobile navigation"
         >
           <div className="max-w-7xl mx-auto px-4 py-3 space-y-0.5">
-            {NAV_LINKS.map(({ href, label }) => (
+            {MOBILE_NAV.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}

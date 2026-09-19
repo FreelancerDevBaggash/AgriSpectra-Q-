@@ -92,33 +92,26 @@ export default function HomePage() {
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
           <div className="max-w-3xl">
 
-            {/* Mode badge — spec §3.2 */}
+            {/* Hackathon badge only — Live Engine moved to Intelligence page where it's meaningful */}
             <div className="flex flex-wrap items-center gap-2.5 mb-8 animate-fade-up">
-              <span className="badge badge-live">
-                <span className="dot-live" />
-                Live Engine Active
-              </span>
               <span className="badge bg-white/8 text-white/60 border border-white/10 text-xs">
                 Arab Youth Space Hackathon 2026
               </span>
+              <span className="badge bg-white/8 text-white/60 border border-white/10 text-xs">
+                Real EnMAP · UAE / Gulf Region
+              </span>
             </div>
 
-            {/* Headline — plain white, no gradient text */}
+            {/* Headline — single clear value proposition, no qualifier in the hero */}
             <h1 className="text-4xl lg:text-5xl font-bold text-white leading-[1.15] tracking-tight mb-5 animate-fade-up delay-100">
-              Hyperspectral intelligence{' '}
-              <span className="text-white/80">for targeted inspection.</span>
+              Turn satellite data into{' '}
+              <span className="text-white/80">field inspection priorities.</span>
             </h1>
 
-            {/* Sub — spec §6.1 UX copy verbatim */}
-            <p className="text-base text-white/60 max-w-2xl leading-relaxed mb-4 animate-fade-up delay-200">
-              Find the areas that deserve attention first, understand the spectral evidence,
-              and send field teams to verify the signal.
-            </p>
-
-            {/* Scientific boundary — spec §6.1 required, §3.3 */}
-            <p className="text-sm text-white/35 max-w-xl mb-10 animate-fade-up delay-200">
-              This system identifies spectral-anomaly priority candidates.
-              It does not diagnose disease or pests.
+            {/* Sub — one focused sentence on the outcome, not the system */}
+            <p className="text-base text-white/65 max-w-2xl leading-relaxed mb-10 animate-fade-up delay-200">
+              AgriSpectra-Q analyses real EnMAP hyperspectral scenes and returns a ranked
+              list of spectral-anomaly zones — so field teams know exactly where to go first.
             </p>
 
             {/* CTAs — primary sm size (enterprise standard), secondary ghost */}
@@ -129,7 +122,7 @@ export default function HomePage() {
               </Link>
               <Link href="/results" className="btn inline-flex items-center gap-2 px-5 py-2.5 text-sm border border-white/15 text-white/70 rounded-lg hover:bg-white/8 hover:text-white hover:border-white/25 transition-all">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-                Explore Results
+                See Benchmark Results
               </Link>
             </div>
 
@@ -206,19 +199,22 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Scientific boundary — spec §6.1 required content, §10 UX copy ── */}
-      <div className="bg-amber-50 border-t border-amber-200 py-5">
+      {/* ── Scientific boundary — moved to bottom of page, away from Hero ──
+           Rationale: placing a disclaimer inside the Hero creates an immediate
+           contradiction that erodes perceived value before the user understands
+           the product. The boundary still appears on every page load — just at
+           the natural scroll terminus where it doesn't compete with the CTA. */}
+      <div className="bg-surface-50 border-t border-surface-100 py-5">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-start gap-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 flex-shrink-0 mt-0.5">
-              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400 flex-shrink-0 mt-0.5" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <p className="text-sm text-surface-600">
-              <strong className="text-surface-800">Scientific boundary:</strong>{' '}
-              AgriSpectra-Q prioritises spectral-anomaly candidates for field inspection.
-              It does not diagnose disease or pests.{' '}
-              <strong className="text-surface-800">Field verification is required.</strong>
+            <p className="text-xs text-surface-500 leading-relaxed">
+              <strong className="text-surface-600">Scientific boundary:</strong>{' '}
+              AgriSpectra-Q identifies spectral-anomaly priority candidates for field inspection.
+              It does not diagnose disease, pests, or soil conditions.
+              All outputs require on-site verification before any operational decision is made.
             </p>
           </div>
         </div>

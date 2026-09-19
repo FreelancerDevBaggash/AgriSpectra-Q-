@@ -82,7 +82,7 @@ export default function ModelComparisonPage() {
           <nav className="flex items-center gap-1 text-xs text-surface-400 mb-4" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-surface-700 transition-colors">Home</Link>
             <span aria-hidden="true">›</span>
-            <Link href="/results" className="hover:text-surface-700 transition-colors">Results</Link>
+            <span className="text-surface-400">Science</span>
             <span aria-hidden="true">›</span>
             <span className="text-surface-600 font-medium">Model Comparison</span>
           </nav>

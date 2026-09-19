@@ -55,12 +55,14 @@ export default function ResearchPage() {
           <nav className="flex items-center gap-1 text-xs text-surface-400 mb-4" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-surface-700 transition-colors">Home</Link>
             <span aria-hidden="true">›</span>
-            <span className="text-surface-600 font-medium">Research &amp; Validation</span>
+            <span className="text-surface-400">Science</span>
+            <span aria-hidden="true">›</span>
+            <span className="text-surface-600 font-medium">Research &amp; Evidence</span>
           </nav>
           <div className="flex items-center gap-2.5 mb-3">
             <span className="badge badge-frozen">FROZEN SCIENTIFIC BENCHMARK</span>
           </div>
-          <h1 className="text-3xl font-bold text-surface-900 mb-2">Research &amp; Validation</h1>
+          <h1 className="text-3xl font-bold text-surface-900 mb-2">Research &amp; Evidence</h1>
           <p className="text-surface-500 max-w-2xl text-sm leading-relaxed">
             Scientific protocol, validation evidence, and current limitations of the AgriSpectra-Q industrial PoC.
             All results are frozen — no live run affects these figures.

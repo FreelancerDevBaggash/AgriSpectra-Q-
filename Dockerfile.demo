@@ -1,0 +1,16 @@
+FROM python:3.12-slim
+
+# Only Flask needed — no rasterio/GDAL required for demo mode
+RUN pip install --no-cache-dir flask flask-cors
+
+WORKDIR /app
+
+# Copy only the demo API and its pre-computed results
+COPY api/demo_api.py api/demo_api.py
+COPY results/live_matrix/AGRQ-LIVE-20260916-132530-587fc9 results/live_matrix/AGRQ-LIVE-20260916-132530-587fc9/
+
+# Railway injects $PORT; fall back to 8765 for local runs
+ENV PORT=8765
+EXPOSE $PORT
+
+CMD ["sh", "-c", "python api/demo_api.py --host 0.0.0.0 --port ${PORT}"]

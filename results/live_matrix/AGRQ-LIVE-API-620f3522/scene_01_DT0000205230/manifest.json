@@ -1,0 +1,18 @@
+{
+  "run_id": "AGRQ-LIVE-API-620f3522",
+  "scene": "scene_01_DT0000205230",
+  "source": "D:\\asia\\AgriSpectra-Q-master-industrial-poc\\data\\raw\\enmap_three_scenes\\scene_01_DT0000205230.TIF",
+  "live": true,
+  "leakage_control": "no labels; relative thresholds from full-scene unsupervised anomaly reference",
+  "crs": "EPSG:32636",
+  "outputs": [
+    "risk_map.tif",
+    "priority_map.tif",
+    "zones.geojson",
+    "zones.csv",
+    "spectral_evidence.csv",
+    "inspection_budget.csv",
+    "scene_statistics.json",
+    "metrics.json"
+  ]
+}
