@@ -1,2 +1,3 @@
-[tool.vercel]
-entrypoint = "api/live_matrix_api.py"
+# pyproject.toml — project metadata only
+# The Flask backend is deployed via Docker on Railway (see Dockerfile + railway.json)
+# The Next.js frontend is deployed on Vercel from the frontend/ directory

@@ -1,0 +1,26 @@
+# Version control
+.git/
+.gitignore
+
+# Frontend (not needed in backend image)
+frontend/
+
+# Large data / results files
+data/
+results/
+*.TIF
+*.tif
+*.tiff
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# Docs / misc
+docs/
+.bob/
+*.pdf
+*.md
