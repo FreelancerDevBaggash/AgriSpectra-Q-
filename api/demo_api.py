@@ -202,7 +202,7 @@ def status():
     scenes_status = []
     for s in SCENE_CATALOG:
         sid      = s["scene_id"]
-        scene_dir = DEMO_RUN_DIR / SCENE_DIR_MAP.get(sid, sid)
+        scene_dir = DEMO_RUN_DIR / (SCENE_DIR_MAP.get(sid) or sid)
         scenes_status.append({
             "scene_id":  sid,
             "label":     s["label"],
