@@ -23,7 +23,7 @@ export interface AnalysisResponse {
 
 export interface RunSummary {
   run_id: string
-  mode: 'LIVE_ANALYSIS' | 'FROZEN_SCIENTIFIC_BENCHMARK'
+  mode: string   // backend sends "LIVE ANALYSIS" (with space) — keep as string for flexibility
   scenes: string[]
   timestamp?: string
   limitations?: string[]
@@ -101,7 +101,7 @@ class ApiClient {
     return this.request<{
       service: string
       mode: string
-      benchmark_mode: string
+      benchmark_note: string
       endpoints: string[]
     }>('/')
   }
@@ -159,26 +159,47 @@ class ApiClient {
   }
 
   /**
-   * Parse zones from CSV data
+   * Upload a GeoTIFF file and run the live engine on it.
+   * Uses multipart/form-data — do NOT set Content-Type header manually.
    */
-  async parseZonesCSV(url: string): Promise<Zone[]> {
-    const response = await fetch(url)
-    const text = await response.text()
-    const lines = text.trim().split('\n')
-    const headers = lines[0].split(',')
-    
-    return lines.slice(1).map(line => {
-      const values = line.split(',')
-      const zone: Record<string, string | number> = {}
-      
-      headers.forEach((header, index) => {
-        const value = values[index]
-        zone[header.trim()] = isNaN(Number(value)) ? value : Number(value)
-      })
-      
-      return zone as unknown as Zone
+  async uploadAndAnalyse(
+    file: File,
+    onProgress?: (pct: number) => void,
+  ): Promise<AnalysisResponse> {
+    return new Promise((resolve, reject) => {
+      const form = new FormData()
+      form.append('file', file)
+
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', `${this.baseUrl}/api/upload`)
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100))
+        }
+      }
+
+      xhr.onload = () => {
+        const data = JSON.parse(xhr.responseText)
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(data as AnalysisResponse)
+        } else {
+          reject(new Error(data?.error ?? `HTTP ${xhr.status}`))
+        }
+      }
+
+      xhr.onerror = () => reject(new Error('Network error — cannot reach API server.'))
+      xhr.send(form)
     })
   }
+
+  /**
+   * Get upload constraints from the server
+   */
+  async getUploadInfo(): Promise<{ max_bytes: number; max_mb: number; allowed_extensions: string[] }> {
+    return this.request('/api/upload/info')
+  }
+
 }
 
 // Export singleton instance

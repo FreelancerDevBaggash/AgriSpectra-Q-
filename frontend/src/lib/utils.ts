@@ -9,7 +9,8 @@ export function cn(...inputs: (string | undefined | null | false | 0)[]): string
 /**
  * Format a number with specified decimal places
  */
-export function formatNumber(num: number, decimals: number = 2): string {
+export function formatNumber(num: number | null | undefined, decimals: number = 2): string {
+  if (num == null || !isFinite(num)) return '—'
   return num.toFixed(decimals)
 }
 
@@ -128,15 +129,43 @@ export function truncate(text: string, maxLength: number): string {
 }
 
 /**
+ * Split a single CSV line respecting RFC 4180 double-quote escaping.
+ * Handles quoted fields that contain commas, newlines, or escaped quotes ("").
+ */
+function splitCSVLine(line: string): string[] {
+  const fields: string[] = []
+  let cur = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++ }   // escaped quote ""
+        else inQuotes = false
+      } else {
+        cur += ch
+      }
+    } else {
+      if (ch === '"') { inQuotes = true }
+      else if (ch === ',') { fields.push(cur); cur = '' }
+      else cur += ch
+    }
+  }
+  fields.push(cur)
+  return fields
+}
+
+/**
  * Parse CSV text to array of objects.
+ * Supports RFC 4180 quoted fields (handles commas inside values like `recommendation`).
  * Numeric columns are automatically coerced to `number`; empty strings stay as `''`.
  * This is the canonical implementation — do NOT duplicate locally in pages.
  */
 export function parseCSV<T>(csvText: string): T[] {
   const lines = csvText.trim().split('\n')
-  const headers = lines[0].split(',').map(h => h.trim())
+  const headers = splitCSVLine(lines[0]).map(h => h.trim())
   return lines.slice(1).filter(l => l.trim()).map(line => {
-    const values = line.split(',')
+    const values = splitCSVLine(line)
     const obj: Record<string, string | number> = {}
     headers.forEach((h, i) => {
       const v = values[i]?.trim() ?? ''

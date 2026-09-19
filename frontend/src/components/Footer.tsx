@@ -40,13 +40,15 @@ export default function Footer() {
             <h3 className="text-xs font-bold uppercase tracking-widest text-surface-500 mb-4">Navigation</h3>
             <ul className="space-y-2.5 text-sm">
               {[
-                { href: '/',             label: 'Home' },
-                { href: '/project',      label: 'About Project' },
-                { href: '/intelligence', label: 'Run Analysis' },
-                { href: '/dashboard',    label: 'Dashboard' },
-                { href: '/results',      label: 'Results' },
-                { href: '/technology',   label: 'Technology' },
-                { href: '/team',         label: 'Team' },
+                { href: '/',                 label: 'Home' },
+                { href: '/project',          label: 'About Project' },
+                { href: '/intelligence',     label: 'Run Analysis' },
+                { href: '/dashboard',        label: 'Dashboard' },
+                { href: '/results',          label: 'Results' },
+                { href: '/model-comparison', label: 'Model Comparison' },
+                { href: '/research',         label: 'Research & Validation' },
+                { href: '/technology',       label: 'Technology' },
+                { href: '/team',             label: 'Team' },
               ].map(({ href, label }) => (
                 <li key={href}>
                   <Link href={href} className="text-surface-400 hover:text-white transition-colors">

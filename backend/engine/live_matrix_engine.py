@@ -21,6 +21,7 @@ import numpy as np
 import rasterio
 from rasterio.features import shapes
 from rasterio.transform import xy
+from rasterio.warp import transform_geom
 from scipy import ndimage
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
@@ -78,7 +79,7 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
             a  = ds.read(indexes=(BANDS + 1).tolist(), window=win).astype("float32")
             ok = np.all(np.isfinite(a), axis=0)
             if nodata is not None:
-                ok &= a[0] != nodata
+                ok &= ~np.isclose(a[0], nodata)
             x = a[:, ok].T
             valid_count += x.shape[0]
             if len(x):
@@ -99,7 +100,7 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
             a  = ds.read(indexes=(BANDS + 1).tolist(), window=win).astype("float32")
             ok = np.all(np.isfinite(a), axis=0)
             if nodata is not None:
-                ok &= a[0] != nodata
+                ok &= ~np.isclose(a[0], nodata)
             z  = np.sqrt(np.mean(((a - mean[:, None, None]) / std[:, None, None]) ** 2, axis=0))
             rr, cc = int(win.row_off), int(win.col_off)
             h,  w  = z.shape
@@ -162,7 +163,7 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
         with rasterio.open(out_dir / "priority_map.tif", "w", **profile) as o:
             o.write(pri, 1)
 
-        # ── GeoJSON ──
+        # ── GeoJSON (reprojected to WGS-84 for MapLibre) ──
         features = []
         for zid in range(1, nz + 1):
             mask = lab == zid
@@ -173,6 +174,8 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
             for g, _ in shapes(mask.astype(np.uint8), mask=mask, transform=transform):
                 geom = g
             if geom is not None:
+                # Reproject geometry from scene CRS to EPSG:4326 (WGS-84 LngLat)
+                geom_wgs84 = transform_geom(crs, "EPSG:4326", geom)
                 match = next(
                     (z for z in zones
                      if z["pixel_count"] == len(xs)
@@ -180,7 +183,7 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
                     None,
                 )
                 if match:
-                    features.append({"type": "Feature", "geometry": geom, "properties": match})
+                    features.append({"type": "Feature", "geometry": geom_wgs84, "properties": match})
 
         (out_dir / "zones.geojson").write_text(json.dumps({
             "type": "FeatureCollection",
@@ -192,18 +195,33 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
 
         # ── Spectral evidence (top-10 zones) ──
         evidence: list[dict] = []
-        for z in zones[:10]:
+        for rank_pos, z in enumerate(zones[:10]):
             zid  = z["zone_id"]
             rank = z["priority_rank"]
-            idx  = next((i for i, x in enumerate(zones) if x["zone_id"] == zid), 0) + 1
+            # lab labels correspond to zid numbers from the original nz loop,
+            # NOT the sorted zone rank. We must match by pixel_count + centroid.
+            idx  = next(
+                (i for i in range(1, nz + 1)
+                 if np.sum(lab == i) == z["pixel_count"]),
+                None,
+            )
+            if idx is None:
+                continue
             ys, xs = np.where(lab == idx)
             if len(xs):
                 y0, y1 = ys.min(), ys.max() + 1
                 x0, x1 = xs.min(), xs.max() + 1
                 a   = ds.read(window=rasterio.windows.Window(x0, y0, x1 - x0, y1 - y0)).astype("float32")
-                m   = (lab[y0:y1, x0:x1] == idx) & np.all(np.isfinite(a), axis=0)
+                # Apply the same nodata / finite mask used in Pass 1 & Pass 2
+                ok_mask = np.all(np.isfinite(a), axis=0)
+                if nodata is not None:
+                    ok_mask &= ~np.isclose(a[0], nodata)
+                m   = (lab[y0:y1, x0:x1] == idx) & ok_mask
                 spec = np.nanmean(np.where(m[None, :, :], a, np.nan), axis=(1, 2))
                 for b, val in enumerate(spec, 1):
+                    # Skip bands where all pixels were NoData (val is NaN)
+                    if not np.isfinite(val):
+                        continue
                     ref = float(mean[list(BANDS).index(min(BANDS, key=lambda q: abs(q - (b - 1))))]) \
                         if (b - 1) in BANDS else None
                     evidence.append({
@@ -239,7 +257,7 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
             "source":             str(path),
             "dimensions":         [H, W],
             "bands":              C,
-            "resolution_m":       30.0,
+            "resolution_m":       abs(transform.a),
             "valid_pixels":       valid_count,
             "total_pixels":       H * W,
             "nodata_percentage":  float(100 * (1 - valid_count / (H * W))),
@@ -290,11 +308,14 @@ def main() -> None:
     scene_names = list(SCENES) if args.scene == "all" else [args.scene]
     stats = [process(name, SCENES[name], run_dir) for name in scene_names]
 
+    scene_name_list = [s["scene"] for s in stats]
     (run_dir / "run_summary.json").write_text(json.dumps({
-        "run_id": run_id,
-        "live":   True,
-        "mode":   "LIVE ANALYSIS",
-        "scenes": stats,
+        "run_id":       run_id,
+        "live":         True,
+        "mode":         "LIVE ANALYSIS",
+        "timestamp":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "scenes":       scene_name_list,   # array of scene-name strings for frontend display
+        "scene_stats":  stats,             # full per-scene statistics objects
         "limitations": [
             "Spectral wavelength metadata unavailable; band indices reported",
             "Unsupervised spectral anomaly proxy — no disease/pest labels",

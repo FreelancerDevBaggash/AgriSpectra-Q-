@@ -6,13 +6,15 @@ import { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
 
 const NAV_LINKS = [
-  { href: '/',             label: 'Home' },
-  { href: '/project',      label: 'Project' },
-  { href: '/intelligence', label: 'Intelligence' },
-  { href: '/dashboard',    label: 'Dashboard' },
-  { href: '/results',      label: 'Results' },
-  { href: '/technology',   label: 'Technology' },
-  { href: '/team',         label: 'Team' },
+  { href: '/',                  label: 'Home' },
+  { href: '/project',           label: 'Project' },
+  { href: '/intelligence',      label: 'Intelligence' },
+  { href: '/dashboard',         label: 'Dashboard' },
+  { href: '/results',           label: 'Results' },
+  { href: '/model-comparison',  label: 'Models' },
+  { href: '/research',          label: 'Research' },
+  { href: '/technology',        label: 'Technology' },
+  { href: '/team',              label: 'Team' },
 ]
 
 export default function Navigation() {
