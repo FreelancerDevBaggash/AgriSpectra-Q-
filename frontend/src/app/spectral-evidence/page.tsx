@@ -16,8 +16,9 @@ interface EvidenceRow {
   zone_id: string
   band_index: number
   observed_mean: number
-  reference_mean: number
-  deviation: number
+  reference_mean?: number              // not in engine output (kept for forward compat)
+  reference_mean_32band_only?: number  // actual CSV column name from engine
+  deviation?: number
   wavelength_nm?: number
   wavelength_status?: string
 }
@@ -106,16 +107,30 @@ function SpectralEvidenceContent() {
   useEffect(() => { load() }, [load])
 
   const zoneIds     = [...new Set(allEvidence.map(r => r.zone_id))].sort()
-  const zoneEvidence = allEvidence.filter(r => r.zone_id === selectedZone)
+
+  // Filter out NoData / non-finite rows before any rendering.
+  // observed_mean can be NaN (nanmean over empty mask) or '' (CSV empty field).
+  // reference_mean_32band_only is '' for non-32-band-aligned bands — treat as absent.
+  const zoneEvidence = allEvidence.filter(r =>
+    r.zone_id === selectedZone &&
+    typeof r.observed_mean === 'number' &&
+    isFinite(r.observed_mean)
+  )
   const zoneRecord   = allZones.find(z => z.zone_id === selectedZone) ?? null
 
-  // Chart data — band index + deviation bars
-  const chartData = zoneEvidence.map(r => ({
-    band: r.band_index,
-    observed:  r.observed_mean,
-    reference: r.reference_mean,
-    deviation: r.deviation,
-  }))
+  // Chart data — band index + deviation bars.
+  // reference_mean_32band_only is the actual engine column; fall back to reference_mean for future compat.
+  // Only include reference value when it is a finite number — empty CSV fields parse as '' and must be omitted.
+  const chartData = zoneEvidence.map(r => {
+    const rawRef = r.reference_mean_32band_only ?? r.reference_mean
+    const ref = typeof rawRef === 'number' && isFinite(rawRef) ? rawRef : undefined
+    return {
+      band:      r.band_index,
+      observed:  r.observed_mean,
+      reference: ref,
+      deviation: typeof r.deviation === 'number' && isFinite(r.deviation) ? r.deviation : undefined,
+    }
+  })
 
   // ── Error State ──
   if (error) return (
@@ -243,7 +258,7 @@ function SpectralEvidenceContent() {
                       <XAxis dataKey="band" tick={{ fontSize: 10 }} label={{ value: 'Band index', position: 'insideBottom', offset: -2, fontSize: 11 }} />
                       <YAxis tick={{ fontSize: 11 }} />
                       <Tooltip
-                        formatter={(v: number, name: string) => [v.toFixed(5), name]}
+                        formatter={(v: unknown, name: unknown) => [typeof v === 'number' ? v.toFixed(5) : String(v ?? ''), String(name ?? '')] as [string, string]}
                         labelFormatter={l => `Band ${l}`}
                       />
                       <ReferenceLine y={0} stroke="#94a3b8" />
@@ -282,12 +297,28 @@ function SpectralEvidenceContent() {
                     {zoneEvidence.map((row, i) => (
                       <tr key={i} className="hover:bg-surface-50 transition-colors">
                         <td className="py-2.5 px-4 font-mono text-surface-700">{row.band_index}</td>
-                        <td className="py-2.5 px-4 font-mono text-surface-900">{typeof row.observed_mean === 'number' ? row.observed_mean.toFixed(5) : '—'}</td>
-                        <td className="py-2.5 px-4 font-mono text-surface-600">{typeof row.reference_mean === 'number' ? row.reference_mean.toFixed(5) : '—'}</td>
+                        <td className="py-2.5 px-4 font-mono text-surface-900">{row.observed_mean.toFixed(5)}</td>
+                        <td className="py-2.5 px-4 font-mono text-surface-600">
+                          {(() => {
+                            const raw = row.reference_mean_32band_only ?? row.reference_mean
+                            const ref = typeof raw === 'number' && isFinite(raw) ? raw : null
+                            return ref !== null ? ref.toFixed(5) : '—'
+                          })()}
+                        </td>
                         <td className="py-2.5 px-4 font-mono">
-                          <span className={row.deviation > 0 ? 'text-red-600' : row.deviation < 0 ? 'text-blue-600' : 'text-surface-500'}>
-                            {typeof row.deviation === 'number' ? (row.deviation > 0 ? '+' : '') + row.deviation.toFixed(5) : '—'}
-                          </span>
+                          {(() => {
+                            const raw = row.reference_mean_32band_only ?? row.reference_mean
+                            const ref = typeof raw === 'number' && isFinite(raw) ? raw : null
+                            const devRaw = typeof row.deviation === 'number' && isFinite(row.deviation)
+                              ? row.deviation
+                              : ref !== null ? row.observed_mean - ref : null
+                            if (devRaw === null) return <span className="text-surface-500">—</span>
+                            return (
+                              <span className={devRaw > 0 ? 'text-red-600' : devRaw < 0 ? 'text-blue-600' : 'text-surface-500'}>
+                                {(devRaw > 0 ? '+' : '') + devRaw.toFixed(5)}
+                              </span>
+                            )
+                          })()}
                         </td>
                         <td className="py-2.5 px-4 text-surface-500 text-xs">{row.wavelength_status ?? 'Not verified'}</td>
                       </tr>

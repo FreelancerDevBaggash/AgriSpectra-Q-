@@ -1,21 +1,23 @@
 'use client'
 
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import {
   MapPin, AlertTriangle, Download, RefreshCw,
-  BarChart3, List, ArrowLeft, ExternalLink
+  BarChart3, List, ArrowLeft, ExternalLink, Map as MapIcon, Layers
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts'
+import Map, { Source, Layer, Popup, NavigationControl, type MapRef, type MapLayerMouseEvent } from 'react-map-gl/maplibre'
 import { parseCSV } from '@/lib/utils'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface Zone {
   zone_id: string
-  rank: number
+  rank?: number             // display alias — may not exist in CSV
+  priority_rank?: number    // actual CSV column name from engine
   priority_category: string
   mean_risk: number
   max_risk: number
@@ -40,6 +42,24 @@ interface RunSummary {
   scenes: string[]
   timestamp?: string
   limitations?: string[]
+}
+
+interface SceneStatistics {
+  scene: string
+  dimensions: [number, number]
+  bands: number
+  resolution_m: number
+  valid_pixels: number
+  total_pixels: number
+  nodata_percentage: number
+  crs: string
+  processing_seconds: number
+  priority_zone_count: number
+  thresholds: {
+    low_medium_q50: number
+    medium_high_q80: number
+    high_priority_q95: number
+  }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -82,9 +102,17 @@ function DashboardContent() {
   const [summary, setSummary] = useState<RunSummary | null>(null)
   const [zones, setZones] = useState<Zone[]>([])
   const [budget, setBudget] = useState<InspectionBudget[]>([])
+  const [sceneStats, setSceneStats] = useState<SceneStatistics | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [geojson, setGeojson] = useState<any | null>(null)
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
+  const [hoveredZoneId, setHoveredZoneId] = useState<string | null>(null)
+  const [popupInfo, setPopupInfo] = useState<{ lng: number; lat: number; zone: Zone } | null>(null)
+  const mapRef = useRef<MapRef>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'zones' | 'budget' | 'chart'>('zones')
+  const [activeTab, setActiveTab] = useState<'zones' | 'budget' | 'chart' | 'map'>('zones')
+  const [techOpen, setTechOpen] = useState(false)
   // frozen: true means the backend was unreachable — we are showing a frozen demo fallback (spec §23.6)
   const [frozen, setFrozen] = useState(false)
 
@@ -99,7 +127,13 @@ function DashboardContent() {
       ])
 
       if (!summaryRes.ok) throw new Error('Run not found. The backend may be offline.')
-      setSummary(await summaryRes.json())
+      // ── Backward compat: old run_summary.json may lack `mode` and `timestamp`
+      const rawSummary = await summaryRes.json()
+      setSummary({
+        ...rawSummary,
+        mode: rawSummary.mode ?? rawSummary.benchmark_note ?? 'LIVE ANALYSIS',
+        timestamp: rawSummary.timestamp ?? rawSummary.created_at ?? undefined,
+      })
 
       if (zonesRes.ok) {
         const zonesData = await zonesRes.json()
@@ -107,6 +141,14 @@ function DashboardContent() {
         if (sceneFile) {
           const csvRes = await fetch(`${API_BASE}${sceneFile.download}`)
           if (csvRes.ok) setZones(parseCSV<Zone>(await csvRes.text()))
+
+          // Fetch scene_statistics.json
+          const statsRes = await fetch(`${API_BASE}/api/runs/${runId}/files/${scene}/scene_statistics.json`)
+          if (statsRes.ok) setSceneStats(await statsRes.json())
+
+          // Fetch zones.geojson for the interactive map
+          const geoRes = await fetch(`${API_BASE}/api/runs/${runId}/files/${scene}/zones.geojson`)
+          if (geoRes.ok) setGeojson(await geoRes.json())
         }
       }
 
@@ -115,7 +157,18 @@ function DashboardContent() {
         const sceneFile = budgetData.files?.find((f: { scene: string; download: string }) => f.scene === scene)
         if (sceneFile) {
           const csvRes = await fetch(`${API_BASE}${sceneFile.download}`)
-          if (csvRes.ok) setBudget(parseCSV<InspectionBudget>(await csvRes.text()))
+          if (csvRes.ok) {
+            // ── Backward compat shim: old CSV uses `budget` / `proxy_positive_coverage`
+            // New engine writes: `budget_fraction` / `positive_recall` / `coverage_percentage`
+            const raw = parseCSV<Record<string, number>>(await csvRes.text())
+            const normalised: InspectionBudget[] = raw.map(row => ({
+              budget_fraction:    row.budget_fraction   ?? row.budget,
+              selected_pixels:    row.selected_pixels,
+              positive_recall:    row.positive_recall   ?? row.proxy_positive_coverage,
+              coverage_percentage: row.coverage_percentage,
+            }))
+            setBudget(normalised)
+          }
         }
       }
     } catch (e) {
@@ -134,6 +187,39 @@ function DashboardContent() {
   }, [runId, scene])
 
   useEffect(() => { load() }, [load])
+
+  // Auto-fit map to GeoJSON bounds.
+  // Runs when geojson loads OR when the map tab is first activated (map mounts lazily).
+  // Uses a short rAF delay to ensure MapLibre has mounted before fitBounds is called.
+  useEffect(() => {
+    if (!geojson || activeTab !== 'map') return
+    const id = requestAnimationFrame(() => {
+      if (!mapRef.current) return
+      const allCoords: number[][] = []
+      for (const feat of (geojson.features ?? [])) {
+        const geom = feat.geometry
+        if (!geom) continue
+        const flatten = (coords: unknown): void => {
+          if (typeof (coords as number[])[0] === 'number') { allCoords.push(coords as number[]); return }
+          for (const c of (coords as unknown[])) flatten(c)
+        }
+        flatten(geom.coordinates)
+      }
+      if (allCoords.length === 0) return
+      // Filter to valid WGS-84 ranges — UTM coords (>360) must not reach fitBounds
+      const valid = allCoords.filter(c =>
+        c[0] >= -180 && c[0] <= 180 && c[1] >= -90 && c[1] <= 90
+      )
+      if (valid.length === 0) return
+      const lngs = valid.map(c => c[0])
+      const lats = valid.map(c => c[1])
+      mapRef.current.fitBounds(
+        [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+        { padding: 40, duration: 600 }
+      )
+    })
+    return () => cancelAnimationFrame(id)
+  }, [geojson, activeTab])
 
   const highCount = zones.filter(z => z.priority_category?.toLowerCase().includes('high')).length
   const medCount = zones.filter(z => z.priority_category?.toLowerCase().includes('medium')).length
@@ -235,12 +321,11 @@ function DashboardContent() {
                 <RefreshCw className="w-4 h-4" aria-hidden="true" /> Refresh
               </button>
               <a
-                href={`${API_BASE}/api/runs/${runId}/report`}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/export?run_id=${runId}&scene=${scene}`}
                 className="btn-primary py-2 px-4 text-sm inline-flex items-center gap-2"
+                aria-label="Export all run artifacts"
               >
-                <Download className="w-4 h-4" aria-hidden="true" /> Export
+                <Download className="w-4 h-4" aria-hidden="true" /> Export All
               </a>
             </div>
           </div>
@@ -249,7 +334,7 @@ function DashboardContent() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        {/* ── 1. DECISION SUMMARY — must come first per spec §10 ── */}
+        {/* ── 1. DECISION SUMMARY — must come first per spec §6.5 / §10 ── */}
         <section>
           <p className="section-label mb-4">WHERE SHOULD I INSPECT FIRST?</p>
           {zones.length === 0 ? (
@@ -259,15 +344,17 @@ function DashboardContent() {
               the configured relative threshold.
             </p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pb-6 border-b border-surface-100">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 pb-6 border-b border-surface-100">
               {[
-                { label: 'High-priority zones',   value: highCount,       unit: '' },
-                { label: 'Top inspection focus',   value: topZone?.zone_id ?? '—', unit: '' },
-                { label: 'Total spectral zones',   value: zones.length,   unit: '' },
-                { label: 'Avg anomaly score',      value: avgRisk,        unit: 'σ' },
+                { label: 'High-priority zones',  value: highCount,                                              unit: '' },
+                { label: 'Top inspection focus', value: topZone?.zone_id ?? '—',                               unit: '' },
+                { label: 'Total spectral zones', value: zones.length,                                          unit: '' },
+                { label: 'Avg anomaly score',    value: avgRisk,                                               unit: 'σ' },
+                { label: 'Scene coverage',       value: sceneStats ? sceneStats.valid_pixels.toLocaleString() : '—', unit: ' px' },
+                { label: 'Processing time',      value: sceneStats ? sceneStats.processing_seconds.toFixed(1) : '—', unit: ' s' },
               ].map(({ label, value, unit }) => (
                 <div key={label}>
-                  <div className="text-xl font-bold text-surface-900">{value}{unit}</div>
+                  <div className="text-xl font-bold text-surface-900 tabular-nums">{value}{unit}</div>
                   <div className="text-xs text-surface-500 mt-0.5">{label}</div>
                 </div>
               ))}
@@ -280,7 +367,7 @@ function DashboardContent() {
           <div className="flex flex-wrap items-center gap-3 text-xs text-surface-500 -mt-4 pb-4 border-b border-surface-100">
             <span>Run mode: <strong className="text-surface-700">{summary.mode}</strong></span>
             <span className="text-surface-200">|</span>
-            <span>Scenes: <strong className="text-surface-700">{summary.scenes?.join(', ')}</strong></span>
+            <span>Scenes: <strong className="text-surface-700">{summary.scenes?.map((s: unknown) => typeof s === 'string' ? s : (s as Record<string, unknown>)?.scene ?? '').join(', ')}</strong></span>
             {summary.timestamp && (
               <>
                 <span className="text-surface-200">|</span>
@@ -344,9 +431,10 @@ function DashboardContent() {
             <p className="section-label">RANKED SPECTRAL-PRIORITY ZONES</p>
             <div className="flex gap-1 bg-surface-50 border border-surface-200 rounded-lg p-0.5">
               {([
-                { id: 'zones',  label: 'Zones',   icon: MapPin  },
+                { id: 'zones',  label: 'Zones',   icon: MapPin    },
+                { id: 'map',    label: 'Map',     icon: MapIcon   },
                 { id: 'chart',  label: 'Chart',   icon: BarChart3 },
-                { id: 'budget', label: 'Budget',  icon: List    },
+                { id: 'budget', label: 'Budget',  icon: List      },
               ] as const).map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -377,9 +465,9 @@ function DashboardContent() {
                 >
                   <div
                     className="w-8 h-8 rounded-full bg-surface-100 flex items-center justify-center text-sm font-bold text-surface-600 flex-shrink-0"
-                    aria-label={`Rank ${zone.rank ?? idx + 1}`}
+                    aria-label={`Rank ${zone.priority_rank ?? zone.rank ?? idx + 1}`}
                   >
-                    <span aria-hidden="true">{zone.rank ?? idx + 1}</span>
+                    <span aria-hidden="true">{zone.priority_rank ?? zone.rank ?? idx + 1}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -436,7 +524,7 @@ function DashboardContent() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="zone_id" tick={{ fontSize: 10 }} angle={-40} textAnchor="end" interval={0} />
                       <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip formatter={(v: number) => [v.toFixed(4), 'Mean risk']} labelClassName="font-mono text-xs" />
+                      <Tooltip formatter={(v: unknown) => [typeof v === 'number' ? v.toFixed(4) : String(v ?? ''), 'Mean risk'] as [string, string]} labelClassName="font-mono text-xs" />
                       <Bar dataKey="mean_risk" radius={[3, 3, 0, 0]}>
                         {zones.slice(0, 20).map((z, i) => (
                           <Cell key={i} fill={riskBarColor(z.mean_risk)} />
@@ -505,7 +593,7 @@ function DashboardContent() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                         <XAxis dataKey="budget_fraction" tickFormatter={v => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 11 }} />
                         <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${(v * 100).toFixed(0)}%`} />
-                        <Tooltip formatter={(v: number) => [`${(v * 100).toFixed(1)}%`, 'Proxy recall']} />
+                        <Tooltip formatter={(v: unknown) => [typeof v === 'number' ? `${(v * 100).toFixed(1)}%` : String(v ?? ''), 'Proxy recall'] as [string, string]} />
                         <Bar dataKey="positive_recall" fill="#3b82f6" radius={[3, 3, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -514,9 +602,232 @@ function DashboardContent() {
               )}
             </div>
           )}
+
+          {/* Map tab — interactive MapLibre zone map */}
+          {activeTab === 'map' && (
+            <div className="border border-surface-200 rounded-lg overflow-hidden bg-surface-900" style={{ height: 480 }}>
+              {!geojson ? (
+                <div className="h-full flex items-center justify-center text-surface-400 text-sm">
+                  <div className="text-center">
+                    <Layers className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    <p>Zone geometry unavailable for this run.</p>
+                    <p className="text-xs mt-1 opacity-60">zones.geojson was not produced or could not be loaded.</p>
+                  </div>
+                </div>
+              ) : (
+                <Map
+                  ref={mapRef}
+                  mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+                  initialViewState={{ longitude: 54.4, latitude: 24.5, zoom: 8 }}
+                  style={{ width: '100%', height: '100%' }}
+                  interactiveLayerIds={['zones-fill']}
+                  onMouseMove={(e: MapLayerMouseEvent) => {
+                    const feat = e.features?.[0]
+                    setHoveredZoneId(feat ? (feat.properties?.zone_id ?? null) : null)
+                  }}
+                  onMouseLeave={() => setHoveredZoneId(null)}
+                  onClick={(e: MapLayerMouseEvent) => {
+                    const feat = e.features?.[0]
+                    if (!feat) { setSelectedZoneId(null); setPopupInfo(null); return }
+                    const zoneId: string = feat.properties?.zone_id ?? ''
+                    setSelectedZoneId(zoneId)
+                    const matched = zones.find(z => z.zone_id === zoneId) ?? null
+                    if (matched && e.lngLat) {
+                      setPopupInfo({ lng: e.lngLat.lng, lat: e.lngLat.lat, zone: matched })
+                      // Zoom to clicked zone bounds
+                      if (feat.geometry?.type === 'Polygon' && mapRef.current) {
+                        const coords = (feat.geometry as { type: string; coordinates: number[][][] }).coordinates[0]
+                        const lngs = coords.map((c: number[]) => c[0])
+                        const lats = coords.map((c: number[]) => c[1])
+                        mapRef.current.fitBounds(
+                          [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+                          { padding: 80, duration: 600 }
+                        )
+                      }
+                    }
+                  }}
+                >
+                  <NavigationControl position="top-right" />
+
+                  <Source id="zones" type="geojson" data={geojson}>
+                    {/* Fill — colour by selection/hover */}
+                    <Layer
+                      id="zones-fill"
+                      type="fill"
+                      paint={{
+                        'fill-color': [
+                          'case',
+                          ['==', ['get', 'zone_id'], selectedZoneId ?? ''], '#2090ff',
+                          ['==', ['get', 'zone_id'], hoveredZoneId ?? ''],  '#f97316',
+                          '#ef4444',
+                        ],
+                        'fill-opacity': [
+                          'case',
+                          ['==', ['get', 'zone_id'], selectedZoneId ?? ''], 0.75,
+                          ['==', ['get', 'zone_id'], hoveredZoneId ?? ''],  0.65,
+                          0.45,
+                        ],
+                      }}
+                    />
+                    {/* Outline */}
+                    <Layer
+                      id="zones-outline"
+                      type="line"
+                      paint={{
+                        'line-color': [
+                          'case',
+                          ['==', ['get', 'zone_id'], selectedZoneId ?? ''], '#60b0ff',
+                          '#ff6060',
+                        ],
+                        'line-width': [
+                          'case',
+                          ['==', ['get', 'zone_id'], selectedZoneId ?? ''], 2,
+                          1,
+                        ],
+                      }}
+                    />
+                  </Source>
+
+                  {/* Popup on selected zone */}
+                  {popupInfo && (
+                    <Popup
+                      longitude={popupInfo.lng}
+                      latitude={popupInfo.lat}
+                      closeOnClick={false}
+                      onClose={() => setPopupInfo(null)}
+                      className="text-xs"
+                      maxWidth="240px"
+                    >
+                      <div className="p-1 space-y-1">
+                        <p className="font-bold text-surface-900 font-mono text-xs">{popupInfo.zone.zone_id}</p>
+                        <p className="text-red-700 font-semibold text-xs">{popupInfo.zone.priority_category}</p>
+                        <p className="text-surface-600 text-xs">Rank <strong>#{popupInfo.zone.priority_rank ?? popupInfo.zone.rank ?? '—'}</strong></p>
+                        <p className="text-surface-600 text-xs">Score <strong>{typeof popupInfo.zone.mean_risk === 'number' ? popupInfo.zone.mean_risk.toFixed(3) : '—'} σ</strong></p>
+                        {(popupInfo.zone.approx_area_m2 ?? popupInfo.zone.area_m2) != null && (
+                          <p className="text-surface-600 text-xs">Area <strong>{((popupInfo.zone.approx_area_m2 ?? popupInfo.zone.area_m2)! / 10000).toFixed(2)} ha</strong></p>
+                        )}
+                        <p className="text-amber-700 text-2xs font-medium">Field verification required</p>
+                        <a
+                          href={`/spectral-evidence?run_id=${runId}&scene=${scene}&zone_id=${encodeURIComponent(popupInfo.zone.zone_id)}`}
+                          className="text-primary-600 underline text-xs block mt-1"
+                        >
+                          View spectral evidence →
+                        </a>
+                      </div>
+                    </Popup>
+                  )}
+                </Map>
+              )}
+
+              {/* Map legend */}
+              {geojson && (
+                <div className="absolute bottom-3 left-3 bg-surface-900/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white space-y-1 pointer-events-none">
+                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-blue-400 inline-block" /> Selected zone</div>
+                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-orange-400 inline-block" /> Hovered zone</div>
+                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-red-500 inline-block" /> High-priority zone</div>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
-        {/* ── 4. SCIENTIFIC CAVEAT — always visible ── */}
+        {/* ── 4. TECHNICAL DETAILS DRAWER — spec §21 ── */}
+        <section>
+          <button
+            type="button"
+            onClick={() => setTechOpen(o => !o)}
+            className="flex items-center gap-2 text-xs font-semibold text-surface-500 hover:text-surface-800 transition-colors py-2"
+            aria-expanded={techOpen}
+            aria-controls="tech-drawer"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+              className={`transition-transform duration-200 ${techOpen ? 'rotate-90' : ''}`} aria-hidden="true">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+            TECHNICAL DETAILS
+          </button>
+
+          {techOpen && (
+            <div
+              id="tech-drawer"
+              className="border border-surface-200 rounded-lg bg-white p-5 mt-1 animate-fade-up-sm"
+            >
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-4 text-xs">
+
+                {/* Run identity */}
+                <div>
+                  <p className="font-bold text-surface-400 uppercase tracking-widest mb-2">Run</p>
+                  <div className="space-y-1">
+                    <div><span className="text-surface-400">Run ID </span><code className="code">{runId}</code></div>
+                    <div><span className="text-surface-400">Scene </span><code className="code">{scene}</code></div>
+                    <div><span className="text-surface-400">Mode </span><strong className="text-surface-700">{summary?.mode ?? '—'}</strong></div>
+                    {summary?.timestamp && (
+                      <div><span className="text-surface-400">Timestamp </span><strong className="text-surface-700">{new Date(summary.timestamp).toLocaleString()}</strong></div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Scene metadata */}
+                {sceneStats && (
+                  <div>
+                    <p className="font-bold text-surface-400 uppercase tracking-widest mb-2">Scene</p>
+                    <div className="space-y-1">
+                      <div><span className="text-surface-400">Dimensions </span><strong className="text-surface-700">{sceneStats.dimensions?.[0]} × {sceneStats.dimensions?.[1]} px</strong></div>
+                      <div><span className="text-surface-400">Bands </span><strong className="text-surface-700">{sceneStats.bands}</strong></div>
+                      <div><span className="text-surface-400">Resolution </span><strong className="text-surface-700">{sceneStats.resolution_m} m/px</strong></div>
+                      <div><span className="text-surface-400">CRS </span><code className="code">{sceneStats.crs}</code></div>
+                      <div><span className="text-surface-400">Valid pixels </span><strong className="text-surface-700">{sceneStats.valid_pixels?.toLocaleString()}</strong></div>
+                      <div><span className="text-surface-400">NoData </span><strong className="text-surface-700">{sceneStats.nodata_percentage?.toFixed(2)}%</strong></div>
+                      <div><span className="text-surface-400">Proc. time </span><strong className="text-surface-700">{sceneStats.processing_seconds?.toFixed(2)} s</strong></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Thresholds */}
+                {sceneStats?.thresholds && (
+                  <div>
+                    <p className="font-bold text-surface-400 uppercase tracking-widest mb-2">Thresholds</p>
+                    <div className="space-y-1">
+                      <div><span className="text-surface-400">P50 (low/medium) </span><strong className="text-surface-700">{sceneStats.thresholds.low_medium_q50?.toFixed(4)}</strong></div>
+                      <div><span className="text-surface-400">P80 (medium/high) </span><strong className="text-surface-700">{sceneStats.thresholds.medium_high_q80?.toFixed(4)}</strong></div>
+                      <div><span className="text-surface-400">P95 (high priority) </span><strong className="text-surface-700">{sceneStats.thresholds.high_priority_q95?.toFixed(4)}</strong></div>
+                    </div>
+                    <p className="text-surface-400 mt-2 leading-relaxed">
+                      Scene-relative percentile thresholds — not absolute disease severity levels.
+                    </p>
+                  </div>
+                )}
+
+                {/* Engine */}
+                <div>
+                  <p className="font-bold text-surface-400 uppercase tracking-widest mb-2">Engine</p>
+                  <div className="space-y-1">
+                    <div><span className="text-surface-400">Name </span><strong className="text-surface-700">Windowed Spectral Anomaly Matrix</strong></div>
+                    <div><span className="text-surface-400">Bands used </span><strong className="text-surface-700">32 of 224 (evenly spaced)</strong></div>
+                    <div><span className="text-surface-400">Risk metric </span><strong className="text-surface-700">RMS standardised deviation (σ)</strong></div>
+                  </div>
+                </div>
+
+                {/* Limitations */}
+                {summary?.limitations && summary.limitations.length > 0 && (
+                  <div className="sm:col-span-2">
+                    <p className="font-bold text-surface-400 uppercase tracking-widest mb-2">Limitations</p>
+                    <ul className="space-y-0.5">
+                      {summary.limitations.map((l, i) => (
+                        <li key={i} className="flex items-start gap-2 text-surface-500">
+                          <span className="text-surface-300 flex-shrink-0 mt-0.5">—</span>
+                          {l}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ── 5. SCIENTIFIC CAVEAT — always visible ── */}
         <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
           <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
           <p className="text-amber-800 text-xs leading-relaxed">
