@@ -22,4 +22,4 @@ COPY api/live_matrix_api.py ./api/live_matrix_api.py
 ENV PORT=8765
 EXPOSE ${PORT}
 
-CMD ["sh", "-c", "python api/live_matrix_api.py --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers 2 --timeout 120 api.live_matrix_api:app"]
