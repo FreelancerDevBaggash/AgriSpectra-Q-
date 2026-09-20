@@ -447,8 +447,10 @@ function DashboardContent() {
                 { label: 'Scene coverage',       value: sceneStats ? sceneStats.valid_pixels.toLocaleString() : '—', unit: ' px' },
                 { label: 'Processing time',      value: sceneStats ? sceneStats.processing_seconds.toFixed(1) : '—', unit: ' s' },
               ].map(({ label, value, unit }) => (
-                <div key={label}>
-                  <div className="text-xl font-bold text-surface-900 tabular-nums">{value}{unit}</div>
+                <div key={label} className="min-w-0">
+                  <div className={`font-bold text-surface-900 tabular-nums truncate ${label === 'Top inspection focus' ? 'text-sm font-mono' : 'text-xl'}`} title={String(value)}>
+                    {value}{unit}
+                  </div>
                   <div className="text-xs text-surface-500 mt-0.5">{label}</div>
                 </div>
               ))}
