@@ -14,10 +14,10 @@ const LIVE_SCENES = [
 ]
 
 const ZONE_CATEGORIES = [
-  { name: 'HIGH PRIORITY',          dot: 'bg-gold-500',    desc: 'Inspect this zone first.' },
-  { name: 'MEDIUM PRIORITY',        dot: 'bg-teal-500',    desc: 'Include in the next inspection cycle.' },
-  { name: 'LOW PRIORITY',           dot: 'bg-primary-500', desc: 'Continue monitoring.' },
-  { name: 'ABSTAIN / HUMAN REVIEW', dot: 'bg-surface-400', desc: 'Insufficient confidence for automated prioritisation.' },
+  { name: 'HIGH PRIORITY',          dot: 'bg-gold-400',    border: 'border-l-gold-400',    text: 'text-gold-700',    desc: 'Inspect this zone first.' },
+  { name: 'MEDIUM PRIORITY',        dot: 'bg-teal-500',    border: 'border-l-teal-500',    text: 'text-teal-700',    desc: 'Include in the next inspection cycle.' },
+  { name: 'LOW PRIORITY',           dot: 'bg-primary-500', border: 'border-l-primary-500', text: 'text-primary-700', desc: 'Continue monitoring.' },
+  { name: 'ABSTAIN / HUMAN REVIEW', dot: 'bg-surface-400', border: 'border-l-surface-400', text: 'text-surface-600', desc: 'Insufficient confidence for automated prioritisation.' },
 ]
 
 const ROADMAP = [
@@ -54,15 +54,24 @@ export default function ProjectPage() {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
 
-        {/* Core Philosophy — numbered list, no colored card boxes */}
+        {/* Core Philosophy — vertical stepper */}
         <section>
           <p className="section-label mb-2">CORE OPERATING PHILOSOPHY</p>
           <h2 className="text-lg font-semibold text-surface-900 mb-6">Four-Step Workflow</h2>
-          <div className="space-y-0 divide-y divide-surface-100 border-t border-b border-surface-100">
+          <div className="flex flex-col gap-0">
             {WORKFLOW.map((w, i) => (
-              <div key={i} className="flex gap-5 py-4">
-                <span className="text-xs font-bold text-surface-300 font-mono mt-0.5 w-5 flex-shrink-0 tabular-nums">0{i + 1}</span>
-                <div>
+              <div key={i} className="flex gap-4">
+                {/* Left rail */}
+                <div className="flex flex-col items-center flex-shrink-0" aria-hidden="true">
+                  <div className="w-7 h-7 rounded-full bg-primary-50 border-2 border-primary-300 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] font-bold text-primary-700 font-mono">0{i + 1}</span>
+                  </div>
+                  {i < WORKFLOW.length - 1 && (
+                    <div className="w-px flex-1 bg-surface-200 my-1" />
+                  )}
+                </div>
+                {/* Content */}
+                <div className={`pb-6 flex-1 ${i === 0 ? 'pt-0.5' : 'pt-0.5'}`}>
                   <h3 className="text-sm font-semibold text-surface-900 mb-1 tracking-wide">{w.step}</h3>
                   <p className="text-sm text-surface-500 leading-relaxed">{w.desc}</p>
                 </div>
@@ -154,16 +163,16 @@ export default function ProjectPage() {
           <p className="text-xs text-surface-400 mt-2">Total live processing time: ~197.66 s · Run ID: <code className="font-mono">AGRQ-LIVE-20260916-132530-587fc9</code></p>
         </section>
 
-        {/* Zone Categories — flat list with color dots */}
+        {/* Zone Categories — priority cards with colored left border */}
         <section>
           <p className="section-label mb-2">PRIORITY SYSTEM</p>
           <h2 className="text-lg font-semibold text-surface-900 mb-4">Priority Zone Categories</h2>
-          <div className="space-y-0 divide-y divide-surface-100 border-t border-b border-surface-100">
-            {ZONE_CATEGORIES.map(({ name, dot, desc }) => (
-              <div key={name} className="flex items-center gap-4 py-3">
-                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dot}`} />
-                <span className="text-xs font-semibold text-surface-800 w-44 flex-shrink-0">{name}</span>
-                <span className="text-sm text-surface-500">{desc}</span>
+          <div className="flex flex-col divide-y divide-surface-100 border-t border-b border-surface-100">
+            {ZONE_CATEGORIES.map(({ name, dot, border, text, desc }) => (
+              <div key={name} className={`flex items-center gap-4 py-3 pl-4 border-l-4 ${border}`}>
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />
+                <span className={`text-xs font-bold tracking-wide flex-shrink-0 w-44 ${text}`}>{name}</span>
+                <span className="text-sm text-surface-500 leading-relaxed">{desc}</span>
               </div>
             ))}
           </div>
@@ -176,42 +185,44 @@ export default function ProjectPage() {
         <section>
           <p className="section-label mb-2">AI ARCHITECTURE</p>
           <h2 className="text-lg font-semibold text-surface-900 mb-4">AgriSpectra-Q Model</h2>
-          <div className="bg-white rounded-lg border border-surface-200 p-5 space-y-4">
-            <p className="text-sm text-surface-600 leading-relaxed">
-              RF-first residual architecture with grouped out-of-fold residual learning, compact spectral 
-              intelligence, Mahalanobis-oriented research components, and an adaptive residual gate. 
-              The nonlinear feature map uses quantum-inspired computational logic within a hybrid 
-              quantum-classical research layer.
-            </p>
-            <div className="border-t border-surface-100 pt-4">
+          <div className="space-y-0 divide-y divide-surface-100 border-t border-b border-surface-100">
+            <div className="py-4">
+              <p className="text-sm text-surface-600 leading-relaxed">
+                RF-first residual architecture with grouped out-of-fold residual learning, compact spectral
+                intelligence, Mahalanobis-oriented research components, and an adaptive residual gate.
+                The nonlinear feature map uses quantum-inspired computational logic within a hybrid
+                quantum-classical research layer.
+              </p>
+            </div>
+            <div className="py-4">
               <p className="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-2">Quantum Component Clarity</p>
-              <p className="text-sm text-surface-600 leading-relaxed bg-surface-50 rounded-lg p-3">
+              <p className="text-sm text-surface-600 leading-relaxed">
                 <strong className="text-surface-800">Correct framing:</strong>{' '}
                 "Quantum-inspired feature transformation within a hybrid quantum-classical research layer."
                 No quantum hardware result, no quantum speedup, no demonstrated quantum advantage.
               </p>
             </div>
-            <div className="border-t border-surface-100 pt-4">
+            <div className="py-4">
               <p className="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-2">Statistical Position</p>
               <p className="text-sm text-surface-600 leading-relaxed">
-                AgriSpectra-Q achieves the highest numerical mean F1 (0.963985) among all six evaluated systems. 
-                However, its advantage over HSI-RF is only +0.0008447 with a 95% CI of [–0.0012, +0.0027], 
+                AgriSpectra-Q achieves the highest numerical mean F1 (0.963985) among all six evaluated systems.
+                However, its advantage over HSI-RF is only +0.0008447 with a 95% CI of [–0.0012, +0.0027],
                 which crosses zero. Statistical superiority is therefore <em>not</em> established.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Roadmap — numbered list, no card boxes */}
+        {/* Roadmap — same divide-y pattern as AI Architecture / consistent with page */}
         <section>
           <p className="section-label mb-2">FUTURE DEVELOPMENT</p>
           <h2 className="text-lg font-semibold text-surface-900 mb-5">Roadmap</h2>
           <div className="space-y-0 divide-y divide-surface-100 border-t border-b border-surface-100">
             {ROADMAP.map(({ phase, title, desc }) => (
               <div key={phase} className="flex gap-5 py-4">
-                <span className="text-xs font-bold text-surface-300 font-mono mt-0.5 w-5 flex-shrink-0">{phase}</span>
+                <span className="text-xs font-bold text-surface-300 font-mono mt-0.5 w-5 flex-shrink-0 tabular-nums">{phase}</span>
                 <div>
-                  <h3 className="text-sm font-semibold text-surface-900 mb-0.5">Phase {phase}: {title}</h3>
+                  <h3 className="text-sm font-semibold text-surface-900 mb-1">Phase {phase}: {title}</h3>
                   <p className="text-sm text-surface-500 leading-relaxed">{desc}</p>
                 </div>
               </div>
