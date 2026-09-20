@@ -1,35 +1,27 @@
 // Team page — spec §16 (Frontend Pages doc §16)
-// Only verified information about Asia Alhammadi and project roles.
-// No invented biographies, credentials, affiliations, or team members.
+// Only verified information about Asia Alhammadi and Ebrahim Baggash.
 
+import Image from 'next/image'
 import Link from 'next/link'
 
-const VERIFIED_ROLES = [
+const TEAM = [
   {
-    id:    'hyperspectral',
-    label: 'Hyperspectral Remote-Sensing Science',
-    desc:  'Interpretation of EnMAP 224-band sensor output, band selection, spectral indexing, and anomaly proxy design.',
+    id:      'asia',
+    role:    'TEAM LEADER / PROJECT CREATOR',
+    name:    'Asia Alhammadi',
+    title:   'Team Leader · Project Creator · Backend & Scientific Systems Lead',
+    photo:   '/Asia.jpeg',
+    initials:'AA',
+    bio:     'Conceived and led the development of AgriSpectra-Q — a hyperspectral crop-intelligence proof of concept built on real EnMAP satellite data. Asia is responsible for the project\'s overall architecture, scientific and technical direction, and the complete backend implementation, including the hyperspectral analysis pipeline, live geospatial processing engine, model integration, data processing, anomaly prioritisation, GeoTIFF/GeoJSON outputs and reproducible experiment infrastructure.',
   },
   {
-    id:    'geospatial-ai',
-    label: 'Geospatial AI Engineering',
-    desc:  'Georeferenced raster processing, zone extraction, GeoJSON pipeline, and decision-spatial output generation.',
-  },
-  {
-    id:    'ml',
-    label: 'Scientific Python and ML',
-    desc:  'Scikit-learn and XGBoost model training, frozen benchmark evaluation, calibration, and paired bootstrap testing.',
-  },
-  {
-    id:    'product',
-    label: 'Product and Dashboard Engineering',
-    desc:  'Next.js frontend, decision dashboard, interactive results views, and backend API integration.',
-  },
-  {
-    id:    'field',
-    label: 'Field-Validation Coordination',
-    desc:  'Future role: liaison between spectral-priority outputs and on-site agronomic field inspection teams.',
-    future: true,
+    id:      'ebrahim',
+    role:    'FRONTEND & UX ENGINEER',
+    name:    'Ebrahim Baggash',
+    title:   'Frontend Engineer · UX Designer · Product Experience Lead',
+    photo:   '/Ebrahim.png',
+    initials:'EB',
+    bio:     'Designed and developed the AgriSpectra-Q frontend and user experience, transforming the underlying scientific and geospatial engine into a clear, intuitive, and presentation-ready product. Ebrahim is responsible for the interface architecture, interactive visualisation, map-based exploration, results presentation, and overall user experience. He also maintains and presents the project\'s GitHub repository, ensuring the implementation is organised, accessible, and ready for technical review.',
   },
 ]
 
@@ -49,60 +41,36 @@ export default function TeamPage() {
           <p className="section-label mb-3">AGRISPECTRA-Q</p>
           <h1 className="text-3xl font-bold text-surface-900 mb-3">Team</h1>
           <p className="text-base text-surface-500 leading-relaxed max-w-xl">
-            Only verified team information is displayed. Roles marked as future are not yet filled.
+            The people behind AgriSpectra-Q — conception, science, engineering, and experience.
           </p>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
 
-        {/* Verified team member */}
-        <section>
-          <p className="section-label mb-4">TEAM LEADER / PROJECT CREATOR</p>
-          <div className="flex items-start gap-4 pb-6 border-b border-surface-100">
-            {/* Avatar placeholder — no fabricated image */}
-            <div className="w-14 h-14 rounded-full bg-surface-100 border border-surface-200 flex items-center justify-center text-surface-400 text-xl font-bold flex-shrink-0 select-none">
-              AA
+        {/* Team members */}
+        {TEAM.map((member, idx) => (
+          <section key={member.id}>
+            <p className="section-label mb-4">{member.role}</p>
+            <div className={`flex items-start gap-5 pb-8 ${idx < TEAM.length - 1 ? 'border-b border-surface-100' : ''}`}>
+              {/* Photo */}
+              <div className="w-20 h-20 rounded-full overflow-hidden border border-surface-200 flex-shrink-0 bg-surface-100">
+                <Image
+                  src={member.photo}
+                  alt={member.name}
+                  width={80}
+                  height={80}
+                  className="w-full h-full object-cover object-top"
+                />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-surface-900 mb-0.5">{member.name}</h3>
+                <p className="text-sm text-surface-500 mb-3">{member.title}</p>
+                <p className="text-sm text-surface-600 leading-relaxed">{member.bio}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-surface-900">Asia Alhammadi</h3>
-              <p className="text-sm text-surface-500 mb-2">Team leader · Project creator · Arab Youth Space Hackathon 2026</p>
-              <p className="text-sm text-surface-600 leading-relaxed">
-                Responsible for the conception, design, and delivery of AgriSpectra-Q — a hyperspectral crop
-                intelligence proof of concept built on real EnMAP satellite data.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Project roles */}
-        <section>
-          <p className="section-label mb-4">VERIFIED PROJECT ROLES</p>
-          <ul className="divide-y divide-surface-100">
-            {VERIFIED_ROLES.map(role => (
-              <li key={role.id} className="py-4 flex flex-col sm:flex-row sm:items-start gap-2">
-                <div className="sm:w-64 flex-shrink-0">
-                  <span className="text-sm font-semibold text-surface-800">{role.label}</span>
-                  {role.future && (
-                    <span className="ml-2 text-2xs font-medium text-surface-400 uppercase tracking-wide border border-surface-200 rounded px-1.5 py-0.5 align-middle">
-                      Future
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-surface-500 leading-relaxed">{role.desc}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* Scientific boundary notice */}
-        <section className="border-t border-surface-200 pt-6">
-          <p className="text-xs text-surface-400 leading-relaxed">
-            The current PoC has no field validation, no field-labelled disease or pest target,
-            no blind fourth scene, no complete six-model LOSO evaluation, no proven quantum advantage,
-            and no measured financial ROI. Team copy does not imply commercial deployment or operational readiness.
-          </p>
-        </section>
+          </section>
+        ))}
 
         {/* Navigation */}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
