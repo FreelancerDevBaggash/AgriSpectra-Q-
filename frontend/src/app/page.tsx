@@ -144,7 +144,7 @@ export default function HomePage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 Run Live Analysis
               </Link>
-              <Link href="/results" className="btn inline-flex items-center gap-2 px-5 py-2.5 text-sm border border-white/15 text-white/70 rounded-lg hover:bg-white/8 hover:text-white hover:border-white/25 transition-all">
+              <Link href="/results" className="btn inline-flex items-center gap-2 px-5 py-2.5 text-sm border border-white/30 text-white/80 rounded-lg hover:bg-white/10 hover:text-white hover:border-white/60 transition-all">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
                 See Benchmark Results
               </Link>
