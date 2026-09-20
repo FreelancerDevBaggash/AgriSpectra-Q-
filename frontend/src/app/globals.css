@@ -6,12 +6,23 @@
 
 /* ── Design tokens ──────────────────────────────────────────────────────────── */
 :root {
-  --nav-height: 64px;
-  --radius-card: 8px;
-  --radius-pill: 999px;
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Brand colours (raw values for inline use) */
+  --color-primary:    #063B2A;
+  --color-green:      #168A45;
+  --color-accent:     #63C72B;
+  --color-teal:       #008F83;
+  --color-cyan:       #21C7D4;
+  --color-gold:       #F5B52E;
+  --color-text:       #10252A;
+  --color-bg:         #F7FAF8;
+  --color-white:      #FFFFFF;
+
+  --nav-height:       64px;
+  --radius-card:      8px;
+  --radius-pill:      999px;
+  --transition-fast:  150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base:  250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:  400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Base ───────────────────────────────────────────────────────────────────── */
@@ -41,14 +52,28 @@
   .btn-primary {
     @apply btn px-5 py-2.5 text-sm bg-primary-600 text-white
            hover:bg-primary-500 active:bg-primary-700
-           focus-visible:ring-primary-500 shadow-sm hover:shadow-glow-blue
+           focus-visible:ring-primary-500 shadow-sm hover:shadow-glow-primary
            hover:-translate-y-px active:translate-y-0;
   }
 
   .btn-primary-lg {
     @apply btn px-6 py-2.5 text-sm bg-primary-600 text-white
            hover:bg-primary-500 active:bg-primary-700
-           focus-visible:ring-primary-500 shadow-sm hover:shadow-glow-blue
+           focus-visible:ring-primary-500 shadow-sm hover:shadow-glow-primary
+           hover:-translate-y-px active:translate-y-0;
+  }
+
+  .btn-teal {
+    @apply btn px-5 py-2.5 text-sm bg-teal-500 text-white
+           hover:bg-teal-400 active:bg-teal-600
+           focus-visible:ring-teal-500 shadow-sm hover:shadow-glow-teal
+           hover:-translate-y-px active:translate-y-0;
+  }
+
+  .btn-accent {
+    @apply btn px-5 py-2.5 text-sm bg-accent-500 text-primary-900 font-bold
+           hover:bg-accent-400 active:bg-accent-600
+           focus-visible:ring-accent-500 shadow-sm hover:shadow-glow-accent
            hover:-translate-y-px active:translate-y-0;
   }
 
@@ -64,7 +89,7 @@
   }
 
   .btn-white {
-    @apply btn px-6 py-2.5 text-sm bg-white text-primary-700 font-bold
+    @apply btn px-6 py-2.5 text-sm bg-white text-primary-800 font-bold
            hover:bg-primary-50 active:bg-primary-100
            focus-visible:ring-white shadow-sm;
   }
@@ -83,34 +108,42 @@
     @apply rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm;
   }
 
+  .card-brand {
+    @apply rounded-lg border border-primary-200 bg-primary-50/60
+           transition-all duration-200;
+  }
+
   /* Badges */
   .badge {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide;
   }
 
   .badge-live {
-    @apply bg-spectral-500/10 text-spectral-700 border border-spectral-500/20;
-  }
-
-  .badge-frozen {
     @apply bg-primary-500/10 text-primary-700 border border-primary-500/20;
   }
 
-  .badge-high {
-    @apply bg-risk-500/10 text-risk-700 border border-risk-500/20;
+  .badge-teal {
+    @apply bg-teal-500/10 text-teal-700 border border-teal-500/20;
   }
 
-  .badge-medium {
-    @apply bg-amber-500/10 text-amber-700 border border-amber-500/20;
+  .badge-accent {
+    @apply bg-accent-500/10 text-accent-700 border border-accent-500/20;
   }
 
-  .badge-low {
-    @apply bg-spectral-500/10 text-spectral-700 border border-spectral-500/20;
+  .badge-cyan {
+    @apply bg-cyan-400/10 text-cyan-600 border border-cyan-400/20;
   }
 
-  .badge-quantum {
-    @apply bg-quantum-500/10 text-quantum-700 border border-quantum-500/20;
+  .badge-gold {
+    @apply bg-gold-400/10 text-gold-700 border border-gold-400/20;
   }
+
+  /* kept for backward compat → maps to primary */
+  .badge-frozen  { @apply badge-teal; }
+  .badge-high    { @apply bg-gold-400/10 text-gold-700 border border-gold-400/20; }
+  .badge-medium  { @apply badge-teal; }
+  .badge-low     { @apply badge-live; }
+  .badge-quantum { @apply badge-cyan; }
 
   /* Inputs */
   .input {
@@ -146,7 +179,10 @@
 
   /* Status dots */
   .dot-live {
-    @apply w-2 h-2 rounded-full bg-spectral-500 animate-pulse-glow;
+    @apply w-2 h-2 rounded-full bg-primary-500 animate-pulse-glow;
+  }
+  .dot-teal {
+    @apply w-2 h-2 rounded-full bg-teal-500 animate-pulse-glow;
   }
 
   /* Priority bars */
@@ -163,9 +199,13 @@
   .data-table tbody td { @apply py-3 sm:py-3.5 px-4 sm:px-5 text-surface-700; }
 
   /* Glow rings */
-  .ring-glow-blue   { box-shadow: 0 0 0 3px rgba(32, 144, 255, .25); }
-  .ring-glow-green  { box-shadow: 0 0 0 3px rgba(34, 197, 94,  .25); }
-  .ring-glow-risk   { box-shadow: 0 0 0 3px rgba(244, 63, 94,  .25); }
+  .ring-glow-primary { box-shadow: 0 0 0 3px rgba(22, 138, 69, .25); }
+  .ring-glow-teal    { box-shadow: 0 0 0 3px rgba(0, 143, 131, .25); }
+  .ring-glow-accent  { box-shadow: 0 0 0 3px rgba(99, 199, 43, .25); }
+  /* backward compat aliases */
+  .ring-glow-blue    { box-shadow: 0 0 0 3px rgba(22, 138, 69, .25); }
+  .ring-glow-green   { box-shadow: 0 0 0 3px rgba(99, 199, 43, .25); }
+  .ring-glow-risk    { box-shadow: 0 0 0 3px rgba(245, 181, 46, .25); }
 
   /* Tooltip-like chip */
   .chip {
@@ -185,18 +225,35 @@
 /* ── Utilities ──────────────────────────────────────────────────────────────── */
 @layer utilities {
   .text-balance { text-wrap: balance; }
-  .text-gradient-blue {
-    background: linear-gradient(135deg, #2090ff, #0557c8);
+
+  /* Primary brand gradient text */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #168A45, #063B2A);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .text-gradient-quantum {
-    background: linear-gradient(135deg, #a855f7, #2090ff);
+
+  /* Teal–primary gradient text */
+  .text-gradient-teal {
+    background: linear-gradient(135deg, #008F83, #168A45);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* Accent (lime) gradient text */
+  .text-gradient-accent {
+    background: linear-gradient(135deg, #63C72B, #168A45);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Backward-compat aliases */
+  .text-gradient-blue    { @apply text-gradient-primary; }
+  .text-gradient-quantum { @apply text-gradient-teal; }
+
   .bg-dots   { background-image: var(--tw-gradient-stops); background-size: 24px 24px; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -224,7 +281,7 @@
 @keyframes progressBar  { 0% { transform: translateX(-100%) scaleX(.4) } 50% { transform: translateX(0) scaleX(.8) } 100% { transform: translateX(100%) scaleX(.4) } }
 @keyframes shimmer      { 0% { background-position: -200% center } 100% { background-position: 200% center } }
 @keyframes orbit        { 0% { transform: rotate(0deg) translateX(70px) rotate(0deg) } 100% { transform: rotate(360deg) translateX(70px) rotate(-360deg) } }
-@keyframes borderFlow   { 0%,100% { border-color: rgba(32,144,255,.2) } 50% { border-color: rgba(32,144,255,.7) } }
+@keyframes borderFlow   { 0%,100% { border-color: rgba(22,138,69,.2) } 50% { border-color: rgba(22,138,69,.7) } }
 @keyframes countUp      { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
 @keyframes scanLine     { 0% { transform: translateY(-100%) } 100% { transform: translateY(100vh) } }
 
@@ -252,10 +309,9 @@
 
 /* ── Scrollbar ──────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 6px; height: 6px; }
-::-webkit-scrollbar-track  { background: #f1f5f9; border-radius: 3px; }
-::-webkit-scrollbar-thumb  { background: #cbd5e1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-track  { background: #edf2ef; border-radius: 3px; }
+::-webkit-scrollbar-thumb  { background: #b5ccbf; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #8aaa97; }
 
 /* ── Focus ──────────────────────────────────────────────────────────────────── */
-:focus-visible { outline: 2px solid #2090ff; outline-offset: 2px; }
-
+:focus-visible { outline: 2px solid #168A45; outline-offset: 2px; }

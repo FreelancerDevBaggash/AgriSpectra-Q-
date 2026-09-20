@@ -102,8 +102,8 @@ export default function ModelComparisonPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
 
         {/* Statistical caveat — must come first per spec §14 */}
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-600 flex-shrink-0 mt-0.5">
+        <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-600 flex-shrink-0 mt-0.5">
             <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
             <line x1="12" y1="9" x2="12" y2="13"/>
           </svg>
@@ -247,7 +247,7 @@ export default function ModelComparisonPage() {
                   </td>
                   <td className="text-sm tabular-nums py-3.5 px-5">
                     {row.ece != null
-                      ? <span className={row.highlight ? 'font-semibold text-spectral-700' : 'text-surface-500'}>{row.ece.toFixed(2)}%</span>
+                      ? <span className={row.highlight ? 'font-semibold text-primary-700' : 'text-surface-500'}>{row.ece.toFixed(2)}%</span>
                       : <span className="text-surface-300">—</span>}
                   </td>
                 </tr>

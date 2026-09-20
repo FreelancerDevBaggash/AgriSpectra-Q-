@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 // ── Static data — sourced from docs/AgriSpectra-Q_—_UX_UI_Product_Specification.md §6.1
 // and docs/AgriSpectra-Q_—_Frontend_Pages_and_UX_Flow.md §6
@@ -87,10 +88,33 @@ export default function HomePage() {
 
       {/* ── Hero — single dark background, no layered noise ────────────────── */}
       <section className="relative min-h-[88vh] flex items-center overflow-hidden bg-gradient-hero">
-        <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-[0.06]" />
+        {/* Hero background image */}
+        <Image
+          src="/hero_photo.png"
+          alt=""
+          fill
+          className="object-cover object-center opacity-55"
+          priority
+          aria-hidden="true"
+        />
+        {/* Overlay gradient to keep text legible */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/25 to-black/10" />
+        <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-[0.04]" />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
           <div className="max-w-3xl">
+
+            {/* Hero logo — icon mark above headline */}
+            <div className="mb-7 animate-fade-up">
+              <Image
+                src="/logo_icon.png"
+                alt="AgriSpectra-Q"
+                width={72}
+                height={72}
+                className="w-16 h-16 object-contain drop-shadow-lg"
+                priority
+              />
+            </div>
 
             {/* Hackathon badge only — Live Engine moved to Intelligence page where it's meaningful */}
             <div className="flex flex-wrap items-center gap-2.5 mb-8 animate-fade-up">

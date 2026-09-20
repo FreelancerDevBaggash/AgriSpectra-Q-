@@ -39,10 +39,10 @@ interface ZoneRecord {
 
 function priorityColor(cat: string) {
   const c = (cat || '').toLowerCase()
-  if (c.includes('high'))   return 'text-red-700 bg-red-50'
-  if (c.includes('medium')) return 'text-amber-700 bg-amber-50'
-  if (c.includes('low'))    return 'text-green-700 bg-green-50'
-  return 'text-blue-700 bg-blue-50'
+  if (c.includes('high'))   return 'text-gold-700 bg-gold-50'
+  if (c.includes('medium')) return 'text-teal-700 bg-teal-50'
+  if (c.includes('low'))    return 'text-primary-700 bg-primary-50'
+  return 'text-teal-700 bg-teal-50'
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -181,7 +181,7 @@ function SpectralEvidenceContent() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold text-surface-900">Why Was This Zone Flagged?</h1>
-                <FlaskConical className="w-4 h-4 text-spectral-600" />
+                <FlaskConical className="w-4 h-4 text-teal-600" />
               </div>
               <p className="text-xs text-surface-500 font-mono">Run: {runId} · Scene: {scene}</p>
             </div>
@@ -270,7 +270,7 @@ function SpectralEvidenceContent() {
                   {/* Legend */}
                   <div className="flex items-center gap-4 mt-3 text-xs text-surface-500" aria-hidden="true">
                     <span className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-sm bg-blue-500 inline-block" /> Observed mean
+                      <span className="w-3 h-3 rounded-sm bg-teal-500 inline-block" /> Observed mean
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-3 rounded-sm bg-surface-300 inline-block" /> Reference mean
@@ -315,7 +315,7 @@ function SpectralEvidenceContent() {
                               : ref !== null ? row.observed_mean - ref : null
                             if (devRaw === null) return <span className="text-surface-500">—</span>
                             return (
-                              <span className={devRaw > 0 ? 'text-red-600' : devRaw < 0 ? 'text-blue-600' : 'text-surface-500'}>
+                              <span className={devRaw > 0 ? 'text-gold-600' : devRaw < 0 ? 'text-teal-600' : 'text-surface-500'}>
                                 {(devRaw > 0 ? '+' : '') + devRaw.toFixed(5)}
                               </span>
                             )
@@ -346,9 +346,9 @@ function SpectralEvidenceContent() {
         )}
 
         {/* Scientific caveat — always visible */}
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
-          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <p className="text-amber-800 text-xs leading-relaxed">
+        <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4 text-sm">
+          <AlertTriangle className="w-4 h-4 text-gold-600 flex-shrink-0 mt-0.5" />
+          <p className="text-gold-800 text-xs leading-relaxed">
             <strong>Field verification required.</strong> Spectral evidence available for this priority candidate.
             The underlying cause is not determined by the current analysis.
             Physical wavelength axis is not verified in the current artifact — band indices only.

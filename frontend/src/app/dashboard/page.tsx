@@ -72,25 +72,25 @@ interface SceneStatistics {
 function priorityColor(cat: string) {
   if (!cat) return 'bg-surface-100 text-surface-700'
   const c = cat.toLowerCase()
-  if (c.includes('high')) return 'bg-red-100 text-risk-700'
-  if (c.includes('medium')) return 'bg-amber-100 text-amber-700'
-  if (c.includes('low')) return 'bg-green-100 text-spectral-700'
-  return 'bg-blue-100 text-blue-700'
+  if (c.includes('high')) return 'bg-gold-100 text-gold-700'
+  if (c.includes('medium')) return 'bg-teal-100 text-teal-700'
+  if (c.includes('low')) return 'bg-primary-100 text-primary-700'
+  return 'bg-teal-50 text-teal-700'
 }
 
 function priorityBorder(cat: string) {
   const c = (cat || '').toLowerCase()
-  if (c.includes('high')) return 'border-l-red-500'
-  if (c.includes('medium')) return 'border-l-amber-500'
-  if (c.includes('low')) return 'border-l-green-500'
-  return 'border-l-blue-500'
+  if (c.includes('high')) return 'border-l-gold-500'
+  if (c.includes('medium')) return 'border-l-teal-500'
+  if (c.includes('low')) return 'border-l-primary-500'
+  return 'border-l-teal-400'
 }
 
 function riskBarColor(val: number) {
-  if (val >= 2) return '#ef4444'
-  if (val >= 1.5) return '#f97316'
-  if (val >= 1) return '#eab308'
-  return '#22c55e'
+  if (val >= 2) return '#F5B52E'   // gold — high
+  if (val >= 1.5) return '#008F83' // teal — medium-high
+  if (val >= 1) return '#168A45'   // green — medium
+  return '#63C72B'                 // accent lime — low
 }
 
 // ── CRS conversion ────────────────────────────────────────────────────────────
@@ -404,7 +404,7 @@ function DashboardContent() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-lg font-bold text-surface-900">Decision Dashboard</h1>
                   <span className="badge badge-live text-xs inline-flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" aria-hidden="true" /> LIVE ANALYSIS
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse" aria-hidden="true" /> LIVE ANALYSIS
                   </span>
                 </div>
                 <p className="text-xs text-surface-500 font-mono truncate">Run: {runId} · Scene: {scene}</p>
@@ -570,7 +570,7 @@ function DashboardContent() {
                         {zone.priority_category || 'Unknown'}
                       </span>
                       {(zone.priority_category || '').toLowerCase().includes('high') && (
-                        <span className="text-xs text-red-600 font-medium">INSPECT FIRST</span>
+                        <span className="text-xs text-gold-600 font-medium">INSPECT FIRST</span>
                       )}
                     </div>
                     <p className="text-xs text-surface-600 leading-relaxed">{zone.recommendation || 'Spectral anomaly relative to scene baseline. Field verification required.'}</p>
@@ -794,13 +794,13 @@ function DashboardContent() {
                     >
                       <div className="p-1 space-y-1">
                         <p className="font-bold text-surface-900 font-mono text-xs">{popupInfo.zone.zone_id}</p>
-                        <p className="text-red-700 font-semibold text-xs">{popupInfo.zone.priority_category}</p>
+                        <p className="text-gold-700 font-semibold text-xs">{popupInfo.zone.priority_category}</p>
                         <p className="text-surface-600 text-xs">Rank <strong>#{popupInfo.zone.priority_rank ?? popupInfo.zone.rank ?? '—'}</strong></p>
                         <p className="text-surface-600 text-xs">Score <strong>{typeof popupInfo.zone.mean_risk === 'number' ? popupInfo.zone.mean_risk.toFixed(3) : '—'} σ</strong></p>
                         {(popupInfo.zone.approx_area_m2 ?? popupInfo.zone.area_m2) != null && (
                           <p className="text-surface-600 text-xs">Area <strong>{((popupInfo.zone.approx_area_m2 ?? popupInfo.zone.area_m2)! / 10000).toFixed(2)} ha</strong></p>
                         )}
-                        <p className="text-amber-700 text-2xs font-medium">Field verification required</p>
+                        <p className="text-gold-700 text-2xs font-medium">Field verification required</p>
                         <a
                           href={`/spectral-evidence?run_id=${runId}&scene=${scene}&zone_id=${encodeURIComponent(popupInfo.zone.zone_id)}`}
                           className="text-primary-600 underline text-xs block mt-1"
@@ -816,9 +816,9 @@ function DashboardContent() {
               {/* Map legend */}
               {geojson && (
                 <div className="absolute bottom-3 left-3 bg-surface-900/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white space-y-1 pointer-events-none">
-                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-blue-400 inline-block" /> Selected zone</div>
-                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-orange-400 inline-block" /> Hovered zone</div>
-                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-red-500 inline-block" /> High-priority zone</div>
+                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-teal-400 inline-block" /> Selected zone</div>
+                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-accent-400 inline-block" /> Hovered zone</div>
+                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-gold-500 inline-block" /> High-priority zone</div>
                 </div>
               )}
             </div>
@@ -922,9 +922,9 @@ function DashboardContent() {
         </section>
 
         {/* ── 5. SCIENTIFIC CAVEAT — always visible ── */}
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
-          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <p className="text-amber-800 text-xs leading-relaxed">
+        <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4 text-sm">
+          <AlertTriangle className="w-4 h-4 text-gold-600 flex-shrink-0 mt-0.5" />
+          <p className="text-gold-800 text-xs leading-relaxed">
             <strong>Field verification required.</strong> High-priority spectral zones are spectral-anomaly prioritisation
             signals — not confirmed disease, pest, or biological diagnoses. Do not act on this output without
             on-site agronomic inspection.

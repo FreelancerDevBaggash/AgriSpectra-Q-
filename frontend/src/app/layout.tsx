@@ -15,10 +15,16 @@ export const metadata: Metadata = {
   description: 'Transform real EnMAP hyperspectral Earth observation data into georeferenced spectral-priority zones and actionable field inspection intelligence.',
   keywords: ['hyperspectral', 'agriculture', 'AI', 'remote sensing', 'crop monitoring', 'EnMAP', 'UAE', 'satellite imagery', 'quantum', 'Space42', 'GIQ'],
   authors: [{ name: 'AgriSpectra-Q Team' }],
+  icons: {
+    icon: '/logo_icon.png',
+    apple: '/logo_icon.png',
+    shortcut: '/logo_icon.png',
+  },
   openGraph: {
     title: 'AgriSpectra-Q — Hyperspectral Crop Intelligence',
     description: 'AI-powered hyperspectral analysis platform for agricultural inspection prioritisation',
     type: 'website',
+    images: [{ url: '/hero_photo.png', width: 1920, height: 640, alt: 'AgriSpectra-Q hyperspectral satellite analysis' }],
   },
 }
 

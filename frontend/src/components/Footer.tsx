@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Footer() {
   const year = new Date().getFullYear()
@@ -9,18 +10,14 @@ export default function Footer() {
 
           {/* Brand */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-glow-blue">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div>
-                <div className="font-bold text-white text-base tracking-tight">
-                  AgriSpectra<span className="text-primary-400">-Q</span>
-                </div>
-                <div className="text-xs text-surface-500">Hyperspectral Crop Intelligence</div>
-              </div>
+            <div className="mb-5">
+              <Image
+                src="/logo_horizontal.png"
+                alt="AgriSpectra-Q"
+                width={200}
+                height={52}
+                className="h-12 w-auto object-contain brightness-0 invert"
+              />
             </div>
             <p className="text-sm text-surface-400 leading-relaxed mb-5 max-w-sm">
               Transforming real EnMAP hyperspectral satellite data into ranked inspection priorities 

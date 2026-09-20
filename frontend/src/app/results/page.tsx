@@ -30,7 +30,7 @@ const FINDINGS = [
 
 function ScoreBar({ value, max = 100 }: { value: number; max?: number }) {
   const pct = (value / max) * 100
-  const color = value >= 96 ? 'bg-spectral-500' : value >= 93 ? 'bg-amber-500' : 'bg-red-400'
+  const color = value >= 96 ? 'bg-primary-500' : value >= 93 ? 'bg-gold-500' : 'bg-gold-400'
   return (
     <div className="flex items-center gap-3">
       <div className="flex-1 h-1.5 rounded-full bg-surface-100">
@@ -75,14 +75,14 @@ export default function ResultsPage() {
           <p className="text-xs font-bold text-surface-400 uppercase tracking-wide mb-4">SCIENTIFIC INTERPRETATION</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pb-5 border-b border-surface-100">
             <div className="flex items-start gap-3">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-spectral-500 flex-shrink-0 mt-0.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-primary-500 flex-shrink-0 mt-0.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
               <div>
                 <p className="text-sm font-semibold text-surface-900 mb-0.5">Competitive numerical result</p>
                 <p className="text-xs text-surface-500">AgriSpectra-Q has the highest mean F1 (96.40%) among all six evaluated systems.</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-500 flex-shrink-0 mt-0.5" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-500 flex-shrink-0 mt-0.5" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
               <div>
                 <p className="text-sm font-semibold text-surface-900 mb-0.5">Statistical superiority over HSI-RF not established</p>
                 <p className="text-xs text-surface-500">Bootstrap 95% CI [−0.0012, +0.0027] crosses zero. Not statistically significant.</p>
@@ -191,7 +191,7 @@ export default function ResultsPage() {
           <div className="space-y-3">
             {FINDINGS.map((f, i) => (
               <div key={i} className="flex items-start gap-3 text-sm">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-spectral-500 flex-shrink-0 mt-0.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-primary-500 flex-shrink-0 mt-0.5">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
                 <p className="text-surface-600 leading-relaxed">{f}</p>

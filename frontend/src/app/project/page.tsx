@@ -14,10 +14,10 @@ const LIVE_SCENES = [
 ]
 
 const ZONE_CATEGORIES = [
-  { name: 'HIGH PRIORITY',          dot: 'bg-red-500',    desc: 'Inspect this zone first.' },
-  { name: 'MEDIUM PRIORITY',        dot: 'bg-amber-500',  desc: 'Include in the next inspection cycle.' },
-  { name: 'LOW PRIORITY',           dot: 'bg-green-500',  desc: 'Continue monitoring.' },
-  { name: 'ABSTAIN / HUMAN REVIEW', dot: 'bg-blue-500',   desc: 'Insufficient confidence for automated prioritisation.' },
+  { name: 'HIGH PRIORITY',          dot: 'bg-gold-500',    desc: 'Inspect this zone first.' },
+  { name: 'MEDIUM PRIORITY',        dot: 'bg-teal-500',    desc: 'Include in the next inspection cycle.' },
+  { name: 'LOW PRIORITY',           dot: 'bg-primary-500', desc: 'Continue monitoring.' },
+  { name: 'ABSTAIN / HUMAN REVIEW', dot: 'bg-surface-400', desc: 'Insufficient confidence for automated prioritisation.' },
 ]
 
 const ROADMAP = [
@@ -79,7 +79,7 @@ export default function ProjectPage() {
 
             <div className="bg-white rounded-lg border border-surface-200 p-5">
               <div className="flex items-center gap-2 mb-3">
-                <span className="w-2 h-2 rounded-full bg-spectral-500 flex-shrink-0 animate-pulse-glow" />
+                <span className="w-2 h-2 rounded-full bg-primary-500 flex-shrink-0 animate-pulse-glow" />
                 <span className="text-xs font-semibold text-surface-500 uppercase tracking-wide">Live Analysis</span>
               </div>
               <h3 className="font-semibold text-surface-900 mb-2">Live Matrix</h3>
@@ -91,7 +91,7 @@ export default function ProjectPage() {
               <div className="space-y-1.5">
                 {['Risk map (GeoTIFF)', 'Priority map (GeoTIFF)', 'Zone table (CSV + GeoJSON)', 'Spectral evidence (CSV)', 'Inspection budget (CSV)'].map(item => (
                   <div key={item} className="flex items-center gap-2 text-xs text-surface-600">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-spectral-500 flex-shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-primary-500 flex-shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
                     {item}
                   </div>
                 ))}
@@ -238,8 +238,8 @@ export default function ProjectPage() {
         </section>
 
         {/* Scientific disclaimer */}
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 flex-shrink-0 mt-0.5">
+        <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold-600 flex-shrink-0 mt-0.5">
             <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
             <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>

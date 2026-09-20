@@ -432,8 +432,8 @@ export default function IntelligencePage() {
               </span>
             )}
             {(backendState === 'offline' || backendState === 'scenes_missing') && (
-              <span className="badge bg-amber-100 text-amber-700 border border-amber-300">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block mr-1" aria-hidden="true" />
+              <span className="badge bg-gold-100 text-gold-700 border border-gold-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-gold-500 inline-block mr-1" aria-hidden="true" />
                 {backendState === 'offline' ? 'ENGINE OFFLINE' : 'SCENES MISSING'}
               </span>
             )}
@@ -482,17 +482,17 @@ export default function IntelligencePage() {
       )}
 
       {backendState === 'offline' && (
-        <div className="bg-amber-50 border-b border-amber-200" role="alert">
+        <div className="bg-gold-50 border-b border-gold-200" role="alert">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-start gap-3">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500 flex-shrink-0 mt-0.5" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold-500 flex-shrink-0 mt-0.5" aria-hidden="true">
               <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>
             </svg>
             <div className="text-xs leading-relaxed">
-              <p className="font-semibold text-amber-800 mb-0.5">Analysis engine is starting up</p>
-              <p className="text-amber-700">
+              <p className="font-semibold text-gold-800 mb-0.5">Analysis engine is starting up</p>
+              <p className="text-gold-700">
                 The server may be waking from sleep — this can take up to 30 seconds on free-tier hosting.
                 Please wait a moment and then{' '}
-                <button onClick={() => window.location.reload()} className="underline font-medium hover:text-amber-900">refresh the page</button>.
+                <button onClick={() => window.location.reload()} className="underline font-medium hover:text-gold-800">refresh the page</button>.
               </p>
             </div>
           </div>
@@ -500,17 +500,17 @@ export default function IntelligencePage() {
       )}
 
       {backendState === 'scenes_missing' && (
-        <div className="bg-amber-50 border-b border-amber-200" role="alert">
+        <div className="bg-gold-50 border-b border-gold-200" role="alert">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-start gap-3">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500 flex-shrink-0 mt-0.5" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold-500 flex-shrink-0 mt-0.5" aria-hidden="true">
               <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>
             </svg>
             <div className="text-xs leading-relaxed">
-              <p className="font-semibold text-amber-800 mb-0.5">
+              <p className="font-semibold text-gold-800 mb-0.5">
                 Scene files missing{missingScenes.length > 0 && `: ${missingScenes.join(', ')}`}
               </p>
-              <p className="text-amber-700">
-                Copy the TIF files to <code className="font-mono bg-amber-100 px-1 rounded">data/raw/enmap_three_scenes/</code> — or switch to <strong>Upload GeoTIFF</strong>.
+              <p className="text-gold-700">
+                Copy the TIF files to <code className="font-mono bg-gold-100 px-1 rounded">data/raw/enmap_three_scenes/</code> — or switch to <strong>Upload GeoTIFF</strong>.
               </p>
             </div>
           </div>
@@ -598,7 +598,7 @@ export default function IntelligencePage() {
                       <span className="text-xs text-surface-400" aria-hidden="true">—</span>
                       <span className="text-xs text-surface-500">{s.location}</span>
                       {s.available === false && (
-                        <span className="text-2xs font-medium px-1.5 py-0.5 rounded bg-red-100 text-red-600">File unavailable</span>
+                        <span className="text-2xs font-medium px-1.5 py-0.5 rounded bg-gold-100 text-gold-600">File unavailable</span>
                       )}
                     </div>
                     <p className="text-xs text-surface-500 leading-relaxed mb-2">{s.desc}</p>
@@ -719,7 +719,7 @@ export default function IntelligencePage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-2 gap-x-4" aria-hidden="true">
                   {PIPELINE_STEPS.slice(0, 8).map((s, i) => (
                     <div key={i} className={`flex items-center gap-2 text-xs transition-all duration-300 ${i <= step ? 'text-primary-700 font-medium' : 'text-surface-400'}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${i < step ? 'bg-spectral-500' : i === step ? 'bg-primary-500 animate-pulse-glow' : 'bg-surface-200'}`} />
+                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${i < step ? 'bg-primary-500' : i === step ? 'bg-primary-500 animate-pulse-glow' : 'bg-surface-200'}`} />
                       {s}
                     </div>
                   ))}
@@ -731,12 +731,12 @@ export default function IntelligencePage() {
             {status === 'done' && runId && (
               <div
                 role="status"
-                className="flex items-center gap-3 bg-spectral-50 border border-spectral-200 rounded-lg px-4 py-3 text-sm"
+                className="flex items-center gap-3 bg-primary-50 border border-primary-200 rounded-lg px-4 py-3 text-sm"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-spectral-600 flex-shrink-0" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-                <span className="text-spectral-800 font-medium">Analysis complete —</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-primary-600 flex-shrink-0" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                <span className="text-primary-800 font-medium">Analysis complete —</span>
                 <code className="code text-xs">{runId}</code>
-                <span className="text-spectral-600">Redirecting to dashboard…</span>
+                <span className="text-primary-600">Redirecting to dashboard…</span>
               </div>
             )}
 
@@ -744,13 +744,13 @@ export default function IntelligencePage() {
             {status === 'error' && error && (
               <div
                 role="alert"
-                className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm"
+                className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg px-4 py-3 text-sm"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gold-500 flex-shrink-0 mt-0.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                 <div>
-                  <p className="font-semibold text-red-800 mb-0.5">Live Analysis Failed</p>
-                  <p className="text-red-600 text-xs">The engine did not produce a valid result. {error}</p>
-                  <button onClick={() => setStatus('idle')} className="mt-2 text-xs text-red-700 underline font-medium">
+                  <p className="font-semibold text-gold-800 mb-0.5">Live Analysis Failed</p>
+                  <p className="text-gold-600 text-xs">The engine did not produce a valid result. {error}</p>
+                  <button onClick={() => setStatus('idle')} className="mt-2 text-xs text-gold-700 underline font-medium">
                     Return to scene selection
                   </button>
                 </div>
@@ -779,12 +779,12 @@ export default function IntelligencePage() {
         </div>
 
         {/* Scientific boundary — spec §6.3 scientific wording + §10 */}
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 flex-shrink-0 mt-0.5">
+        <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4 text-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold-600 flex-shrink-0 mt-0.5">
             <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
             <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <p className="text-amber-800">
+          <p className="text-gold-800">
             <strong>Scientific boundary:</strong>{' '}
             The result is a spectral-anomaly prioritisation signal and requires field verification.
             Output zones are inspection priority candidates — not confirmed disease or pest detections.
@@ -849,7 +849,7 @@ export default function IntelligencePage() {
                   : isDragOver
                     ? 'cursor-copy border-primary-400 bg-primary-50'
                     : uploadFile
-                      ? 'cursor-pointer border-spectral-300 bg-spectral-50 hover:border-spectral-400'
+                      ? 'cursor-pointer border-primary-300 bg-primary-50 hover:border-primary-400'
                       : 'cursor-pointer border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50'
                 }`}
             >
@@ -864,7 +864,7 @@ export default function IntelligencePage() {
 
               {uploadFile ? (
                 <>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-spectral-500" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary-500" aria-hidden="true">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                     <polyline points="14 2 14 8 20 8"/>
                     <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
@@ -1016,12 +1016,12 @@ export default function IntelligencePage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-2 gap-x-4" aria-hidden="true">
                     {PIPELINE_STEPS.map((s, i) => (
                       <div key={i} className={`flex items-center gap-2 text-xs transition-all duration-300 ${
-                        i < uploadStep ? 'text-spectral-600 font-medium' :
+                        i < uploadStep ? 'text-primary-600 font-medium' :
                         i === uploadStep ? 'text-primary-700 font-semibold' :
                         'text-surface-400'
                       }`}>
                         <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                          i < uploadStep ? 'bg-spectral-500' :
+                          i < uploadStep ? 'bg-primary-500' :
                           i === uploadStep ? 'bg-primary-500 animate-pulse-glow' :
                           'bg-surface-200'
                         }`} />
@@ -1064,12 +1064,12 @@ export default function IntelligencePage() {
               {uploadStage === 'done' && uploadRunId && (
                 <div
                   role="status"
-                  className="flex items-center gap-3 bg-spectral-50 border border-spectral-200 rounded-lg px-4 py-3 text-sm mb-6"
+                  className="flex items-center gap-3 bg-primary-50 border border-primary-200 rounded-lg px-4 py-3 text-sm mb-6"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-spectral-600 flex-shrink-0" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span className="text-spectral-800 font-medium">Analysis complete —</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-primary-600 flex-shrink-0" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span className="text-primary-800 font-medium">Analysis complete —</span>
                   <code className="code text-xs">{uploadRunId}</code>
-                  <span className="text-spectral-600 ml-auto text-xs">Redirecting…</span>
+                  <span className="text-primary-600 ml-auto text-xs">Redirecting…</span>
                 </div>
               )}
 
@@ -1077,16 +1077,16 @@ export default function IntelligencePage() {
               {uploadStage === 'error' && uploadError && (
                 <div
                   role="alert"
-                  className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm mb-6"
+                  className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg px-4 py-3 text-sm mb-6"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gold-500 flex-shrink-0 mt-0.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-red-800 mb-0.5">Upload or Analysis Failed</p>
-                    <p className="text-red-600 text-xs break-words">{uploadError}</p>
+                    <p className="font-semibold text-gold-800 mb-0.5">Upload or Analysis Failed</p>
+                    <p className="text-gold-600 text-xs break-words">{uploadError}</p>
                     <div className="flex gap-3 mt-2">
                       <button
                         onClick={() => { setUploadStage('idle'); setUploadError(null) }}
-                        className="text-xs text-red-700 underline font-medium"
+                        className="text-xs text-gold-700 underline font-medium"
                       >
                         Try again
                       </button>
@@ -1114,12 +1114,12 @@ export default function IntelligencePage() {
             </div>
 
             {/* ── Scientific boundary ─────────────────────────────────────────── */}
-            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 flex-shrink-0 mt-0.5">
+            <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4 text-sm">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold-600 flex-shrink-0 mt-0.5">
                 <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                 <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
               </svg>
-              <p className="text-amber-800">
+              <p className="text-gold-800">
                 <strong>Scientific boundary:</strong>{' '}
                 The result is a spectral-anomaly prioritisation signal and requires field verification.
                 Output zones are inspection priority candidates — not confirmed disease or pest detections.

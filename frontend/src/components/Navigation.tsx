@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { Menu, X, ChevronDown } from 'lucide-react'
@@ -90,21 +91,15 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
 
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group flex-shrink-0" aria-label="AgriSpectra-Q — Home">
-          <div className="relative w-9 h-9 flex-shrink-0">
-            <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 group-hover:from-primary-400 group-hover:to-primary-600 transition-all duration-200 shadow-glow-blue opacity-80 group-hover:opacity-100" />
-            <div className="relative flex items-center justify-center w-full h-full">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-white" aria-hidden="true">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </div>
-          <div className="flex flex-col leading-none">
-            <span className="font-bold text-surface-900 text-base tracking-tight group-hover:text-primary-700 transition-colors">
-              AgriSpectra<span className="text-primary-600">-Q</span>
-            </span>
-            <span className="text-2xs text-surface-400 font-medium tracking-wide mt-0.5">Hyperspectral Intelligence</span>
-          </div>
+        <Link href="/" className="flex items-center gap-2 group flex-shrink-0" aria-label="AgriSpectra-Q — Home">
+          <Image
+            src="/logo_horizontal.png"
+            alt="AgriSpectra-Q"
+            width={180}
+            height={48}
+            className="h-10 w-auto object-contain transition-opacity duration-200 group-hover:opacity-90"
+            priority
+          />
         </Link>
 
         {/* Desktop nav */}

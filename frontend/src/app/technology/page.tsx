@@ -193,7 +193,7 @@ export default function TechnologyPage() {
           <div className="space-y-0 divide-y divide-surface-100 border-t border-b border-surface-100">
             {SCIENTIFIC_DESIGN.map(({ title, desc }) => (
               <div key={title} className="flex gap-4 py-4">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-spectral-500 flex-shrink-0 mt-0.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-primary-500 flex-shrink-0 mt-0.5">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
                 <div>
