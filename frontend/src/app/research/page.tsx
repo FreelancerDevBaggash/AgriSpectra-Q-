@@ -5,12 +5,36 @@ import Link from 'next/link'
 // All values are frozen benchmark results — FROZEN SCIENTIFIC BENCHMARK label mandatory.
 
 const EVIDENCE_ITEMS = [
-  { label: '3 EnMAP scenes',        sub: 'UAE & Gulf region — real EO data, no simulation' },
-  { label: '224 spectral bands',     sub: 'Full hyperspectral L2A sensor output per scene' },
-  { label: '5 random seeds',         sub: 'Seeds 11, 22, 33, 44, 55 — statistical stability' },
-  { label: 'Spatially separated',    sub: 'Train/validation/test splits prevent leakage' },
-  { label: '90 total runs',          sub: '6 models × 3 scenes × 5 seeds' },
-  { label: '10,000 bootstrap reps',  sub: 'Paired bootstrap for significance testing' },
+  {
+    label: '3 EnMAP scenes',
+    sub: 'UAE & Gulf region — real EO data, no simulation',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+  },
+  {
+    label: '224 spectral bands',
+    sub: 'Full hyperspectral L2A sensor output per scene',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+  },
+  {
+    label: '5 random seeds',
+    sub: 'Seeds 11, 22, 33, 44, 55 — statistical stability',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400" aria-hidden="true"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/><path d="M12 6v6l4 2"/></svg>,
+  },
+  {
+    label: 'Spatially separated',
+    sub: 'Train/validation/test splits prevent leakage',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>,
+  },
+  {
+    label: '90 total runs',
+    sub: '6 models × 3 scenes × 5 seeds',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400" aria-hidden="true"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>,
+  },
+  {
+    label: '10,000 bootstrap reps',
+    sub: 'Paired bootstrap for significance testing',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>,
+  },
 ]
 
 const BENCHMARK_METRICS = [
@@ -77,9 +101,10 @@ export default function ResearchPage() {
           <p className="section-label mb-2">DATASET &amp; EVALUATION EVIDENCE</p>
           <h2 className="text-lg font-semibold text-surface-900 mb-5">What Evidence Exists</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {EVIDENCE_ITEMS.map(({ label, sub }) => (
-              <div key={label} className="bg-white border border-surface-200 rounded-lg px-4 py-3">
-                <div className="text-sm font-bold text-surface-900 mb-0.5">{label}</div>
+            {EVIDENCE_ITEMS.map(({ label, sub, icon }) => (
+              <div key={label} className="bg-white border border-surface-200 rounded-lg px-5 py-4">
+                <div className="mb-3">{icon}</div>
+                <div className="text-sm font-bold text-surface-900 mb-1">{label}</div>
                 <div className="text-xs text-surface-500 leading-relaxed">{sub}</div>
               </div>
             ))}

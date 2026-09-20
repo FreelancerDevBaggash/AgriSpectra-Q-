@@ -94,17 +94,17 @@ export default function ResultsPage() {
           </p>
         </div>
 
-        {/* KPI row — flat numbers */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 sm:gap-x-10 gap-y-6 pb-8 border-b border-surface-100">
+        {/* KPI row — stat cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-8 border-b border-surface-100">
           {[
-            { val: '96.40%', lbl: 'Mean F1',       sub: '3 scenes × 5 seeds'  },
-            { val: '99.47%', lbl: 'PR-AUC',         sub: 'Precision-Recall'    },
-            { val: '99.87%', lbl: 'ROC-AUC',        sub: 'Discrimination'      },
-            { val: '0.73%',  lbl: 'Calibrated ECE', sub: 'Prob. calibration'   },
-          ].map(({ val, lbl, sub }) => (
-            <div key={lbl}>
-              <div className="text-3xl font-extrabold text-surface-900 tabular-nums mb-1">{val}</div>
-              <div className="text-sm font-semibold text-surface-700">{lbl}</div>
+            { val: '96.40%', lbl: 'Mean F1',       sub: '3 scenes × 5 seeds',  accent: 'text-primary-700' },
+            { val: '99.47%', lbl: 'PR-AUC',         sub: 'Precision-Recall',    accent: 'text-primary-700' },
+            { val: '99.87%', lbl: 'ROC-AUC',        sub: 'Discrimination',      accent: 'text-primary-700' },
+            { val: '0.73%',  lbl: 'Calibrated ECE', sub: 'Prob. calibration',   accent: 'text-teal-700'    },
+          ].map(({ val, lbl, sub, accent }) => (
+            <div key={lbl} className="bg-white border border-surface-200 rounded-lg px-5 py-4">
+              <div className={`text-3xl font-extrabold tabular-nums mb-1 ${accent}`}>{val}</div>
+              <div className="text-sm font-semibold text-surface-800">{lbl}</div>
               <div className="text-xs text-surface-400 mt-0.5">{sub}</div>
             </div>
           ))}
@@ -203,15 +203,43 @@ export default function ResultsPage() {
         {/* Validation methodology */}
         <div className="border-t border-surface-100 pt-8">
           <p className="section-label mb-5">VALIDATION METHODOLOGY</p>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-4">
             {[
-              { label: '5 Random Seeds',      sub: '11, 22, 33, 44, 55',   desc: 'Statistical stability across initialisation variance' },
-              { label: '3 Real EnMAP Scenes', sub: 'UAE & Gulf region',     desc: 'No simulated data — all results on actual EO imagery' },
-              { label: 'Paired Bootstrap',    sub: 'n = 10,000 replicates', desc: 'Rigorous significance testing for model comparisons' },
-            ].map(({ label, sub, desc }) => (
-              <div key={label}>
+              {
+                label: '5 Random Seeds',
+                sub: '11, 22, 33, 44, 55',
+                desc: 'Statistical stability across initialisation variance',
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400" aria-hidden="true">
+                    <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/><path d="M12 6v6l4 2"/>
+                  </svg>
+                ),
+              },
+              {
+                label: '3 Real EnMAP Scenes',
+                sub: 'UAE & Gulf region',
+                desc: 'No simulated data — all results on actual EO imagery',
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                ),
+              },
+              {
+                label: 'Paired Bootstrap',
+                sub: 'n = 10,000 replicates',
+                desc: 'Rigorous significance testing for model comparisons',
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400" aria-hidden="true">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                  </svg>
+                ),
+              },
+            ].map(({ label, sub, desc, icon }) => (
+              <div key={label} className="bg-white border border-surface-200 rounded-lg px-5 py-4">
+                <div className="mb-3">{icon}</div>
                 <div className="font-semibold text-surface-900 text-sm mb-0.5">{label}</div>
-                <div className="text-xs font-medium text-primary-600 mb-1">{sub}</div>
+                <div className="text-xs font-medium text-primary-600 mb-2">{sub}</div>
                 <p className="text-xs text-surface-500 leading-relaxed">{desc}</p>
               </div>
             ))}

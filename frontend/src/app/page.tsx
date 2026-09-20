@@ -168,14 +168,12 @@ export default function HomePage() {
       {/* ── Capability strip — spec §6.1 wireframe: Real EnMAP · Geospatial · Evidence-led */}
       <section className="py-16 bg-white border-t border-surface-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-10">
+          <div className="grid md:grid-cols-3 gap-4">
             {CAPABILITIES.map(({ icon, title, desc }) => (
-              <div key={title} className="flex gap-4">
-                <div className="text-surface-400 mt-0.5 flex-shrink-0">{icon}</div>
-                <div>
-                  <h3 className="font-semibold text-surface-900 text-sm mb-1">{title}</h3>
-                  <p className="text-sm text-surface-500 leading-relaxed">{desc}</p>
-                </div>
+              <div key={title} className="bg-white border border-surface-200 rounded-lg px-6 py-5">
+                <div className="text-surface-400 mb-4">{icon}</div>
+                <h3 className="font-semibold text-surface-900 text-sm mb-2">{title}</h3>
+                <p className="text-sm text-surface-500 leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
@@ -190,18 +188,37 @@ export default function HomePage() {
             <h2 className="section-title">Four steps from satellite to field</h2>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-0 divide-y md:divide-y-0 md:divide-x divide-surface-100">
+          {/* ── Workflow grid — desktop: 4 cols | mobile: 1 col ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {WORKFLOW.map(({ step, title, desc, icon }, i) => (
-              <div key={step} className="px-6 py-6 lg:py-0 animate-fade-up" style={{ animationDelay: `${i * 80}ms` }}>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-xs font-bold tabular-nums text-surface-300 font-mono">{step}</span>
-                  <div className="text-surface-400">{icon}</div>
+              <div key={step} className="flex lg:flex-col gap-4 lg:gap-0 items-start animate-fade-up" style={{ animationDelay: `${i * 80}ms` }}>
+
+                {/* Card */}
+                <div className="bg-white border border-surface-200 rounded-lg p-5 flex-1 lg:flex-none w-full">
+                  {/* Top row: step badge + icon */}
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary-50 border border-primary-200 text-[11px] font-bold text-primary-700 font-mono tabular-nums flex-shrink-0">
+                      {step}
+                    </span>
+                    <div className="text-primary-400">{icon}</div>
+                  </div>
+                  <h3 className="text-sm font-bold text-surface-900 mb-2 tracking-wide">{title}</h3>
+                  <p className="text-sm text-surface-500 leading-relaxed">{desc}</p>
                 </div>
-                <h3 className="text-sm font-bold text-surface-900 mb-2 tracking-wide">{title}</h3>
-                <p className="text-sm text-surface-500 leading-relaxed">{desc}</p>
+
+                {/* Connector — right of card on desktop, hidden on mobile (last item has none) */}
+                {i < 3 && (
+                  <div className="hidden lg:flex items-center self-stretch -mx-1.5 mt-7" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-surface-300 flex-shrink-0">
+                      <path d="M2 6h8M7 2.5l3 3.5-3 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+
               </div>
             ))}
           </div>
+
         </div>
       </section>
 
