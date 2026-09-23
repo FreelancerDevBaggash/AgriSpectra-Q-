@@ -1,9 +1,11 @@
 /**
  * API Client for AgriSpectra-Q Backend
- * Production backend: https://agrispectra-q-production-7bd0.up.railway.app
+ *
+ * apiClient     → Demo API  (https://api.agrispectra-q.cloud)   default
+ * prodApiClient → Prod API  (https://prod.agrispectra-q.cloud)  upload-only
  */
 
-import { API_BASE } from './config'
+import { API_BASE, PROD_API_BASE } from './config'
 const API_BASE_URL = API_BASE
 
 // ── Upload types ─────────────────────────────────────────────────────────────
@@ -280,8 +282,11 @@ class ApiClient {
 
 }
 
-// Export singleton instance
-export const apiClient = new ApiClient()
+// Demo API — 3 pre-loaded EnMAP scenes, ~0.8 s response (default)
+export const apiClient = new ApiClient(API_BASE)
+
+// Production API — upload-only, runs real engine on user's GeoTIFF
+export const prodApiClient = new ApiClient(PROD_API_BASE)
 
 // Export class for custom instances
 export { ApiClient }
