@@ -46,7 +46,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL:
       process.env.NEXT_PUBLIC_API_URL ||
-      'https://agrispectra-q-production-7bd0.up.railway.app',
+      'https://api.agrispectra-q.cloud',
   },
 
   webpack: (config) => {

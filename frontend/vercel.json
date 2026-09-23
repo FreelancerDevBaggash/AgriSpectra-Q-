@@ -5,7 +5,7 @@
   "installCommand": "npm install",
   "build": {
     "env": {
-      "NEXT_PUBLIC_API_URL": "https://agrispectra-q-production-7bd0.up.railway.app"
+      "NEXT_PUBLIC_API_URL": "https://api.agrispectra-q.cloud"
     }
   }
 }

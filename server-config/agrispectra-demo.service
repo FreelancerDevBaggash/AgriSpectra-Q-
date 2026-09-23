@@ -1,0 +1,16 @@
+[Unit]
+Description=AgriSpectra-Q Demo API (Flask)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/agrispectra
+ExecStart=/opt/agrispectra/venv/bin/python api/demo_api.py --host 127.0.0.1 --port 8765
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+Environment=FLASK_ENV=production
+
+[Install]
+WantedBy=multi-user.target
