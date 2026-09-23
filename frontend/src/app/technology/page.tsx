@@ -4,67 +4,62 @@ const TECH_STACK = [
   {
     layer: 'Frontend',
     items: [
-      { name: 'Next.js 15.1',    desc: 'React framework — App Router, SSR, code splitting' },
+      { name: 'Next.js 15',      desc: 'React framework with server-side rendering' },
       { name: 'React 19',        desc: 'UI component library' },
       { name: 'TypeScript 5.7',  desc: 'End-to-end type safety' },
-      { name: 'Tailwind CSS 3.4',desc: 'Utility-first styling, responsive design' },
-      { name: 'Recharts 2.15',   desc: 'Risk & budget visualisation charts' },
-      { name: 'MapLibre GL 5',   desc: 'Interactive georeferenced zone maps' },
-      { name: 'Lucide React',    desc: 'Consistent icon system' },
+      { name: 'Tailwind CSS',    desc: 'Responsive design system' },
+      { name: 'Recharts',        desc: 'Risk & budget visualisation charts' },
+      { name: 'MapLibre GL',     desc: 'Interactive georeferenced zone maps' },
     ],
   },
   {
     layer: 'Backend API',
     items: [
-      { name: 'Python 3.11+', desc: 'Core runtime for engine and API' },
-      { name: 'Flask 3.0',    desc: 'Lightweight REST API server (port 8765)' },
-      { name: 'flask-cors',   desc: 'Cross-origin request support for frontend dev' },
+      { name: 'Python 3.11+', desc: 'Core runtime for analysis engine and API' },
+      { name: 'Flask 3.0',    desc: 'Lightweight REST API server' },
     ],
   },
   {
     layer: 'Processing Engine',
     items: [
-      { name: 'Rasterio 1.3',  desc: 'Georeferenced GeoTIFF I/O with windowed streaming' },
-      { name: 'NumPy 1.26',    desc: 'Vectorised spectral band arithmetic' },
-      { name: 'SciPy 1.13',   desc: 'Connected-component labelling (ndimage)' },
+      { name: 'Rasterio',  desc: 'Georeferenced GeoTIFF reading with windowed streaming' },
+      { name: 'NumPy',     desc: 'Vectorised spectral band arithmetic' },
+      { name: 'SciPy',     desc: 'Connected-component zone detection' },
     ],
   },
   {
     layer: 'Scientific Benchmark',
     items: [
-      { name: 'scikit-learn 1.4', desc: 'Random Forest, calibration, cross-validation' },
-      { name: 'XGBoost 2.0',     desc: 'Gradient-boosted tree models (48-band, spectral)' },
-      { name: 'pandas 2.2',      desc: 'Data manipulation and result tables' },
-      { name: 'matplotlib 3.8',  desc: 'Scientific figures and benchmark charts' },
+      { name: 'scikit-learn', desc: 'Random Forest, calibration, cross-validation' },
+      { name: 'XGBoost',      desc: 'Gradient-boosted tree models on spectral features' },
+      { name: 'pandas',       desc: 'Data manipulation and result tables' },
+      { name: 'matplotlib',   desc: 'Scientific figures and benchmark charts' },
     ],
   },
   {
-    layer: 'Data & Storage',
+    layer: 'Data',
     items: [
-      { name: 'EnMAP GeoTIFF', desc: '224-band hyperspectral L2A scenes, 30 m/px resolution' },
-      { name: 'GeoJSON',       desc: 'Georeferenced zone boundaries with CRS metadata' },
-      { name: 'CSV',           desc: 'Zone tables, spectral evidence, inspection budgets' },
-      { name: 'JSON',          desc: 'Run summaries, manifests, scene statistics' },
+      { name: 'EnMAP GeoTIFF', desc: '224-band hyperspectral L2A scenes at 30 m/px resolution' },
+      { name: 'GeoJSON',       desc: 'Georeferenced zone boundaries with coordinate metadata' },
     ],
   },
   {
-    layer: 'DevOps & Deploy',
+    layer: 'Deployment',
     items: [
-      { name: 'Git / GitHub',     desc: 'Version control and CI/CD trigger' },
-      { name: 'Vercel',           desc: 'Frontend deployment (Next.js first-class)' },
-      { name: 'Docker',           desc: 'Containerised backend deployment' },
-      { name: 'Railway / Render', desc: 'Backend cloud hosting options' },
+      { name: 'Vercel',  desc: 'Frontend — global edge network, automatic HTTPS' },
+      { name: 'Ubuntu VPS + nginx', desc: 'Backend — dedicated server with SSL certificates' },
+      { name: 'Docker',  desc: 'Containerised engine for reproducible builds' },
     ],
   },
 ]
 
 const ARCHITECTURE_STEPS = [
-  { step: '1', title: 'User selects EnMAP scene',           detail: 'Frontend sends POST /api/analyse with scene ID' },
-  { step: '2', title: 'Flask API dispatches engine',         detail: 'Spawns live_matrix_engine.py subprocess with unique run ID' },
-  { step: '3', title: 'Engine runs two-pass streaming analysis', detail: 'Pass 1: online mean/variance over 32 bands. Pass 2: RMS spectral deviation risk raster' },
-  { step: '4', title: 'Priority zones extracted',            detail: 'Connected components above 95th percentile → ranked zone table + GeoTIFF + GeoJSON' },
-  { step: '5', title: 'Results written to disk',             detail: 'results/live_matrix/<run_id>/<scene>/ — all outputs are immutable per run' },
-  { step: '6', title: 'Dashboard fetches and renders',       detail: 'Frontend polls /api/runs/<run_id>/* and renders zones, charts, budget table' },
+  { step: '1', title: 'Select an EnMAP scene',              detail: 'Choose from three pre-loaded hyperspectral scenes captured over agricultural zones in the UAE' },
+  { step: '2', title: 'Live analysis engine activates',      detail: 'Two-pass spectral anomaly detection runs across all 224 bands of the selected scene' },
+  { step: '3', title: 'Risk raster computed',                detail: 'Per-pixel RMS spectral deviation scores identify crop stress signatures across the full scene' },
+  { step: '4', title: 'Priority zones extracted',            detail: 'High-risk connected regions are ranked by severity, area, and spectral confidence' },
+  { step: '5', title: 'Georeferenced outputs generated',     detail: 'Zone boundaries, spectral evidence, and inspection budget are exported with full coordinate metadata' },
+  { step: '6', title: 'Interactive dashboard rendered',      detail: 'Zones, risk maps, spectral charts, and budget recommendations are displayed in real time' },
 ]
 
 const SCIENTIFIC_DESIGN = [
@@ -116,52 +111,6 @@ export default function TechnologyPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* Directory Layout */}
-        <section>
-          <p className="section-label mb-2">PROJECT STRUCTURE</p>
-          <h2 className="text-lg font-semibold text-surface-900 mb-4">Directory Layout</h2>
-          <div className="bg-surface-900 text-surface-100 rounded-lg p-5 font-mono text-xs leading-relaxed overflow-x-auto">
-            <pre>{`AgriSpectra-Q/
-├── backend/
-│   ├── api/
-│   │   └── live_matrix_api.py       ← Flask REST server (port 8765)
-│   ├── engine/
-│   │   └── live_matrix_engine.py    ← Spectral-anomaly core engine
-│   ├── benchmark/
-│   │   ├── final_six_benchmark.py   ← Frozen 6-model validation
-│   │   └── ...                      ← Analysis & reporting scripts
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── src/app/
-│   │   ├── page.tsx                 ← Home / landing
-│   │   ├── intelligence/page.tsx    ← Scene selection + run trigger
-│   │   ├── dashboard/page.tsx       ← Results, zones, charts
-│   │   ├── results/page.tsx         ← Frozen benchmark results
-│   │   ├── project/page.tsx         ← About the project
-│   │   └── technology/page.tsx      ← This page
-│   ├── src/components/
-│   │   ├── Navigation.tsx
-│   │   └── Footer.tsx
-│   └── src/lib/
-│       ├── api.ts                   ← API client
-│       ├── types.ts                 ← TypeScript types
-│       └── utils.ts                 ← Helpers
-│
-├── data/
-│   └── raw/enmap_three_scenes/
-│       ├── scene_01_DT0000205230.TIF
-│       ├── scene_02.TIF
-│       └── scene_03.TIF
-│
-├── results/
-│   ├── live_matrix/                 ← Engine run outputs
-│   └── industrial_validation/       ← Frozen benchmark results
-│
-└── docs/                            ← Architecture & spec documents`}</pre>
           </div>
         </section>
 
