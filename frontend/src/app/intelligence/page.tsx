@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { apiClient, UploadProgressEvent, UploadHandle } from '@/lib/api'
+import { apiClient, prodApiClient, UploadProgressEvent, UploadHandle } from '@/lib/api'
 import { saveRun, getRunHistory, RunHistoryEntry } from '@/lib/runHistory'
 import { API_BASE } from '@/lib/config'
 
@@ -199,7 +199,7 @@ export default function IntelligencePage() {
     return () => {
       // Abort any in-flight upload/processing on unmount
       activeHandleRef.current?.abort()
-      if (processingRunIdRef.current) apiClient.abortRun(processingRunIdRef.current)
+      if (processingRunIdRef.current) prodApiClient.abortRun(processingRunIdRef.current)
       if (tickRef.current)            clearInterval(tickRef.current)
       if (stepTickRef.current)        clearInterval(stepTickRef.current)
       if (redirectTimerRef.current)   clearTimeout(redirectTimerRef.current)
@@ -224,7 +224,7 @@ export default function IntelligencePage() {
       activeHandleRef.current = null
     }
     if (processingRunIdRef.current) {
-      apiClient.abortRun(processingRunIdRef.current)
+      prodApiClient.abortRun(processingRunIdRef.current)
       processingRunIdRef.current = null
     }
     clearUploadTimers()
@@ -281,7 +281,7 @@ export default function IntelligencePage() {
     }
     // Phase B: tell the server to abort if processing has started
     if (processingRunIdRef.current) {
-      await apiClient.abortRun(processingRunIdRef.current)
+      await prodApiClient.abortRun(processingRunIdRef.current)
       processingRunIdRef.current = null
     }
     clearUploadTimers()
@@ -304,7 +304,7 @@ export default function IntelligencePage() {
     processingRunIdRef.current = null
 
     // Elapsed timer — only runs during processing phase (not upload)
-    const handle = apiClient.uploadAndAnalyse(uploadFile, (evt: UploadProgressEvent) => {
+    const handle = prodApiClient.uploadAndAnalyse(uploadFile, (evt: UploadProgressEvent) => {
       setUploadProgress(evt)
       // Transition to processing once upload is 100%
       if (evt.uploadPct === 100) {
