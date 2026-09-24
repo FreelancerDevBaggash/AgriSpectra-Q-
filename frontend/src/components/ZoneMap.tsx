@@ -31,12 +31,11 @@ export interface MapZone {
 
 interface ZoneMapProps {
   /** GeoJSON FeatureCollection — must be in WGS-84 (EPSG:4326) */
-  geojson:        GeoJSON.FeatureCollection | null
-  zones:          MapZone[]
-  runId:          string
-  scene:          string
-  /** Height of the map container (default 520) */
-  height?:        number
+  geojson:  GeoJSON.FeatureCollection | null
+  zones:    MapZone[]
+  runId:    string
+  scene:    string
+  height?:  number
 }
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
@@ -89,11 +88,9 @@ function geojsonBounds(geojson: GeoJSON.FeatureCollection): LngLatBoundsLike | n
     if (f.geometry) collect((f.geometry as GeoJSON.Polygon).coordinates)
   }
 
-  const valid = lons.filter((_, i) => lons[i] >= -180 && lons[i] <= 180 && lats[i] >= -90 && lats[i] <= 90)
-  if (valid.length === 0) return null
-
-  const validLons = lons.filter((v) => v >= -180 && v <= 180)
-  const validLats = lats.filter((v) => v >= -90 && v <= 90)
+  const validLons = lons.filter((v, i) => v >= -180 && v <= 180 && lats[i] >= -90 && lats[i] <= 90)
+  const validLats = lats.filter((v, i) => v >= -90 && v <= 90 && lons[i] >= -180 && lons[i] <= 180)
+  if (validLons.length === 0) return null
 
   return [
     [Math.min(...validLons), Math.min(...validLats)],
@@ -106,12 +103,12 @@ function geojsonBounds(geojson: GeoJSON.FeatureCollection): LngLatBoundsLike | n
 export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: ZoneMapProps) {
   const mapRef = useRef<MapRef>(null)
 
-  const [selectedId,   setSelectedId]   = useState<string | null>(null)
-  const [hoveredId,    setHoveredId]    = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [hoveredId,  setHoveredId]  = useState<string | null>(null)
   const [popup, setPopup] = useState<{ lng: number; lat: number; zone: MapZone } | null>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
 
-  // Fit bounds once GeoJSON loads or map becomes ready
+  // Fit to GeoJSON bounds whenever map loads or geojson arrives
   const fitBounds = useCallback(() => {
     if (!geojson || !mapRef.current) return
     const bounds = geojsonBounds(geojson)
@@ -148,8 +145,6 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
     const matched = zones.find(z => z.zone_id === zoneId) ?? null
     if (matched && e.lngLat) {
       setPopup({ lng: e.lngLat.lng, lat: e.lngLat.lat, zone: matched })
-
-      // Zoom to zone polygon bounds
       if (feat.geometry?.type === 'Polygon' && mapRef.current) {
         const coords = (feat.geometry as GeoJSON.Polygon).coordinates[0]
         const lngs = coords.map(c => c[0])
@@ -164,32 +159,13 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
 
   // ── Layer paint expressions ────────────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fillColor: any = ['case', ['==', ['get', 'zone_id'], selectedId ?? ''], '#3b82f6', ['==', ['get', 'zone_id'], hoveredId ?? ''], '#f59e0b', riskColorExpression()]
+  const fillColor: any  = ['case', ['==', ['get', 'zone_id'], selectedId ?? ''], '#3b82f6', ['==', ['get', 'zone_id'], hoveredId ?? ''], '#f59e0b', riskColorExpression()]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fillOpacity: any = ['case', ['==', ['get', 'zone_id'], selectedId ?? ''], 0.85, ['==', ['get', 'zone_id'], hoveredId ?? ''], 0.75, 0.55]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lineColor: any = ['case', ['==', ['get', 'zone_id'], selectedId ?? ''], '#93c5fd', ['==', ['get', 'zone_id'], hoveredId ?? ''], '#fcd34d', 'rgba(255,255,255,0.3)']
+  const lineColor: any  = ['case', ['==', ['get', 'zone_id'], selectedId ?? ''], '#93c5fd', ['==', ['get', 'zone_id'], hoveredId ?? ''], '#fcd34d', 'rgba(255,255,255,0.3)']
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lineWidth: any = ['case', ['==', ['get', 'zone_id'], selectedId ?? ''], 2.5, ['==', ['get', 'zone_id'], hoveredId ?? ''], 1.5, 0.6]
-
-  // ── Empty state ────────────────────────────────────────────────────────────
-
-  if (!geojson) {
-    return (
-      <div
-        className="flex items-center justify-center bg-surface-950 rounded-xl border border-surface-800 text-surface-500"
-        style={{ height }}
-      >
-        <div className="text-center space-y-2">
-          <svg className="w-10 h-10 mx-auto opacity-30" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497z" />
-          </svg>
-          <p className="text-sm">Zone geometry unavailable</p>
-          <p className="text-xs opacity-60">zones.geojson was not produced for this run</p>
-        </div>
-      </div>
-    )
-  }
+  const lineWidth: any  = ['case', ['==', ['get', 'zone_id'], selectedId ?? ''], 2.5, ['==', ['get', 'zone_id'], hoveredId ?? ''], 1.5, 0.6]
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -198,35 +174,49 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
   return (
     <div className="relative rounded-xl overflow-hidden border border-surface-200 shadow-sm" style={{ height }}>
 
+      {/* Empty state overlay — shown inside the map when geojson hasn't loaded */}
+      {!geojson && (
+        <div className="absolute inset-0 flex items-center justify-center bg-surface-950/70 z-20 pointer-events-none">
+          <div className="text-center space-y-2 text-surface-400">
+            <svg className="w-10 h-10 mx-auto opacity-40" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497z" />
+            </svg>
+            <p className="text-sm">Zone geometry unavailable</p>
+            <p className="text-xs opacity-60">zones.geojson was not produced for this run</p>
+          </div>
+        </div>
+      )}
+
       <Map
         ref={mapRef}
         mapStyle="https://tiles.openfreemap.org/styles/dark"
         initialViewState={{ longitude: 54.4, latitude: 24.5, zoom: 6 }}
         style={{ width: '100%', height: '100%' }}
-        interactiveLayerIds={['zones-fill']}
+        interactiveLayerIds={geojson ? ['zones-fill'] : []}
         onLoad={() => setMapLoaded(true)}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
         attributionControl={false}
       >
-        {/* Controls */}
         <NavigationControl position="top-right" />
         <ScaleControl position="bottom-right" unit="metric" />
 
-        {/* Zone layers */}
-        <Source id="zones" type="geojson" data={geojson}>
-          <Layer
-            id="zones-fill"
-            type="fill"
-            paint={{ 'fill-color': fillColor, 'fill-opacity': fillOpacity }}
-          />
-          <Layer
-            id="zones-outline"
-            type="line"
-            paint={{ 'line-color': lineColor, 'line-width': lineWidth }}
-          />
-        </Source>
+        {/* Zone layers — only when GeoJSON is available */}
+        {geojson && (
+          <Source id="zones" type="geojson" data={geojson}>
+            <Layer
+              id="zones-fill"
+              type="fill"
+              paint={{ 'fill-color': fillColor, 'fill-opacity': fillOpacity }}
+            />
+            <Layer
+              id="zones-outline"
+              type="line"
+              paint={{ 'line-color': lineColor, 'line-width': lineWidth }}
+            />
+          </Source>
+        )}
 
         {/* Popup */}
         {popup && (
@@ -236,14 +226,13 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
             closeOnClick={false}
             onClose={() => { setPopup(null); setSelectedId(null) }}
             maxWidth="260px"
-            className="zone-popup"
           >
             <PopupContent zone={popup.zone} runId={runId} scene={scene} />
           </Popup>
         )}
       </Map>
 
-      {/* ── Top-left: fit-bounds button ── */}
+      {/* Fit-bounds button */}
       <button
         onClick={fitBounds}
         title="Fit all zones"
@@ -254,15 +243,15 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
         </svg>
       </button>
 
-      {/* ── Bottom-left: legend ── */}
+      {/* Legend */}
       <div className="absolute bottom-8 left-3 z-10 bg-surface-900/85 backdrop-blur-sm rounded-xl px-3.5 py-3 text-white shadow-lg min-w-[160px]">
         <p className="text-[10px] font-bold uppercase tracking-widest text-surface-400 mb-2">Risk Level</p>
         <div className="space-y-1.5">
           {[
-            { color: 'bg-emerald-500',  label: 'Low anomaly',      sub: '< 1.0 σ' },
-            { color: 'bg-yellow-400',   label: 'Medium anomaly',   sub: '1.0–2.0 σ' },
-            { color: 'bg-orange-500',   label: 'High anomaly',     sub: '2.0–2.5 σ' },
-            { color: 'bg-red-600',      label: 'Critical anomaly', sub: '> 2.5 σ' },
+            { color: 'bg-emerald-500', label: 'Low anomaly',      sub: '< 1.0 σ' },
+            { color: 'bg-yellow-400',  label: 'Medium anomaly',   sub: '1.0–2.0 σ' },
+            { color: 'bg-orange-500',  label: 'High anomaly',     sub: '2.0–2.5 σ' },
+            { color: 'bg-red-600',     label: 'Critical anomaly', sub: '> 2.5 σ' },
           ].map(({ color, label, sub }) => (
             <div key={label} className="flex items-center gap-2">
               <span className={`w-3 h-3 rounded-sm flex-shrink-0 ${color}`} />
@@ -285,12 +274,14 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
         </div>
       </div>
 
-      {/* ── Bottom-right: zone count badge ── */}
+      {/* Zone count badge */}
       <div className="absolute bottom-8 right-12 z-10 bg-surface-900/80 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-white shadow-md">
-        <span className="text-[11px] font-semibold tabular-nums">{geojson.features.length} zones</span>
+        <span className="text-[11px] font-semibold tabular-nums">
+          {geojson ? `${geojson.features.length} zones` : 'No data'}
+        </span>
       </div>
 
-      {/* ── Selected zone mini-panel (top center) ── */}
+      {/* Selected zone info panel */}
       {selectedZone && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-surface-900/90 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white shadow-lg max-w-xs pointer-events-none">
           <div className="flex items-center gap-2.5">
@@ -331,7 +322,6 @@ function PopupContent({ zone, runId, scene }: { zone: MapZone; runId: string; sc
 
       {/* Body */}
       <div className="px-3 py-2.5 space-y-2">
-        {/* Priority badge */}
         <div className="flex items-center gap-2">
           <span className={`text-[11px] px-2 py-0.5 rounded-full border font-semibold ${priorityBadgeClass(zone.priority_category)}`}>
             {zone.priority_category || 'Unknown'}
@@ -341,7 +331,6 @@ function PopupContent({ zone, runId, scene }: { zone: MapZone; runId: string; sc
           )}
         </div>
 
-        {/* Stats grid */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
           <div>
             <span className="text-surface-400 block">Rank</span>
@@ -367,7 +356,7 @@ function PopupContent({ zone, runId, scene }: { zone: MapZone; runId: string; sc
           )}
         </div>
 
-        {/* Risk bar */}
+        {/* Risk intensity bar */}
         <div>
           <div className="flex justify-between text-[10px] text-surface-400 mb-1">
             <span>Anomaly intensity</span>
@@ -384,18 +373,16 @@ function PopupContent({ zone, runId, scene }: { zone: MapZone; runId: string; sc
           </div>
         </div>
 
-        {/* Recommendation */}
         {zone.recommendation && (
           <p className="text-[10px] text-surface-500 leading-relaxed border-t border-surface-100 pt-2">
             {zone.recommendation}
           </p>
         )}
 
-        {/* Field verification notice */}
         <p className="text-[10px] text-amber-600 font-medium">Field verification required</p>
       </div>
 
-      {/* Footer link */}
+      {/* Footer */}
       <div className="border-t border-surface-100 px-3 py-2 bg-surface-50">
         <a
           href={`/spectral-evidence?run_id=${runId}&scene=${scene}&zone_id=${encodeURIComponent(zone.zone_id)}`}
