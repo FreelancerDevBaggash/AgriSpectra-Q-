@@ -266,6 +266,17 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
           setLoaded(true)
           const map = mapRef.current?.getMap()
           if (!map) return
+          // ── Water: give sea/ocean a clear blue so it's distinct from land ──
+          if (map.getLayer('water')) {
+            map.setPaintProperty('water', 'fill-color', '#0e2340')
+          }
+          if (map.getLayer('waterway')) {
+            map.setPaintProperty('waterway', 'line-color', '#1a3a5c')
+          }
+          // ── Land: slightly lighter than background so contrast is visible ──
+          if (map.getLayer('landcover')) {
+            map.setPaintProperty('landcover', 'fill-color', '#1a1f2e')
+          }
           // ── Exact layer IDs confirmed from openfreemap dark style ─────────
           // Boundaries
           ;['boundary_country_z0-4', 'boundary_country_z5-', 'boundary_state'].forEach(id => {
