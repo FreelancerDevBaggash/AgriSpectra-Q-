@@ -34,3 +34,10 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# ── Large upload TIFFs (root-level) ─────────────
+*.tiff
+*.TIFF
+
+# ── Test result runs ─────────────────────────────
+results/test_corrected_run/

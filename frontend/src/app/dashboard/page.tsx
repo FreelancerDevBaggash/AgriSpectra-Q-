@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { API_BASE } from '@/lib/config'
+import { API_BASE, PROD_API_BASE } from '@/lib/config'
 import {
   MapPin, AlertTriangle, Download, RefreshCw,
   BarChart3, List, ArrowLeft, ExternalLink, Map as MapIcon,
@@ -93,12 +93,23 @@ function riskBarColor(val: number) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
+/** Pick the right backend based on run_id prefix:
+ *  AGRQ-LIVE-API-*  → uploaded via prod API → prod.agrispectra-q.cloud
+ *  everything else  → demo pre-loaded scenes → api.agrispectra-q.cloud
+ */
+function apiBase(runId: string): string {
+  return runId.startsWith('AGRQ-LIVE-API-') ? PROD_API_BASE : API_BASE
+}
+
 function DashboardContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
   const runId = searchParams.get('run_id') ?? ''
   const scene = searchParams.get('scene') ?? 'scene_01_DT0000205230'
+
+  // Derived — recalculated whenever runId changes
+  const BASE = apiBase(runId)
 
   const [summary, setSummary] = useState<RunSummary | null>(null)
   const [zones, setZones] = useState<Zone[]>([])
@@ -118,13 +129,12 @@ function DashboardContent() {
     setLoading(true); setError(null); setFrozen(false)
     try {
       const [summaryRes, zonesRes, budgetRes] = await Promise.all([
-        fetch(`${API_BASE}/api/runs/${runId}`),
-        fetch(`${API_BASE}/api/runs/${runId}/zones`),
-        fetch(`${API_BASE}/api/runs/${runId}/inspection`),
+        fetch(`${BASE}/api/runs/${runId}`),
+        fetch(`${BASE}/api/runs/${runId}/zones`),
+        fetch(`${BASE}/api/runs/${runId}/inspection`),
       ])
 
       if (!summaryRes.ok) throw new Error('Run not found. The backend may be offline.')
-      // ── Backward compat: old run_summary.json may lack `mode` and `timestamp`
       const rawSummary = await summaryRes.json()
       setSummary({
         ...rawSummary,
@@ -136,15 +146,15 @@ function DashboardContent() {
         const zonesData = await zonesRes.json()
         const sceneFile = zonesData.files?.find((f: { scene: string; download: string }) => f.scene === scene)
         if (sceneFile) {
-          const csvRes = await fetch(`${API_BASE}${sceneFile.download}`)
+          const csvRes = await fetch(`${BASE}${sceneFile.download}`)
           if (csvRes.ok) setZones(parseCSV<Zone>(await csvRes.text()))
 
           // Fetch scene_statistics.json
-          const statsRes = await fetch(`${API_BASE}/api/runs/${runId}/files/${scene}/scene_statistics.json`)
+          const statsRes = await fetch(`${BASE}/api/runs/${runId}/files/${scene}/scene_statistics.json`)
           if (statsRes.ok) setSceneStats(await statsRes.json())
 
-          // Fetch zones.geojson — engine now outputs WGS-84 directly (EPSG:4326)
-          const geoRes = await fetch(`${API_BASE}/api/runs/${runId}/files/${scene}/zones.geojson`)
+          // Fetch zones.geojson — engine outputs WGS-84 directly (EPSG:4326)
+          const geoRes = await fetch(`${BASE}/api/runs/${runId}/files/${scene}/zones.geojson`)
           if (geoRes.ok) setGeojson(await geoRes.json())
         }
       }
@@ -153,7 +163,7 @@ function DashboardContent() {
         const budgetData = await budgetRes.json()
         const sceneFile = budgetData.files?.find((f: { scene: string; download: string }) => f.scene === scene)
         if (sceneFile) {
-          const csvRes = await fetch(`${API_BASE}${sceneFile.download}`)
+          const csvRes = await fetch(`${BASE}${sceneFile.download}`)
           if (csvRes.ok) {
             // ── Backward compat shim: old CSV uses `budget` / `proxy_positive_coverage`
             // New engine writes: `budget_fraction` / `positive_recall` / `coverage_percentage`
@@ -351,7 +361,7 @@ function DashboardContent() {
               {
                 label: 'Zone Boundaries',
                 sub:   'GeoJSON · georeferenced polygons',
-                href:  `${API_BASE}/api/runs/${runId}/zones`,
+                href:  `${BASE}/api/runs/${runId}/zones`,
                 icon:  (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 ),
@@ -359,7 +369,7 @@ function DashboardContent() {
               {
                 label: 'Inspection Budget',
                 sub:   'CSV · recall vs budget fraction',
-                href:  `${API_BASE}/api/runs/${runId}/inspection`,
+                href:  `${BASE}/api/runs/${runId}/inspection`,
                 icon:  (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                 ),
@@ -367,7 +377,7 @@ function DashboardContent() {
               {
                 label: 'Full Run Report',
                 sub:   'JSON · run summary & metadata',
-                href:  `${API_BASE}/api/runs/${runId}/report`,
+                href:  `${BASE}/api/runs/${runId}/report`,
                 icon:  (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 ),
