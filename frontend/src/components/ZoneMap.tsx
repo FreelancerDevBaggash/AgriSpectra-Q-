@@ -163,7 +163,13 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
     mapRef.current.fitBounds(b, { padding: isMobile ? 32 : 52, duration: 900, maxZoom: 14 })
   }, [geojson, isMobile])
 
-  useEffect(() => { if (loaded && geojson) fitAll() }, [loaded, geojson, fitAll])
+  // fit whenever geojson arrives OR map finishes loading — whichever comes last
+  // use a short delay so the map canvas is ready after tab-switch renders
+  useEffect(() => {
+    if (!loaded || !geojson) return
+    const t = setTimeout(fitAll, 120)
+    return () => clearTimeout(t)
+  }, [loaded, geojson, fitAll])
 
   // ── Events ────────────────────────────────────────────────────────────────
   const onMove = useCallback((e: MapLayerMouseEvent) => {

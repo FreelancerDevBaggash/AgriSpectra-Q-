@@ -604,9 +604,10 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Map tab — ZoneMap component */}
+          {/* Map tab — key=runId forces full remount on new run so fitBounds fires fresh */}
           {activeTab === 'map' && (
             <ZoneMap
+              key={runId}
               geojson={geojson}
               zones={zones}
               runId={runId}
