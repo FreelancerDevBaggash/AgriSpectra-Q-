@@ -1,19 +1,17 @@
 'use client'
 
-import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import * as maplibregl from 'maplibre-gl'
-import proj4 from 'proj4'
 import { API_BASE } from '@/lib/config'
 import {
   MapPin, AlertTriangle, Download, RefreshCw,
-  BarChart3, List, ArrowLeft, ExternalLink, Map as MapIcon, Layers
+  BarChart3, List, ArrowLeft, ExternalLink, Map as MapIcon,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts'
-import Map, { Source, Layer, Popup, NavigationControl, type MapRef, type MapLayerMouseEvent } from 'react-map-gl/maplibre'
 import { parseCSV } from '@/lib/utils'
+import ZoneMap from '@/components/ZoneMap'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -93,98 +91,7 @@ function riskBarColor(val: number) {
   return '#63C72B'                 // accent lime — low
 }
 
-// ── CRS conversion ────────────────────────────────────────────────────────────
-// The engine outputs GeoJSON in the scene's native CRS (e.g. EPSG:32653 UTM).
-// MapLibre requires WGS84 (EPSG:4326). We reproject every coordinate on load.
-
-// EPSG definitions needed for UAE/Gulf EnMAP scenes:
-//   32637 = UTM Zone 37N  (UAE mainland — Al Ain area)
-//   32638 = UTM Zone 38N
-//   32640 = UTM Zone 40N
-//   32653 = UTM Zone 53N
-//   32753 = UTM Zone 53S
-proj4.defs('EPSG:32637', '+proj=utm +zone=37 +datum=WGS84 +units=m +no_defs')
-proj4.defs('EPSG:32638', '+proj=utm +zone=38 +datum=WGS84 +units=m +no_defs')
-proj4.defs('EPSG:32640', '+proj=utm +zone=40 +datum=WGS84 +units=m +no_defs')
-proj4.defs('EPSG:32653', '+proj=utm +zone=53 +datum=WGS84 +units=m +no_defs')
-proj4.defs('EPSG:32753', '+proj=utm +zone=53 +south +datum=WGS84 +units=m +no_defs')
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function reprojectGeoJSON(geojson: any): any {
-  if (!geojson) return geojson
-
-  // Detect source CRS from GeoJSON crs property (EPSG:XXXXX)
-  const crsName: string = geojson?.crs?.properties?.name ?? 'EPSG:4326'
-  if (crsName === 'EPSG:4326' || crsName.includes('4326')) return geojson // already WGS84
-
-  // Check proj4 knows this CRS — if not, return as-is (MapLibre will show nothing but won't crash)
-  let converter: ((coord: number[]) => number[]) | null = null
-  try {
-    const fromProj = proj4(crsName)
-    converter = (c: number[]) => proj4(crsName, 'EPSG:4326', [c[0], c[1]])
-    void fromProj // suppress unused warning
-  } catch {
-    console.warn('[dashboard] Unknown CRS:', crsName, '— skipping reprojection')
-    return geojson
-  }
-
-  // Deep-clone and reproject all coordinate arrays
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function reprojectCoords(coords: any): any {
-    if (typeof coords[0] === 'number') return converter!(coords)
-    return coords.map(reprojectCoords)
-  }
-
-  return {
-    ...geojson,
-    crs: { type: 'name', properties: { name: 'EPSG:4326' } },
-    features: geojson.features.map((f: any) => ({
-      ...f,
-      geometry: f.geometry
-        ? { ...f.geometry, coordinates: reprojectCoords(f.geometry.coordinates) }
-        : f.geometry,
-    })),
-  }
-}
-
-// Compute the geographic centre + rough zoom from a reprojected WGS84 GeoJSON.
-// Returns null if the GeoJSON has no valid coordinates.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function geojsonCenter(geojson: any): { longitude: number; latitude: number; zoom: number } | null {
-  if (!geojson?.features?.length) return null
-  const lngs: number[] = []
-  const lats: number[] = []
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function collect(coords: any): void {
-    if (typeof coords[0] === 'number') { lngs.push(coords[0]); lats.push(coords[1]); return }
-    for (const c of coords) collect(c)
-  }
-  for (const f of geojson.features) {
-    if (f.geometry?.coordinates) collect(f.geometry.coordinates)
-  }
-  const valid = lngs.filter((_, i) => lngs[i] >= -180 && lngs[i] <= 180 && lats[i] >= -90 && lats[i] <= 90)
-  if (!valid.length) return null
-  const validLngs = lngs.filter((v, i) => lats[i] >= -90 && lats[i] <= 90 && v >= -180 && v <= 180)
-  const validLats = lats.filter((v, i) => lngs[i] >= -180 && lngs[i] <= 180 && v >= -90 && v <= 90)
-  const minLng = Math.min(...validLngs), maxLng = Math.max(...validLngs)
-  const minLat = Math.min(...validLats), maxLat = Math.max(...validLats)
-  const span = Math.max(maxLng - minLng, maxLat - minLat)
-  const zoom = span < 0.01 ? 14 : span < 0.1 ? 11 : span < 0.5 ? 9 : span < 2 ? 8 : 6
-  return {
-    longitude: (minLng + maxLng) / 2,
-    latitude:  (minLat + maxLat) / 2,
-    zoom,
-  }
-}
-
 // ── Main Component ────────────────────────────────────────────────────────────
-
-// Set worker URL once at module level so all Map instances share the same worker.
-// maplibre-gl v6 no longer bundles the worker inline — it must be served as a
-// separate file and pointed at via setWorkerUrl before any Map is created.
-if (typeof window !== 'undefined') {
-  maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs')
-}
 
 function DashboardContent() {
   const searchParams = useSearchParams()
@@ -199,10 +106,6 @@ function DashboardContent() {
   const [sceneStats, setSceneStats] = useState<SceneStatistics | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [geojson, setGeojson] = useState<any | null>(null)
-  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
-  const [hoveredZoneId, setHoveredZoneId] = useState<string | null>(null)
-  const [popupInfo, setPopupInfo] = useState<{ lng: number; lat: number; zone: Zone } | null>(null)
-  const mapRef = useRef<MapRef>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'zones' | 'budget' | 'chart' | 'map'>('zones')
@@ -240,9 +143,9 @@ function DashboardContent() {
           const statsRes = await fetch(`${API_BASE}/api/runs/${runId}/files/${scene}/scene_statistics.json`)
           if (statsRes.ok) setSceneStats(await statsRes.json())
 
-          // Fetch zones.geojson for the interactive map — reproject to WGS84 if needed
+          // Fetch zones.geojson — engine now outputs WGS-84 directly (EPSG:4326)
           const geoRes = await fetch(`${API_BASE}/api/runs/${runId}/files/${scene}/zones.geojson`)
-          if (geoRes.ok) setGeojson(reprojectGeoJSON(await geoRes.json()))
+          if (geoRes.ok) setGeojson(await geoRes.json())
         }
       }
 
@@ -281,39 +184,6 @@ function DashboardContent() {
   }, [runId, scene])
 
   useEffect(() => { load() }, [load])
-
-  // Auto-fit map to GeoJSON bounds.
-  // Runs when geojson loads OR when the map tab is first activated (map mounts lazily).
-  // Uses a short rAF delay to ensure MapLibre has mounted before fitBounds is called.
-  useEffect(() => {
-    if (!geojson || activeTab !== 'map') return
-    const id = requestAnimationFrame(() => {
-      if (!mapRef.current) return
-      const allCoords: number[][] = []
-      for (const feat of (geojson.features ?? [])) {
-        const geom = feat.geometry
-        if (!geom) continue
-        const flatten = (coords: unknown): void => {
-          if (typeof (coords as number[])[0] === 'number') { allCoords.push(coords as number[]); return }
-          for (const c of (coords as unknown[])) flatten(c)
-        }
-        flatten(geom.coordinates)
-      }
-      if (allCoords.length === 0) return
-      // Filter to valid WGS-84 ranges — UTM coords (>360) must not reach fitBounds
-      const valid = allCoords.filter(c =>
-        c[0] >= -180 && c[0] <= 180 && c[1] >= -90 && c[1] <= 90
-      )
-      if (valid.length === 0) return
-      const lngs = valid.map(c => c[0])
-      const lats = valid.map(c => c[1])
-      mapRef.current.fitBounds(
-        [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
-        { padding: 40, duration: 600 }
-      )
-    })
-    return () => cancelAnimationFrame(id)
-  }, [geojson, activeTab])
 
   const highCount = zones.filter(z => z.priority_category?.toLowerCase().includes('high')).length
   const medCount = zones.filter(z => z.priority_category?.toLowerCase().includes('medium')).length
@@ -699,131 +569,15 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Map tab — interactive MapLibre zone map */}
+          {/* Map tab — ZoneMap component */}
           {activeTab === 'map' && (
-            <div className="border border-surface-200 rounded-lg overflow-hidden bg-surface-900" style={{ height: 480 }}>
-              {!geojson ? (
-                <div className="h-full flex items-center justify-center text-surface-400 text-sm">
-                  <div className="text-center">
-                    <Layers className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    <p>Zone geometry unavailable for this run.</p>
-                    <p className="text-xs mt-1 opacity-60">zones.geojson was not produced or could not be loaded.</p>
-                  </div>
-                </div>
-              ) : (
-                <Map
-                  ref={mapRef}
-                  mapStyle="https://tiles.openfreemap.org/styles/dark"
-                  initialViewState={geojsonCenter(geojson) ?? { longitude: 54.4, latitude: 24.5, zoom: 8 }}
-                  style={{ width: '100%', height: '100%' }}
-                  interactiveLayerIds={['zones-fill']}
-                  onMouseMove={(e: MapLayerMouseEvent) => {
-                    const feat = e.features?.[0]
-                    setHoveredZoneId(feat ? (feat.properties?.zone_id ?? null) : null)
-                  }}
-                  onMouseLeave={() => setHoveredZoneId(null)}
-                  onClick={(e: MapLayerMouseEvent) => {
-                    const feat = e.features?.[0]
-                    if (!feat) { setSelectedZoneId(null); setPopupInfo(null); return }
-                    const zoneId: string = feat.properties?.zone_id ?? ''
-                    setSelectedZoneId(zoneId)
-                    const matched = zones.find(z => z.zone_id === zoneId) ?? null
-                    if (matched && e.lngLat) {
-                      setPopupInfo({ lng: e.lngLat.lng, lat: e.lngLat.lat, zone: matched })
-                      // Zoom to clicked zone bounds
-                      if (feat.geometry?.type === 'Polygon' && mapRef.current) {
-                        const coords = (feat.geometry as { type: string; coordinates: number[][][] }).coordinates[0]
-                        const lngs = coords.map((c: number[]) => c[0])
-                        const lats = coords.map((c: number[]) => c[1])
-                        mapRef.current.fitBounds(
-                          [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
-                          { padding: 80, duration: 600 }
-                        )
-                      }
-                    }
-                  }}
-                >
-                  <NavigationControl position="top-right" />
-
-                  <Source id="zones" type="geojson" data={geojson}>
-                    {/* Fill — colour by selection/hover */}
-                    <Layer
-                      id="zones-fill"
-                      type="fill"
-                      paint={{
-                        'fill-color': [
-                          'case',
-                          ['==', ['get', 'zone_id'], selectedZoneId ?? ''], '#2090ff',
-                          ['==', ['get', 'zone_id'], hoveredZoneId ?? ''],  '#f97316',
-                          '#ef4444',
-                        ],
-                        'fill-opacity': [
-                          'case',
-                          ['==', ['get', 'zone_id'], selectedZoneId ?? ''], 0.75,
-                          ['==', ['get', 'zone_id'], hoveredZoneId ?? ''],  0.65,
-                          0.45,
-                        ],
-                      }}
-                    />
-                    {/* Outline */}
-                    <Layer
-                      id="zones-outline"
-                      type="line"
-                      paint={{
-                        'line-color': [
-                          'case',
-                          ['==', ['get', 'zone_id'], selectedZoneId ?? ''], '#60b0ff',
-                          '#ff6060',
-                        ],
-                        'line-width': [
-                          'case',
-                          ['==', ['get', 'zone_id'], selectedZoneId ?? ''], 2,
-                          1,
-                        ],
-                      }}
-                    />
-                  </Source>
-
-                  {/* Popup on selected zone */}
-                  {popupInfo && (
-                    <Popup
-                      longitude={popupInfo.lng}
-                      latitude={popupInfo.lat}
-                      closeOnClick={false}
-                      onClose={() => setPopupInfo(null)}
-                      className="text-xs"
-                      maxWidth="240px"
-                    >
-                      <div className="p-1 space-y-1">
-                        <p className="font-bold text-surface-900 font-mono text-xs">{popupInfo.zone.zone_id}</p>
-                        <p className="text-gold-700 font-semibold text-xs">{popupInfo.zone.priority_category}</p>
-                        <p className="text-surface-600 text-xs">Rank <strong>#{popupInfo.zone.priority_rank ?? popupInfo.zone.rank ?? '—'}</strong></p>
-                        <p className="text-surface-600 text-xs">Score <strong>{typeof popupInfo.zone.mean_risk === 'number' ? popupInfo.zone.mean_risk.toFixed(3) : '—'} σ</strong></p>
-                        {(popupInfo.zone.approx_area_m2 ?? popupInfo.zone.area_m2) != null && (
-                          <p className="text-surface-600 text-xs">Area <strong>{((popupInfo.zone.approx_area_m2 ?? popupInfo.zone.area_m2)! / 10000).toFixed(2)} ha</strong></p>
-                        )}
-                        <p className="text-gold-700 text-2xs font-medium">Field verification required</p>
-                        <a
-                          href={`/spectral-evidence?run_id=${runId}&scene=${scene}&zone_id=${encodeURIComponent(popupInfo.zone.zone_id)}`}
-                          className="text-primary-600 underline text-xs block mt-1"
-                        >
-                          View spectral evidence →
-                        </a>
-                      </div>
-                    </Popup>
-                  )}
-                </Map>
-              )}
-
-              {/* Map legend */}
-              {geojson && (
-                <div className="absolute bottom-3 left-3 bg-surface-900/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white space-y-1 pointer-events-none">
-                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-teal-400 inline-block" /> Selected zone</div>
-                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-accent-400 inline-block" /> Hovered zone</div>
-                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-gold-500 inline-block" /> High-priority zone</div>
-                </div>
-              )}
-            </div>
+            <ZoneMap
+              geojson={geojson}
+              zones={zones}
+              runId={runId}
+              scene={scene}
+              height={520}
+            />
           )}
         </section>
 
