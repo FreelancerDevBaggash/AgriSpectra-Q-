@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import Map, { Source, Layer, Popup, NavigationControl, ScaleControl, MapRef } from 'react-map-gl/maplibre'
 import * as maplibregl from 'maplibre-gl'
-import type { MapLayerMouseEvent } from 'react-map-gl/maplibre'
+import type { MapLayerMouseEvent, MapEvent } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 if (typeof window !== 'undefined') {
@@ -17,12 +17,12 @@ const C = {
   bg:        '#0d1117',   // map container bg
   surface:   '#161b22',   // card / panel bg
   surfaceHi: '#1c2330',   // hover / elevated surface
-  border:    'rgba(255,255,255,0.08)',
-  borderHi:  'rgba(255,255,255,0.14)',
-  text:      'rgba(255,255,255,0.88)',
-  textMid:   'rgba(255,255,255,0.50)',
-  textLow:   'rgba(255,255,255,0.28)',
-  textXlow:  'rgba(255,255,255,0.16)',
+  border:    'rgba(255,255,255,0.10)',
+  borderHi:  'rgba(255,255,255,0.18)',
+  text:      'rgba(255,255,255,0.95)',
+  textMid:   'rgba(255,255,255,0.65)',
+  textLow:   'rgba(255,255,255,0.40)',
+  textXlow:  'rgba(255,255,255,0.22)',
 } as const
 
 // ── Risk scale ─────────────────────────────────────────────────────────────────
@@ -209,11 +209,11 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fillColor:   any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], '#60a5fa', ['==', ['get', 'zone_id'], hovId ?? ''], '#fbbf24', riskColorExpr()]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fillOpacity: any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], 0.90, ['==', ['get', 'zone_id'], hovId ?? ''], 0.82, 0.62]
+  const fillOpacity: any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], 0.88, ['==', ['get', 'zone_id'], hovId ?? ''], 0.80, 0.68]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lineColor:   any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], '#93c5fd', ['==', ['get', 'zone_id'], hovId ?? ''], '#fde68a', 'rgba(255,255,255,0.22)']
+  const lineColor:   any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], '#93c5fd', ['==', ['get', 'zone_id'], hovId ?? ''], '#fde68a', 'rgba(255,255,255,0.75)']
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lineWidth:   any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], 2.5, ['==', ['get', 'zone_id'], hovId ?? ''], 1.8, 0.5]
+  const lineWidth:   any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], 3.0, ['==', ['get', 'zone_id'], hovId ?? ''], 2.2, 1.2]
 
   const zoneCount = geojson?.features.length ?? 0
   const highCount = zones.filter(z => (z.priority_category || '').toLowerCase().includes('high')).length
@@ -256,7 +256,56 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
         initialViewState={initView()}
         style={{ width: '100%', height: '100%' }}
         interactiveLayerIds={geojson ? ['zones-fill'] : []}
-        onLoad={() => setLoaded(true)}
+        onLoad={(_e: MapEvent) => {
+          setLoaded(true)
+          const map = mapRef.current?.getMap()
+          if (!map) return
+          // ── Boost place/country label sizes & brightness ──────────────────
+          const textLayers = [
+            'place-country-1', 'place-country-2', 'place-country-3',
+            'place-state', 'place-city', 'place-town', 'place-village',
+            'place-suburb', 'place-hamlet', 'place-neighbourhood',
+            'country-label', 'state-label', 'settlement-label',
+            'settlement-subdivision-label',
+          ]
+          textLayers.forEach(id => {
+            if (!map.getLayer(id)) return
+            try {
+              map.setPaintProperty(id, 'text-color', '#ffffff')
+              map.setPaintProperty(id, 'text-halo-color', 'rgba(0,0,0,0.85)')
+              map.setPaintProperty(id, 'text-halo-width', 2)
+            } catch { /* layer may not support these props */ }
+            try {
+              const cur = map.getLayoutProperty(id, 'text-size')
+              // scale up if it's a simple number or a zoom-stops array
+              if (typeof cur === 'number') {
+                map.setLayoutProperty(id, 'text-size', cur * 1.45)
+              } else if (Array.isArray(cur) && cur[0] === 'interpolate') {
+                // ['interpolate',['linear'],['zoom'],z1,s1,z2,s2,...]
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const boosted: any[] = cur.map((v: unknown, i: number) =>
+                  i >= 3 && i % 2 === 0 ? (v as number) * 1.45 : v
+                )
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                map.setLayoutProperty(id, 'text-size', boosted as any)
+              }
+            } catch { /* skip */ }
+          })
+          // ── Boost boundary / border line visibility ───────────────────────
+          const borderLayers = [
+            'boundary-country', 'boundary-state', 'boundary-land-level-0',
+            'boundary-land-level-1', 'boundary-land-level-2',
+            'admin-0-boundary', 'admin-1-boundary',
+            'country_boundaries', 'admin_level_2',
+          ]
+          borderLayers.forEach(id => {
+            if (!map.getLayer(id)) return
+            try {
+              map.setPaintProperty(id, 'line-color', 'rgba(255,255,255,0.55)')
+              map.setPaintProperty(id, 'line-width', 1.5)
+            } catch { /* skip */ }
+          })
+        }}
         onMouseMove={onMove}
         onMouseLeave={onLeave}
         onClick={onClickMap}

@@ -106,7 +106,9 @@ function DashboardContent() {
   const router = useRouter()
 
   const runId = searchParams.get('run_id') ?? ''
-  const scene = searchParams.get('scene') ?? 'scene_01_DT0000205230'
+  // scene from URL is a hint only — uploaded runs use dynamic scene names
+  // (e.g. 'upload_ce3a2cf2'). We fall back to the first scene in the API response.
+  const sceneHint = searchParams.get('scene') ?? ''
 
   // Derived — recalculated whenever runId changes
   const BASE = apiBase(runId)
@@ -115,6 +117,8 @@ function DashboardContent() {
   const [zones, setZones] = useState<Zone[]>([])
   const [budget, setBudget] = useState<InspectionBudget[]>([])
   const [sceneStats, setSceneStats] = useState<SceneStatistics | null>(null)
+  // resolved scene name — set after API call (handles dynamic names like 'upload_abc123')
+  const [scene, setScene] = useState<string>(sceneHint || 'scene_01_DT0000205230')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [geojson, setGeojson] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
@@ -144,24 +148,30 @@ function DashboardContent() {
 
       if (zonesRes.ok) {
         const zonesData = await zonesRes.json()
-        const sceneFile = zonesData.files?.find((f: { scene: string; download: string }) => f.scene === scene)
+        // Prefer the hinted scene from URL; fall back to first available scene
+        // This is critical for uploaded runs whose scene name is dynamic (e.g. 'upload_*')
+        const files: { scene: string; download: string }[] = zonesData.files ?? []
+        const sceneFile = files.find(f => f.scene === sceneHint) ?? files[0]
+        const resolvedScene = sceneFile?.scene ?? sceneHint
+        setScene(resolvedScene)
         if (sceneFile) {
           const csvRes = await fetch(`${BASE}${sceneFile.download}`)
           if (csvRes.ok) setZones(parseCSV<Zone>(await csvRes.text()))
 
           // Fetch scene_statistics.json
-          const statsRes = await fetch(`${BASE}/api/runs/${runId}/files/${scene}/scene_statistics.json`)
+          const statsRes = await fetch(`${BASE}/api/runs/${runId}/files/${resolvedScene}/scene_statistics.json`)
           if (statsRes.ok) setSceneStats(await statsRes.json())
 
           // Fetch zones.geojson — engine outputs WGS-84 directly (EPSG:4326)
-          const geoRes = await fetch(`${BASE}/api/runs/${runId}/files/${scene}/zones.geojson`)
+          const geoRes = await fetch(`${BASE}/api/runs/${runId}/files/${resolvedScene}/zones.geojson`)
           if (geoRes.ok) setGeojson(await geoRes.json())
         }
       }
 
       if (budgetRes.ok) {
         const budgetData = await budgetRes.json()
-        const sceneFile = budgetData.files?.find((f: { scene: string; download: string }) => f.scene === scene)
+        const bfiles: { scene: string; download: string }[] = budgetData.files ?? []
+        const sceneFile = bfiles.find(f => f.scene === sceneHint) ?? bfiles[0]
         if (sceneFile) {
           const csvRes = await fetch(`${BASE}${sceneFile.download}`)
           if (csvRes.ok) {
@@ -191,7 +201,7 @@ function DashboardContent() {
     } finally {
       setLoading(false)
     }
-  }, [runId, scene])
+  }, [runId, sceneHint])
 
   useEffect(() => { load() }, [load])
 
