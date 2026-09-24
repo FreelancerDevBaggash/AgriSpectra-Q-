@@ -138,9 +138,10 @@ def _demo_run_summary(scene: str, synthetic_run_id: str) -> dict:
     real_summary_path = DEMO_RUN_DIR / "run_summary.json"
     if real_summary_path.exists():
         real = json.loads(real_summary_path.read_text())
-        # Find the per-scene stats from the real run
+        # run_summary.json uses "scene_stats" (list of dicts) for per-scene data;
+        # "scenes" is a list of scene-name strings in the current engine format.
         scene_stats = next(
-            (s for s in real.get("scenes", [])
+            (s for s in real.get("scene_stats", real.get("scenes", []))
              if isinstance(s, dict) and s.get("scene") == scene),
             None,
         )
@@ -313,7 +314,8 @@ def _resolve_run(rid: str) -> tuple[str | None, Path | None]:
         if summary_path.exists():
             summary = json.loads(summary_path.read_text())
             scenes = summary.get("scenes", [])
-            # scenes may be list of strings or list of dicts
+            # "scenes" is always a list of strings in the current engine format.
+            # Older runs may have stored dicts — handle both gracefully.
             first = scenes[0] if scenes else None
             scene_val: str | None = first if isinstance(first, str) else (first.get("scene") if isinstance(first, dict) else None)
             return scene_val, run_dir

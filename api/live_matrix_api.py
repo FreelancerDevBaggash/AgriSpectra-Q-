@@ -23,6 +23,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 import uuid
 from pathlib import Path
 
@@ -30,7 +31,7 @@ from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-ROOT    = Path(__file__).resolve().parents[2]        # project root
+ROOT    = Path(__file__).resolve().parents[1]        # project root (api/ is one level deep)
 ENGINE  = ROOT / "backend" / "engine" / "live_matrix_engine.py"
 OUT     = ROOT / "results" / "live_matrix"
 RAW     = ROOT / "data" / "raw" / "enmap_three_scenes"
@@ -116,12 +117,13 @@ def run_analysis(scene: str) -> dict:
         raise RuntimeError(result.stderr[-2000:])
     run_path = OUT / run_id
     record = {
-        "run_id":  run_id,
-        "scene":   scene,
-        "path":    str(run_path),
-        "status":  "completed",
-        "mode":    "LIVE ANALYSIS",
-        "scenes":  [scene],
+        "run_id":    run_id,
+        "scene":     scene,
+        "path":      str(run_path),
+        "status":    "completed",
+        "mode":      "LIVE ANALYSIS",
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "scenes":    [scene],
     }
     with LOCK:
         RUNS[run_id] = record

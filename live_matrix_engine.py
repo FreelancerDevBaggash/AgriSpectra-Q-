@@ -1,10 +1,28 @@
 #!/usr/bin/env python3
+# =============================================================================
+# REFERENCE COPY — DO NOT RUN OR EDIT
+# =============================================================================
+# This is the original root-level prototype engine kept for historical reference.
+#
+# Active engine (used by all APIs and Docker):
+#   backend/engine/live_matrix_engine.py
+#
+# Key differences vs this file:
+#   - GeoJSON geometries reprojected to EPSG:4326 via transform_geom
+#   - centroid_lon / centroid_lat added to zone properties
+#   - budget CSV uses budget_fraction / positive_recall / coverage_percentage
+#   - nodata checked with np.isclose() instead of ==
+#   - NaN bands filtered from spectral evidence
+#   - run_summary.json includes mode, timestamp, scenes (strings)
+#   - Paths resolved relative to __file__ instead of hardcoded /home/ubuntu/
+# =============================================================================
 import argparse,csv,json,time,uuid
 from pathlib import Path
 import numpy as np
 import rasterio
 from rasterio.features import shapes
 from rasterio.transform import xy
+from rasterio.warp import transform_geom, transform as warp_transform
 from scipy import ndimage
 
 ROOT=Path('/home/ubuntu/AgriSpectra-Q'); RAW=ROOT/'data/raw/enmap_three_scenes'; OUT=ROOT/'results/live_matrix'
@@ -53,9 +71,10 @@ def process(name,path,run):
    ys,xs=np.where(lab==zid); npx=len(xs)
    if npx<9: continue
    rv=risk[ys,xs]; cx,cy=xy(transform,float(ys.mean()),float(xs.mean()))
+   lon,lat=warp_transform(crs,'EPSG:4326',[cx],[cy])
    coords=[]
    for geom,val in shapes((lab==zid).astype(np.uint8),mask=(lab==zid),transform=transform): coords.append(geom)
-   zones.append({'zone_id':f'{name}-Z{len(zones)+1:04d}','scene':name,'pixel_count':int(npx),'approx_area_m2':float(npx*abs(transform.a*transform.e)),'centroid_x':float(cx),'centroid_y':float(cy),'mean_risk':float(rv.mean()),'max_risk':float(rv.max()),'median_risk':float(np.median(rv)),'high_priority_pixel_pct':100.0,'priority_category':'HIGH PRIORITY','threshold_type':'95th percentile prioritisation threshold','recommendation':'Spectral-stress evidence detected. Prioritise field inspection to determine the underlying cause. Field verification required.'})
+   zones.append({'zone_id':f'{name}-Z{len(zones)+1:04d}','scene':name,'pixel_count':int(npx),'approx_area_m2':float(npx*abs(transform.a*transform.e)),'centroid_x':float(cx),'centroid_y':float(cy),'centroid_lon':float(lon[0]),'centroid_lat':float(lat[0]),'mean_risk':float(rv.mean()),'max_risk':float(rv.max()),'median_risk':float(np.median(rv)),'high_priority_pixel_pct':100.0,'priority_category':'HIGH PRIORITY','threshold_type':'95th percentile prioritisation threshold','recommendation':'Spectral-stress evidence detected. Prioritise field inspection to determine the underlying cause. Field verification required.'})
    features.append((geom if coords else None,zones[-1]))
   zones.sort(key=lambda x:x['mean_risk'],reverse=True)
   for i,z in enumerate(zones,1):z['priority_rank']=i
@@ -64,7 +83,7 @@ def process(name,path,run):
   with rasterio.open(od/'risk_map.tif','w',**profile) as o:o.write(np.nan_to_num(risk,nan=-9999).astype('float32'),1)
   profile.update(dtype='uint8',nodata=0)
   with rasterio.open(od/'priority_map.tif','w',**profile) as o:o.write(pri,1)
-  # GeoJSON generated only because CRS/geotransform are valid.
+  # GeoJSON is written in WGS84 longitude/latitude for web-map compatibility.
   geoms=[]
   for zid in range(1,nz+1):
    mask=(lab==zid); ys,xs=np.where(mask)
@@ -72,9 +91,10 @@ def process(name,path,run):
    geom=None
    for g,v in shapes(mask.astype(np.uint8),mask=mask,transform=transform):geom=g
    if geom is not None:
+    geom4326=transform_geom(crs,'EPSG:4326',geom,precision=6)
     z=next((z for z in zones if z['pixel_count']==len(xs) and abs(z['centroid_x']-xy(transform,float(ys.mean()),float(xs.mean()))[0])<1e-3),None)
-    if z: geoms.append({'type':'Feature','geometry':geom,'properties':z})
-  (od/'zones.geojson').write_text(json.dumps({'type':'FeatureCollection','crs':{'type':'name','properties':{'name':crs}},'features':geoms},default=float))
+    if z: geoms.append({'type':'Feature','geometry':geom4326,'properties':z})
+  (od/'zones.geojson').write_text(json.dumps({'type':'FeatureCollection','features':geoms},default=float))
   csvwrite(od/'zones.csv',zones)
   # Actual zone spectral evidence from source pixels.
   ev=[]
@@ -93,7 +113,7 @@ def process(name,path,run):
   csvwrite(od/'spectral_evidence.csv',ev)
   rows=[]
   for b in [.05,.10,.20,.30,.50,1.0]:
-   k=max(1,int(valid_count*b));sel=np.argsort(vals)[-k:];rows.append({'budget':b,'valid_pixels':valid_count,'selected_pixels':k,'proxy_positive_coverage':float(np.sum(vals[sel]>=q95)/max(1,np.sum(vals>=q95))),'label':'pixel-level proxy inspection coverage'})
+   k=max(1,int(valid_count*b));sel=np.argsort(vals)[-k:];rows.append({'budget_fraction':b,'valid_pixels':valid_count,'selected_pixels':k,'positive_recall':float(np.sum(vals[sel]>=q95)/max(1,np.sum(vals>=q95))),'coverage_percentage':float(100*k/valid_count),'label':'pixel-level proxy inspection coverage'})
   csvwrite(od/'inspection_budget.csv',rows)
   scene_stats={'scene':name,'source':str(path),'dimensions':[H,W],'bands':C,'resolution_m':30.0,'valid_pixels':valid_count,'total_pixels':total,'nodata_percentage':float(100*(1-valid_count/total)),'crs':crs,'transform':list(transform),'thresholds':{'low_medium_q50':q50,'medium_high_q80':q80,'high_priority_q95':q95},'priority_zone_count':len(zones),'processing_seconds':time.perf_counter()-t0,'status':'LIVE ANALYSIS from actual EnMAP GeoTIFF; spectral anomaly proxy, not disease label'}
   (od/'scene_statistics.json').write_text(json.dumps(scene_stats,indent=2,default=float));(od/'metrics.json').write_text(json.dumps({'engine':'windowed spectral anomaly Matrix','risk_definition':'RMS standardized deviation over 32 actual EnMAP bands','models':'spectral anomaly proxy; AgriSpectra-Q benchmark remains frozen separately','zone_count':len(zones)},indent=2))

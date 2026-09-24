@@ -1,3 +1,16 @@
+# =============================================================================
+# REFERENCE COPY — DO NOT RUN OR EDIT
+# =============================================================================
+# This is the original root-level prototype API kept for historical reference.
+#
+# Active API entry-points:
+#   api/demo_api.py        → Railway / hackathon demo (pre-computed results)
+#   api/live_matrix_api.py → Docker / gunicorn with pre-loaded TIF scenes
+#   api/production_api.py  → VPS upload-only mode
+#
+# This file has hardcoded paths to /home/ubuntu/ and calls the deprecated
+# root-level live_matrix_engine.py. Do not deploy or import this file.
+# =============================================================================
 from flask import Flask, jsonify, request, send_file
 from pathlib import Path
 import threading,uuid,subprocess,sys,json

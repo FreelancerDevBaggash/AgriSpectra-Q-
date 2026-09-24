@@ -21,7 +21,7 @@ import numpy as np
 import rasterio
 from rasterio.features import shapes
 from rasterio.transform import xy
-from rasterio.warp import transform_geom
+from rasterio.warp import transform_geom, transform as warp_transform
 from scipy import ndimage
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
@@ -130,6 +130,7 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
                 continue
             rv      = risk[ys, xs]
             cx, cy  = xy(transform, float(ys.mean()), float(xs.mean()))
+            lon, lat = warp_transform(crs, "EPSG:4326", [cx], [cy])
             zones.append({
                 "zone_id":                 f"{name}-Z{len(zones)+1:04d}",
                 "scene":                   name,
@@ -137,6 +138,8 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
                 "approx_area_m2":          float(npx * abs(transform.a * transform.e)),
                 "centroid_x":              float(cx),
                 "centroid_y":              float(cy),
+                "centroid_lon":            float(lon[0]),
+                "centroid_lat":            float(lat[0]),
                 "mean_risk":               float(rv.mean()),
                 "max_risk":                float(rv.max()),
                 "median_risk":             float(np.median(rv)),
@@ -187,7 +190,6 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
 
         (out_dir / "zones.geojson").write_text(json.dumps({
             "type": "FeatureCollection",
-            "crs": {"type": "name", "properties": {"name": crs}},
             "features": features,
         }, default=float))
 

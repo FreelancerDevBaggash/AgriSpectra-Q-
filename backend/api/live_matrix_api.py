@@ -1,6 +1,21 @@
 #!/usr/bin/env python3
+# =============================================================================
+# REFERENCE COPY — DO NOT RUN OR EDIT
+# =============================================================================
+# This is an intermediate version of the API stored under backend/api/.
+# No Dockerfile, deploy.sh, or systemd service targets this file.
+#
+# Active API entry-points (use these instead):
+#   api/demo_api.py        → Railway / hackathon demo (pre-computed results)
+#   api/live_matrix_api.py → Docker / gunicorn with pre-loaded TIF scenes
+#   api/production_api.py  → VPS upload-only mode
+#
+# Note: ROOT = parents[2] is correct for this file's location (backend/api/),
+# but since nothing invokes it, it has not been updated to stay in sync with
+# the changes applied to api/live_matrix_api.py (timestamp, etc.).
+# =============================================================================
 """
-AgriSpectra-Q — Live Matrix REST API
+AgriSpectra-Q — Live Matrix REST API (REFERENCE COPY)
 ======================================
 Flask server that exposes the live spectral-anomaly engine over HTTP.
 
