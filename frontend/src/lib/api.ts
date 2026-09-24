@@ -204,6 +204,7 @@ class ApiClient {
       const xhr = new XMLHttpRequest()
       xhrRef = xhr
       xhr.open('POST', `${this.baseUrl}/api/upload`)
+      xhr.timeout = 0   // no timeout — large files (400MB+) can take >30 min on slow connections
 
       // ── Speed tracking (rolling 2-second window) ───────────────────────────
       let lastLoaded  = 0
@@ -250,8 +251,8 @@ class ApiClient {
         }
       }
 
-      xhr.onerror   = () => { xhrRef = null; reject(new Error('Network error — cannot reach API server.')) }
-      xhr.ontimeout = () => { xhrRef = null; reject(new Error('Request timed out.')) }
+      xhr.onerror   = () => { xhrRef = null; reject(new Error('Network error — cannot reach API server. Check your connection and try again.')) }
+      xhr.ontimeout = () => { xhrRef = null; reject(new Error('Upload timed out. Try again on a faster connection.')) }
       xhr.onabort   = () => { xhrRef = null; reject(new Error('UPLOAD_ABORTED')) }
 
       xhr.send(form)

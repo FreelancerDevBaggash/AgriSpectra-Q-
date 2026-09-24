@@ -70,6 +70,7 @@ LOCK = threading.Lock()
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
+app.config["THREADED"] = True
 CORS(app)
 
 
@@ -91,48 +92,45 @@ def _stream_to_disk(file_storage, dest: Path) -> int:
     return written
 
 
-def run_analysis_on_file(tif_path: Path, scene_name: str, abort_event: threading.Event) -> dict:
-    """Run the engine on an uploaded GeoTIFF and return the run record."""
+def _run_engine_async(run_id: str, run_dir: Path, tif_path: Path,
+                      scene_name: str, abort_event: threading.Event) -> None:
+    """
+    Background thread: run the engine, update RUNS[run_id], clean up.
+    Never raises — all errors are captured into RUNS[run_id]['error'].
+    """
     import importlib.util
 
-    if abort_event.is_set():
-        raise RuntimeError("Aborted before processing started.")
-
-    run_id  = f"AGRQ-UPLOAD-{uuid.uuid4().hex[:8]}"
-    run_dir = OUT / run_id
-    run_dir.mkdir(parents=True, exist_ok=True)
-
-    with LOCK:
-        RUNS[run_id] = {
-            "run_id": run_id,
-            "scene":  scene_name,
-            "path":   str(run_dir),
-            "status": "processing",
-            "mode":   "LIVE ANALYSIS",
-            "scenes": [scene_name],
-        }
-        ABORTS[run_id] = abort_event
+    def _fail(msg: str) -> None:
+        with LOCK:
+            RUNS[run_id] = {**RUNS.get(run_id, {}), "status": "failed", "error": msg[-2000:]}
+        summary = run_dir / "run_summary.json"
+        summary.parent.mkdir(parents=True, exist_ok=True)
+        if not summary.exists():
+            summary.write_text(json.dumps(
+                {"run_id": run_id, "status": "failed", "error": msg[-2000:]}, indent=2))
+        shutil.rmtree(run_dir, ignore_errors=True)
+        tif_path.unlink(missing_ok=True)
 
     try:
+        if abort_event.is_set():
+            _fail("Aborted before engine started."); return
+
         spec = importlib.util.spec_from_file_location("live_matrix_engine", str(ENGINE))
         mod  = importlib.util.module_from_spec(spec)          # type: ignore[arg-type]
         spec.loader.exec_module(mod)                          # type: ignore[union-attr]
 
         if abort_event.is_set():
-            raise RuntimeError("Aborted before engine started.")
+            _fail("Aborted."); return
 
         scene_stats = mod.process(scene_name, tif_path, run_dir)
 
         if abort_event.is_set():
-            raise RuntimeError("Aborted after engine finished.")
+            _fail("Aborted after engine finished."); return
 
-        # ── Remove large raster outputs to save disk on free tier ──
         for large_file in ["risk_map.tif", "priority_map.tif"]:
             p = run_dir / scene_name / large_file
-            if p.exists():
-                p.unlink()
+            if p.exists(): p.unlink()
 
-        # ── Delete the uploaded source file (no longer needed) ──
         tif_path.unlink(missing_ok=True)
 
         (run_dir / "run_summary.json").write_text(json.dumps({
@@ -140,7 +138,6 @@ def run_analysis_on_file(tif_path: Path, scene_name: str, abort_event: threading
             "live":        True,
             "mode":        "LIVE ANALYSIS",
             "source":      "user_upload",
-            "filename":    tif_path.name,
             "timestamp":   time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "scenes":      [scene_name],
             "scene_stats": [scene_stats],
@@ -152,25 +149,15 @@ def run_analysis_on_file(tif_path: Path, scene_name: str, abort_event: threading
             ],
         }, indent=2, default=float))
 
-        record = {
-            "run_id": run_id,
-            "scene":  scene_name,
-            "path":   str(run_dir),
-            "status": "completed",
-            "mode":   "LIVE ANALYSIS",
-            "scenes": [scene_name],
-        }
         with LOCK:
-            RUNS[run_id] = record
-        return record
+            RUNS[run_id] = {
+                "run_id": run_id, "scene": scene_name,
+                "path":   str(run_dir), "status": "completed",
+                "mode":   "LIVE ANALYSIS", "scenes": [scene_name],
+            }
 
-    except Exception:
-        with LOCK:
-            RUNS.pop(run_id, None)
-            ABORTS.pop(run_id, None)
-        shutil.rmtree(run_dir, ignore_errors=True)
-        tif_path.unlink(missing_ok=True)
-        raise
+    except Exception as exc:
+        _fail(str(exc))
 
 
 def csv_index(run_id: str, filename: str):
@@ -246,7 +233,15 @@ def analyse():
 
 @app.post("/api/upload")
 def upload():
-    """Accept a user-uploaded GeoTIFF, run the live engine, return run_id."""
+    """
+    ASYNC upload endpoint.
+    1. Validate extension.
+    2. Stream file to disk (1 MB chunks — no RAM buffer).
+    3. Register run_id as 'processing'.
+    4. Start engine in background thread.
+    5. Return {run_id, status:'processing'} with HTTP 202 immediately.
+    6. Client polls GET /api/runs/<run_id> until status in {completed, failed}.
+    """
     if "file" not in request.files:
         return jsonify({"error": "No file part. Use multipart/form-data with field name 'file'."}), 400
 
@@ -275,19 +270,36 @@ def upload():
         save_path.unlink(missing_ok=True)
         return jsonify({"error": "Uploaded file is empty."}), 400
 
+    run_id      = f"AGRQ-LIVE-API-{uuid.uuid4().hex[:8]}"
+    run_dir     = OUT / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
     scene_name  = f"upload_{uid[:8]}"
     abort_event = threading.Event()
 
-    try:
-        record = run_analysis_on_file(save_path, scene_name, abort_event)
-        return jsonify(record)
-    except RuntimeError as exc:
-        msg = str(exc)
-        if "Aborted" in msg:
-            return jsonify({"error": "Run was cancelled.", "aborted": True}), 409
-        return jsonify({"error": msg[-2000:]}), 500
-    except Exception as exc:
-        return jsonify({"error": str(exc)[-2000:]}), 500
+    with LOCK:
+        RUNS[run_id]   = {
+            "run_id":  run_id, "scene": scene_name,
+            "path":    str(run_dir), "status": "processing",
+            "mode":    "LIVE ANALYSIS", "scenes": [scene_name],
+            "started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "size_mb": round(bytes_written / (1024 * 1024), 1),
+        }
+        ABORTS[run_id] = abort_event
+
+    threading.Thread(
+        target=_run_engine_async,
+        args=(run_id, run_dir, save_path, scene_name, abort_event),
+        daemon=True,
+        name=f"engine-{run_id}",
+    ).start()
+
+    return jsonify({
+        "run_id":   run_id,
+        "scene":    scene_name,
+        "status":   "processing",
+        "mode":     "LIVE ANALYSIS",
+        "poll_url": f"/api/runs/{run_id}",
+    }), 202
 
 
 @app.post("/api/upload/abort/<run_id>")
@@ -302,6 +314,11 @@ def abort_run(run_id: str):
 
 @app.get("/api/runs/<rid>")
 def get_run(rid: str):
+    # In-memory first — covers 'processing' state before summary is written
+    with LOCK:
+        mem = RUNS.get(rid)
+    if mem and mem.get("status") == "processing":
+        return jsonify(mem)
     summary = OUT / rid / "run_summary.json"
     if not summary.exists():
         return jsonify({"error": "run not found"}), 404
@@ -370,9 +387,10 @@ if __name__ == "__main__":
 
     print("\nAgriSpectra-Q Production API (Upload-Only)")
     print("   Mode:    upload-only (no pre-loaded EnMAP scenes)")
+    print("   Upload:  async — engine in background thread, 202 returned immediately")
     engine_status = "found" if ENGINE.exists() else "NOT FOUND - check backend/engine/live_matrix_engine.py"
     print(f"   Engine:  {engine_status}")
     print(f"   Uploads: {UPLOADS}")
     print(f"   Results: {OUT}\n")
 
-    app.run(host=args.host, port=args.port, debug=args.debug)
+    app.run(host=args.host, port=args.port, debug=args.debug, threaded=True)

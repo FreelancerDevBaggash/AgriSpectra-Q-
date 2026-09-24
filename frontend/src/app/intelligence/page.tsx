@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiClient, prodApiClient, UploadProgressEvent, UploadHandle } from '@/lib/api'
 import { saveRun, getRunHistory, RunHistoryEntry } from '@/lib/runHistory'
-import { API_BASE } from '@/lib/config'
+import { API_BASE, PROD_API_BASE } from '@/lib/config'
 
 // ── Static fallback scene data — used when /api/scenes is unavailable
 // Source: docs/AgriSpectra-Q_—_Data_and_File_Schema.md §2.2
@@ -325,14 +325,46 @@ export default function IntelligencePage() {
     activeHandleRef.current = handle
 
     handle.promise
-      .then((result) => {
-        activeHandleRef.current  = null
-        processingRunIdRef.current = null
+      .then(async (result) => {
+        activeHandleRef.current = null
+
+        // ── Async flow: backend returns 202 {status:'processing'} immediately ──
+        // We poll /api/runs/<run_id> every 4 s until status changes.
+        if (result.status === 'processing' && result.run_id) {
+          processingRunIdRef.current = result.run_id
+          // Start elapsed + step timers (upload done, engine running)
+          setUploadStage('processing')
+          if (!uploadTickRef.current)
+            uploadTickRef.current = setInterval(() => setUploadElapsed(e => e + 1), 1000)
+          if (!uploadStepRef.current)
+            uploadStepRef.current = setInterval(
+              () => setUploadStep(s => Math.min(s + 1, PIPELINE_STEPS.length - 1)), 4500)
+
+          // Poll until done or failed
+          const POLL_INTERVAL_MS = 4000
+          const MAX_POLLS = 900  // 3600 s = 1 hour max
+          for (let i = 0; i < MAX_POLLS; i++) {
+            await new Promise(r => setTimeout(r, POLL_INTERVAL_MS))
+            // Check if user cancelled while polling
+            if (uploadStage === 'cancelling') { processingRunIdRef.current = null; return }
+            try {
+              const r2 = await fetch(`${PROD_API_BASE}/api/runs/${result.run_id}`)
+              if (!r2.ok) continue
+              const poll = await r2.json()
+              if (poll.status === 'completed') { result = { ...result, ...poll }; break }
+              if (poll.status === 'failed') throw new Error(poll.error || 'Engine failed')
+            } catch (pollErr) {
+              if (pollErr instanceof Error && pollErr.message !== 'Engine failed') continue
+              throw pollErr
+            }
+          }
+          processingRunIdRef.current = null
+        }
+
         clearUploadTimers()
         setUploadRunId(result.run_id)
         setUploadStage('done')
         const sceneId = result.scene ?? uploadFile.name.replace(/\.[^.]+$/, '')
-        // Persist upload run so user can return to this analysis later
         saveRun({
           run_id:    result.run_id,
           scene:     sceneId,
@@ -347,10 +379,9 @@ export default function IntelligencePage() {
         )
       })
       .catch((e: Error) => {
-        activeHandleRef.current  = null
+        activeHandleRef.current    = null
         processingRunIdRef.current = null
         clearUploadTimers()
-        // Distinguish user-initiated cancel from real errors
         if (e.message === 'UPLOAD_ABORTED' || uploadStage === 'cancelling') {
           setUploadStage('cancelled')
           return
