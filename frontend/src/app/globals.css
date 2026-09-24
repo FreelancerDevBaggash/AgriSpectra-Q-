@@ -316,25 +316,82 @@
 /* ── Focus ──────────────────────────────────────────────────────────────────── */
 :focus-visible { outline: 2px solid #168A45; outline-offset: 2px; }
 
-/* ── MapLibre Popup override — ZoneMap ──────────────────────────────────────── */
-/* Strip all default MapLibre popup chrome so our custom dark card shows cleanly */
-.zone-popup-maplibre .maplibregl-popup-content {
+/* ── ZoneMap shared UI tokens ────────────────────────────────────────────────── */
+
+.zm-btn {
+  background: rgba(13,17,23,0.82);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.65);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+.zm-btn:hover {
+  background: rgba(28,35,48,0.95);
+  color: rgba(255,255,255,0.92);
+  border-color: rgba(255,255,255,0.18);
+}
+.zm-pill {
+  background: rgba(13,17,23,0.82);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 9px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+.zm-card {
+  background: #161b22;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.55);
+}
+.zm-icon-btn {
+  padding: 6px;
+  border-radius: 7px;
+  color: rgba(255,255,255,0.30);
+  transition: background .15s, color .15s;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+.zm-icon-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.72);
+}
+.zm-cta-row {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: background .15s;
+  color: rgba(255,255,255,0.55);
+}
+.zm-cta-row:hover {
+  background: rgba(255,255,255,0.09);
+  color: rgba(255,255,255,0.85);
+}
+
+/* ── MapLibre Popup override ─────────────────────────────────────────────────── */
+.zm-popup .maplibregl-popup-content {
   padding: 0 !important;
   background: transparent !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
-.zone-popup-maplibre .maplibregl-popup-tip {
-  border-top-color: rgba(30, 35, 48, 0.92) !important;
-  border-bottom-color: rgba(30, 35, 48, 0.92) !important;
+.zm-popup .maplibregl-popup-tip {
+  border-top-color:    #161b22 !important;
+  border-bottom-color: #161b22 !important;
 }
-.zone-popup-maplibre .maplibregl-popup-close-button {
-  display: none !important;
-}
+.zm-popup .maplibregl-popup-close-button { display: none !important; }
 
-/* slideInRight animation for zone sidebar */
+/* ── ZoneMap animations ──────────────────────────────────────────────────────── */
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(20px) scale(.97); }
+  from { opacity: 0; transform: translateX(18px) scale(.97); }
   to   { opacity: 1; transform: translateX(0)    scale(1);   }
 }
-.animate-slide-in-right { animation: slideInRight .28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.animate-slide-in-right { animation: slideInRight .26s cubic-bezier(0.34, 1.45, 0.64, 1) both; }
+
+@keyframes slideUpSheet {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up-sheet { animation: slideUpSheet .32s cubic-bezier(0.22, 1, 0.36, 1) both; }
