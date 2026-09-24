@@ -1,9 +1,9 @@
 {
-  "run_id": "AGRQ-LIVE-20260916-132530-587fc9",
+  "run_id": "test_corrected_run",
   "scene": "scene_03",
-  "source": "/home/ubuntu/AgriSpectra-Q/data/raw/enmap_three_scenes/scene_03.TIF",
+  "source": "data\\raw\\enmap_three_scenes\\scene_03.TIF",
   "live": true,
-  "leakage_control": "no labels; relative thresholds computed from full scene unsupervised anomaly reference; not benchmark test evaluation",
+  "leakage_control": "no labels; relative thresholds from full-scene unsupervised anomaly reference",
   "crs": "EPSG:32636",
   "outputs": [
     "risk_map.tif",

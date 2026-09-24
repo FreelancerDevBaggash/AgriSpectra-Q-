@@ -1,6 +1,6 @@
 {
-  "engine": "windowed spectral anomaly Matrix",
-  "risk_definition": "RMS standardized deviation over 32 actual EnMAP bands",
-  "models": "spectral anomaly proxy; AgriSpectra-Q benchmark remains frozen separately",
-  "zone_count": 438
+  "engine": "windowed spectral anomaly matrix",
+  "risk_definition": "RMS standardised deviation over 32 actual EnMAP bands",
+  "models": "spectral anomaly proxy; AgriSpectra-Q benchmark is frozen separately",
+  "zone_count": 390
 }
