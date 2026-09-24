@@ -342,7 +342,9 @@ def get_file(rid: str, scene: str, filename: str):
     if request.method == "HEAD":
         from flask import Response
         return Response(status=200, headers={"Content-Type": "application/octet-stream"})
-    return send_file(target, as_attachment=True, download_name=filename)
+    inline_exts = {".json", ".geojson"}
+    as_attachment = target.suffix.lower() not in inline_exts
+    return send_file(target, as_attachment=as_attachment, download_name=filename)
 
 
 @app.get("/api/upload/info")

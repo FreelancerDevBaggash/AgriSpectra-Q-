@@ -414,7 +414,11 @@ def get_file(rid: str, scene: str, filename: str):
         from flask import Response
         return Response(status=200, headers={"Content-Type": "application/octet-stream"})
 
-    return send_file(target, as_attachment=True, download_name=filename)
+    # Serve JSON/GeoJSON inline so the frontend can fetch().json() them directly.
+    # CSV and other files are served as attachments (download).
+    inline_exts = {".json", ".geojson"}
+    as_attachment = target.suffix.lower() not in inline_exts
+    return send_file(target, as_attachment=as_attachment, download_name=filename)
 
 
 # ── Entry-point ───────────────────────────────────────────────────────────────
