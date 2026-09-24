@@ -205,16 +205,15 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
     }
   }, [zones, isMobile, onClose])
 
-  // ── Layer expressions ─────────────────────────────────────────────────────
-  // positron = light base map → zones use solid saturated fill + dark outline
+  // ── Layer expressions — dark base map ─────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fillColor:   any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], '#3b82f6', ['==', ['get', 'zone_id'], hovId ?? ''], '#f59e0b', riskColorExpr()]
+  const fillColor:   any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], '#60a5fa', ['==', ['get', 'zone_id'], hovId ?? ''], '#fbbf24', riskColorExpr()]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fillOpacity: any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], 0.80, ['==', ['get', 'zone_id'], hovId ?? ''], 0.75, 0.60]
+  const fillOpacity: any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], 0.88, ['==', ['get', 'zone_id'], hovId ?? ''], 0.82, 0.70]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lineColor:   any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], '#1d4ed8', ['==', ['get', 'zone_id'], hovId ?? ''], '#d97706', 'rgba(0,0,0,0.65)']
+  const lineColor:   any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], '#93c5fd', ['==', ['get', 'zone_id'], hovId ?? ''], '#fde68a', '#ffffff']
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lineWidth:   any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], 3.0, ['==', ['get', 'zone_id'], hovId ?? ''], 2.2, 1.4]
+  const lineWidth:   any = ['case', ['==', ['get', 'zone_id'], selId ?? ''], 3.0, ['==', ['get', 'zone_id'], hovId ?? ''], 2.2, 1.5]
 
   const zoneCount = geojson?.features.length ?? 0
   const highCount = zones.filter(z => (z.priority_category || '').toLowerCase().includes('high')).length
@@ -253,11 +252,43 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
       {/* Map */}
       <Map
         ref={mapRef}
-        mapStyle="https://tiles.openfreemap.org/styles/positron"
+        mapStyle="https://tiles.openfreemap.org/styles/dark"
         initialViewState={initView()}
         style={{ width: '100%', height: '100%' }}
         interactiveLayerIds={geojson ? ['zones-fill'] : []}
-        onLoad={() => setLoaded(true)}
+        onLoad={() => {
+          setLoaded(true)
+          const map = mapRef.current?.getMap()
+          if (!map) return
+          // ── Exact layer IDs confirmed from openfreemap dark style ─────────
+          // Boundaries
+          ;['boundary_country_z0-4', 'boundary_country_z5-', 'boundary_state'].forEach(id => {
+            if (!map.getLayer(id)) return
+            map.setPaintProperty(id, 'line-color', 'rgba(255,255,255,0.7)')
+            map.setPaintProperty(id, 'line-width', id.includes('state') ? 1.0 : 1.8)
+          })
+          // Place labels — text-color + halo + bigger size
+          ;['place_country_major','place_country_minor','place_country_other',
+            'place_state','place_city_large','place_city',
+            'place_town','place_village','place_suburb','place_other'].forEach(id => {
+            if (!map.getLayer(id)) return
+            map.setPaintProperty(id, 'text-color', '#ffffff')
+            map.setPaintProperty(id, 'text-halo-color', 'rgba(0,0,0,0.9)')
+            map.setPaintProperty(id, 'text-halo-width', 1.5)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const sz = map.getLayoutProperty(id, 'text-size') as any
+            if (typeof sz === 'number') {
+              map.setLayoutProperty(id, 'text-size', sz * 1.5)
+            } else if (Array.isArray(sz) && sz[0] === 'interpolate') {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const boosted: any[] = sz.map((v: unknown, i: number) =>
+                i >= 3 && i % 2 === 0 ? (v as number) * 1.5 : v
+              )
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              map.setLayoutProperty(id, 'text-size', boosted as any)
+            }
+          })
+        }}
         onMouseMove={onMove}
         onMouseLeave={onLeave}
         onClick={onClickMap}

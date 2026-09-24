@@ -363,7 +363,7 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* ── 2. GEOSPATIAL OUTPUTS — direct file download links ── */}
+        {/* ── 2. GEOSPATIAL OUTPUTS — fetch+blob download (cross-origin safe) ── */}
         <section>
           <p className="section-label mb-4">GEOSPATIAL OUTPUTS</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -371,9 +371,8 @@ function DashboardContent() {
               {
                 label:    'Zone Boundaries',
                 sub:      'GeoJSON · georeferenced polygons',
-                // direct file download — resolvedScene set after load()
-                href:     `${BASE}/api/runs/${runId}/files/${scene}/zones.geojson`,
-                download: `${runId}_zones.geojson`,
+                url:      `${BASE}/api/runs/${runId}/files/${scene}/zones.geojson`,
+                filename: `${runId}_zones.geojson`,
                 icon: (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 ),
@@ -381,8 +380,8 @@ function DashboardContent() {
               {
                 label:    'Inspection Budget',
                 sub:      'CSV · recall vs budget fraction',
-                href:     `${BASE}/api/runs/${runId}/files/${scene}/inspection_budget.csv`,
-                download: `${runId}_inspection_budget.csv`,
+                url:      `${BASE}/api/runs/${runId}/files/${scene}/inspection_budget.csv`,
+                filename: `${runId}_inspection_budget.csv`,
                 icon: (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                 ),
@@ -390,18 +389,31 @@ function DashboardContent() {
               {
                 label:    'Full Run Report',
                 sub:      'JSON · run summary & metadata',
-                href:     `${BASE}/api/runs/${runId}/report`,
-                download: `${runId}_report.json`,
+                url:      `${BASE}/api/runs/${runId}/report`,
+                filename: `${runId}_report.json`,
                 icon: (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 ),
               },
-            ].map(({ label, sub, href, download, icon }) => (
-              <a
+            ].map(({ label, sub, url, filename, icon }) => (
+              <button
                 key={label}
-                href={href}
-                download={download}
-                className="flex items-center gap-3 px-4 py-3 bg-white border border-surface-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-colors group"
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch(url)
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                    const blob = await res.blob()
+                    const a = document.createElement('a')
+                    a.href = URL.createObjectURL(blob)
+                    a.download = filename
+                    a.click()
+                    URL.revokeObjectURL(a.href)
+                  } catch (err) {
+                    alert(`Download failed: ${err instanceof Error ? err.message : err}`)
+                  }
+                }}
+                className="flex items-center gap-3 px-4 py-3 bg-white border border-surface-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-colors group w-full text-left cursor-pointer"
               >
                 <span className="text-surface-400 group-hover:text-primary-600 transition-colors flex-shrink-0">{icon}</span>
                 <div className="min-w-0">
@@ -409,7 +421,7 @@ function DashboardContent() {
                   <div className="text-xs text-surface-400">{sub}</div>
                 </div>
                 <Download className="w-3.5 h-3.5 text-surface-300 group-hover:text-primary-500 transition-colors ml-auto flex-shrink-0" aria-hidden="true" />
-              </a>
+              </button>
             ))}
           </div>
         </section>
