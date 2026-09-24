@@ -42,9 +42,10 @@ export interface AnalysisRequest {
 
 export interface AnalysisResponse {
   run_id: string
-  scene: string
-  path: string
-  status: 'completed' | 'failed'
+  scene?: string
+  path?: string
+  status: 'completed' | 'failed' | 'processing'
+  error?: string
 }
 
 export interface RunSummary {
