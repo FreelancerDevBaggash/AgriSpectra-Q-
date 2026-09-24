@@ -108,17 +108,27 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
   const [popup, setPopup] = useState<{ lng: number; lat: number; zone: MapZone } | null>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
 
-  // Fit to GeoJSON bounds whenever map loads or geojson arrives
+  // Compute initial view from GeoJSON centroid so the map opens near the data
+  const initialView = useCallback(() => {
+    if (!geojson || geojson.features.length === 0) return { longitude: 45, latitude: 20, zoom: 4 }
+    const bounds = geojsonBounds(geojson)
+    if (!bounds) return { longitude: 45, latitude: 20, zoom: 4 }
+    const [[minLon, minLat], [maxLon, maxLat]] = bounds as [[number,number],[number,number]]
+    return { longitude: (minLon + maxLon) / 2, latitude: (minLat + maxLat) / 2, zoom: 8 }
+  }, [geojson])
+
+  // Fit to GeoJSON bounds — called both on map load and whenever geojson changes
   const fitBounds = useCallback(() => {
     if (!geojson || !mapRef.current) return
     const bounds = geojsonBounds(geojson)
     if (!bounds) return
-    mapRef.current.fitBounds(bounds, { padding: 48, duration: 800, maxZoom: 14 })
+    mapRef.current.fitBounds(bounds as [[number,number],[number,number]], { padding: 48, duration: 800, maxZoom: 14 })
   }, [geojson])
 
+  // Trigger fitBounds whenever map becomes ready OR geojson changes after map is ready
   useEffect(() => {
-    if (mapLoaded) fitBounds()
-  }, [mapLoaded, fitBounds])
+    if (mapLoaded && geojson) fitBounds()
+  }, [mapLoaded, geojson, fitBounds])
 
   // ── Event handlers ─────────────────────────────────────────────────────────
 
@@ -190,10 +200,10 @@ export default function ZoneMap({ geojson, zones, runId, scene, height = 520 }: 
       <Map
         ref={mapRef}
         mapStyle="https://tiles.openfreemap.org/styles/dark"
-        initialViewState={{ longitude: 54.4, latitude: 24.5, zoom: 6 }}
+        initialViewState={initialView()}
         style={{ width: '100%', height: '100%' }}
         interactiveLayerIds={geojson ? ['zones-fill'] : []}
-        onLoad={() => setMapLoaded(true)}
+        onLoad={() => { setMapLoaded(true) }}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
