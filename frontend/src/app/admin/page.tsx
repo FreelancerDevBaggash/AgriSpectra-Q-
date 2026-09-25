@@ -311,9 +311,13 @@ function RunCard({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
+  // ALL hooks must be declared before any conditional return (React rules of hooks)
   const [authed,  setAuthed]  = useState(false)
   const [data,    setData]    = useState<AdminData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState<string | null>(null)
+  const [toast,   setToast]   = useState<{ msg: string; ok: boolean } | null>(null)
+  const [tab,     setTab]     = useState<'uploads' | 'all'>('uploads')
 
   // Check session on mount
   useEffect(() => {
@@ -321,12 +325,6 @@ export default function AdminPage() {
       setAuthed(true)
     }
   }, [])
-
-  if (!authed) return <LoginGate onAuth={() => setAuthed(true)} />
-
-  const [error,   setError]   = useState<string | null>(null)
-  const [toast,   setToast]   = useState<{ msg: string; ok: boolean } | null>(null)
-  const [tab,     setTab]     = useState<'uploads' | 'all'>('uploads')
 
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok }); setTimeout(() => setToast(null), 3500)
@@ -343,7 +341,10 @@ export default function AdminPage() {
     } finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { if (authed) load() }, [load, authed])
+
+  // Gate: show login screen until authed (all hooks already declared above)
+  if (!authed) return <LoginGate onAuth={() => setAuthed(true)} />
 
   const handleDelete = async (runId: string) => {
     try {
