@@ -17,12 +17,43 @@ import time
 import uuid
 from pathlib import Path
 
+import urllib.request
 import numpy as np
 import rasterio
 from rasterio.features import shapes
 from rasterio.transform import xy
 from rasterio.warp import transform_geom, transform as warp_transform
 from scipy import ndimage
+
+
+def _reverse_geocode(lon: float, lat: float) -> dict:
+    """
+    One Nominatim call for the scene centre.
+    Returns dict with country, state, city keys (empty strings on failure).
+    Rate-limited by Nominatim: only called once per scene, never per-zone.
+    """
+    try:
+        url = (
+            f"https://nominatim.openstreetmap.org/reverse"
+            f"?format=json&lon={lon}&lat={lat}&zoom=10&addressdetails=1"
+        )
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "AgriSpectra-Q/1.0 (spectral-analysis)"}
+        )
+        with urllib.request.urlopen(req, timeout=8) as r:
+            data = json.load(r)
+        addr = data.get("address", {})
+        return {
+            "country":      addr.get("country", ""),
+            "country_code": addr.get("country_code", "").upper(),
+            "state":        addr.get("state", ""),
+            "county":       addr.get("county", ""),
+            "city":         (addr.get("city") or addr.get("town")
+                             or addr.get("village") or addr.get("region") or ""),
+            "display_name": data.get("display_name", ""),
+        }
+    except Exception:
+        return {"country": "", "country_code": "", "state": "", "county": "", "city": "", "display_name": ""}
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parents[2]          # project root
@@ -252,6 +283,19 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
             })
         csvwrite(out_dir / "inspection_budget.csv", budget_rows)
 
+        # ── Reverse geocode scene centre (one HTTP call, best-effort) ──────
+        scene_lons = [z["centroid_lon"] for z in zones if z.get("centroid_lon")]
+        scene_lats = [z["centroid_lat"] for z in zones if z.get("centroid_lat")]
+        if scene_lons:
+            centre_lon = float(sum(scene_lons) / len(scene_lons))
+            centre_lat = float(sum(scene_lats) / len(scene_lats))
+        else:
+            # fallback: transform image centre
+            centre_lon, centre_lat_arr = warp_transform(crs, "EPSG:4326", [float(transform.c + W * transform.a / 2)], [float(transform.f + H * transform.e / 2)])
+            centre_lon = float(centre_lon[0])
+            centre_lat = float(centre_lat_arr[0])
+        location = _reverse_geocode(centre_lon, centre_lat)
+
         # ── Scene statistics & manifests ──
         elapsed = time.perf_counter() - t0
         scene_stats = {
@@ -269,6 +313,7 @@ def process(name: str, path: Path, run_dir: Path) -> dict:
             "priority_zone_count": len(zones),
             "processing_seconds": elapsed,
             "status":             "LIVE ANALYSIS — spectral anomaly proxy, not disease label",
+            "location":           location,
         }
         (out_dir / "scene_statistics.json").write_text(json.dumps(scene_stats, indent=2, default=float))
         (out_dir / "metrics.json").write_text(json.dumps({

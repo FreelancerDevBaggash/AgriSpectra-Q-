@@ -45,6 +45,15 @@ interface RunSummary {
   limitations?: string[]
 }
 
+interface Location {
+  country:      string
+  country_code: string
+  state:        string
+  county:       string
+  city:         string
+  display_name: string
+}
+
 interface SceneStatistics {
   scene: string
   dimensions: [number, number]
@@ -56,6 +65,7 @@ interface SceneStatistics {
   crs: string
   processing_seconds: number
   priority_zone_count: number
+  location?: Location
   thresholds: {
     low_medium_q50: number
     medium_high_q80: number
@@ -358,6 +368,19 @@ function DashboardContent() {
               <>
                 <span className="text-surface-200">|</span>
                 <span>Time: <strong className="text-surface-700">{new Date(summary.timestamp).toLocaleString()}</strong></span>
+              </>
+            )}
+            {/* Location from reverse geocoding */}
+            {sceneStats?.location?.country && (
+              <>
+                <span className="text-surface-200">|</span>
+                <span className="inline-flex items-center gap-1">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <strong className="text-surface-700">
+                    {[sceneStats.location.city, sceneStats.location.state, sceneStats.location.country]
+                      .filter(Boolean).join('، ')}
+                  </strong>
+                </span>
               </>
             )}
           </div>
