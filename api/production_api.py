@@ -68,6 +68,10 @@ RUNS:   dict[str, dict]            = {}
 ABORTS: dict[str, threading.Event] = {}
 LOCK = threading.Lock()
 
+# ── Admin key (set via env var AGRQ_ADMIN_KEY) ────────────────────────────────
+import os as _os
+ADMIN_KEY = _os.environ.get("AGRQ_ADMIN_KEY", "agrq-admin-2026")
+
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
 app.config["THREADED"] = True
@@ -375,6 +379,86 @@ def upload_info():
         "raster_outputs":     False,
         "note":               "risk_map.tif and priority_map.tif are not produced in upload-only mode to save disk space.",
     })
+
+
+# ── Admin API ─────────────────────────────────────────────────────────────────
+
+def _admin_auth():
+    """Return None if authorised, else a 401 response."""
+    key = request.headers.get("X-Admin-Key") or request.args.get("key")
+    if key != ADMIN_KEY:
+        return jsonify({"error": "unauthorised"}), 401
+    return None
+
+def _run_info(run_dir: Path) -> dict | None:
+    """Build a summary dict for one run directory."""
+    sp = run_dir / "run_summary.json"
+    if not sp.exists():
+        return None
+    data = json.loads(sp.read_text())
+    scenes_info = []
+    for sd in sorted(d for d in run_dir.iterdir() if d.is_dir()):
+        stp = sd / "scene_statistics.json"
+        if stp.exists():
+            st = json.loads(stp.read_text())
+            src = st.get("source", "")
+            scenes_info.append({
+                "scene":      sd.name,
+                "zones":      st.get("priority_zone_count", 0),
+                "seconds":    round(st.get("processing_seconds", 0), 1),
+                "source_file": Path(src).name if src else "",
+                "dims":       st.get("dimensions", []),
+                "crs":        st.get("crs", ""),
+            })
+    # disk usage (bytes)
+    total_bytes = sum(f.stat().st_size for f in run_dir.rglob("*") if f.is_file())
+    return {
+        "run_id":    run_dir.name,
+        "status":    data.get("status", "unknown"),
+        "timestamp": data.get("timestamp", ""),
+        "source":    data.get("source", ""),
+        "scenes":    scenes_info,
+        "disk_kb":   round(total_bytes / 1024, 1),
+        "dashboard_url": f"/dashboard?run_id={run_dir.name}"
+                         + (f"&scene={scenes_info[0]['scene']}" if scenes_info else ""),
+    }
+
+
+@app.get("/api/admin/runs")
+def admin_list_runs():
+    """List all runs with metadata. Requires X-Admin-Key header."""
+    auth_err = _admin_auth()
+    if auth_err:
+        return auth_err
+    runs = []
+    for d in sorted(OUT.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+        if not d.is_dir():
+            continue
+        info = _run_info(d)
+        if info:
+            runs.append(info)
+    total_kb = sum(r["disk_kb"] for r in runs)
+    return jsonify({"runs": runs, "total_runs": len(runs), "total_disk_kb": round(total_kb, 1)})
+
+
+@app.delete("/api/admin/runs/<run_id>")
+def admin_delete_run(run_id: str):
+    """Delete a run directory permanently. Requires X-Admin-Key header."""
+    auth_err = _admin_auth()
+    if auth_err:
+        return auth_err
+    # Safety: only allow known run-id pattern
+    import re
+    if not re.match(r'^AGRQ-[A-Z0-9-]+$', run_id):
+        return jsonify({"error": "invalid run_id"}), 400
+    run_dir = OUT / run_id
+    if not run_dir.exists():
+        return jsonify({"error": "run not found"}), 404
+    shutil.rmtree(run_dir)
+    with LOCK:
+        RUNS.pop(run_id, None)
+        ABORTS.pop(run_id, None)
+    return jsonify({"deleted": run_id})
 
 
 # ── Entry-point ───────────────────────────────────────────────────────────────
