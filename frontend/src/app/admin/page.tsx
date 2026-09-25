@@ -23,6 +23,7 @@ interface SceneInfo {
   source_file:  string
   dims:         [number, number]
   crs:          string
+  location:     string
   output_files: OutputFile[]
 }
 
@@ -45,10 +46,66 @@ interface AdminData {
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY ?? 'agrq-admin-2026'
-const HEADERS   = { 'X-Admin-Key': ADMIN_KEY }
+const ADMIN_KEY   = process.env.NEXT_PUBLIC_ADMIN_KEY ?? 'agrq-admin-2026'
+const HEADERS     = { 'X-Admin-Key': ADMIN_KEY }
+// Password to access the /admin page in the browser (client-side gate)
+const PAGE_PASS   = process.env.NEXT_PUBLIC_ADMIN_PASS ?? 'agrispectra2026'
+const SESSION_KEY = 'agrq_admin_auth'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+// ── Login gate ────────────────────────────────────────────────────────────────
+
+function LoginGate({ onAuth }: { onAuth: () => void }) {
+  const [pw,  setPw]  = useState('')
+  const [err, setErr] = useState(false)
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (pw === PAGE_PASS) {
+      sessionStorage.setItem(SESSION_KEY, '1')
+      onAuth()
+    } else {
+      setErr(true)
+      setPw('')
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-surface-50 flex items-center justify-center">
+      <div className="bg-white rounded-2xl border border-surface-200 shadow-sm p-8 w-full max-w-sm">
+        <div className="mb-6 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-primary-600 flex items-center justify-center mx-auto mb-3">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25z"/>
+            </svg>
+          </div>
+          <h1 className="text-lg font-bold text-surface-900">Admin Access</h1>
+          <p className="text-sm text-surface-400 mt-1">AgriSpectra-Q · Run Manager</p>
+        </div>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-surface-600 mb-1.5">Password</label>
+            <input
+              type="password"
+              value={pw}
+              onChange={e => { setPw(e.target.value); setErr(false) }}
+              placeholder="Enter admin password"
+              autoFocus
+              className={`w-full px-3 py-2.5 rounded-lg border text-sm outline-none transition-colors
+                ${err ? 'border-red-300 bg-red-50' : 'border-surface-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100'}`}
+            />
+            {err && <p className="text-xs text-red-500 mt-1.5">Incorrect password</p>}
+          </div>
+          <button type="submit"
+            className="w-full btn-primary py-2.5 text-sm font-semibold">
+            Sign in
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 function fmtDate(ts: string) {
   if (!ts) return '—'
@@ -154,12 +211,18 @@ function RunCard({
               </span>
             )}
           </div>
-          <div className="text-xs text-surface-400 mt-0.5 flex gap-3 flex-wrap">
+          <div className="text-xs text-surface-400 mt-0.5 flex gap-3 flex-wrap items-center">
             <span>{fmtDate(run.timestamp)}</span>
             <span className="inline-flex items-center gap-1">
               <HardDrive className="w-3 h-3" />{fmtDisk(run.disk_kb)}
             </span>
             {sc && <span>{sc.zones} zones · {sc.seconds}s</span>}
+            {sc?.location && (
+              <span className="inline-flex items-center gap-1 text-surface-500">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {sc.location}
+              </span>
+            )}
           </div>
         </div>
 
@@ -248,8 +311,19 @@ function RunCard({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
+  const [authed,  setAuthed]  = useState(false)
   const [data,    setData]    = useState<AdminData | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // Check session on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem(SESSION_KEY) === '1') {
+      setAuthed(true)
+    }
+  }, [])
+
+  if (!authed) return <LoginGate onAuth={() => setAuthed(true)} />
+
   const [error,   setError]   = useState<string | null>(null)
   const [toast,   setToast]   = useState<{ msg: string; ok: boolean } | null>(null)
   const [tab,     setTab]     = useState<'uploads' | 'all'>('uploads')

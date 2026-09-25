@@ -411,6 +411,11 @@ def _run_info(run_dir: Path) -> dict | None:
                         "size_kb":  round(f.stat().st_size / 1024, 1),
                         "download": f"/api/runs/{run_dir.name}/files/{sd.name}/{f.name}",
                     })
+            loc = st.get("location", {})
+            city    = loc.get("city", "")
+            state   = loc.get("state", "")
+            country = loc.get("country", "")
+            location_str = ", ".join(filter(None, [city, state, country]))
             scenes_info.append({
                 "scene":        sd.name,
                 "zones":        st.get("priority_zone_count", 0),
@@ -418,6 +423,7 @@ def _run_info(run_dir: Path) -> dict | None:
                 "source_file":  Path(src).name if src else "",
                 "dims":         st.get("dimensions", []),
                 "crs":          st.get("crs", ""),
+                "location":     location_str,
                 "output_files": output_files,
             })
     # disk usage (bytes)

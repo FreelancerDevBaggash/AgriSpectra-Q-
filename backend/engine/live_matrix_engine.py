@@ -35,10 +35,13 @@ def _reverse_geocode(lon: float, lat: float) -> dict:
     try:
         url = (
             f"https://nominatim.openstreetmap.org/reverse"
-            f"?format=json&lon={lon}&lat={lat}&zoom=10&addressdetails=1"
+            f"?format=json&lon={lon}&lat={lat}&zoom=10&addressdetails=1&accept-language=en"
         )
         req = urllib.request.Request(
-            url, headers={"User-Agent": "AgriSpectra-Q/1.0 (spectral-analysis)"}
+            url, headers={
+                "User-Agent":      "AgriSpectra-Q/1.0 (spectral-analysis)",
+                "Accept-Language": "en",
+            }
         )
         with urllib.request.urlopen(req, timeout=8) as r:
             data = json.load(r)
