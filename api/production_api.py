@@ -135,6 +135,7 @@ def _run_engine_async(run_id: str, run_dir: Path, tif_path: Path,
 
         (run_dir / "run_summary.json").write_text(json.dumps({
             "run_id":      run_id,
+            "status":      "completed",          # ← required by frontend polling loop
             "live":        True,
             "mode":        "LIVE ANALYSIS",
             "source":      "user_upload",
