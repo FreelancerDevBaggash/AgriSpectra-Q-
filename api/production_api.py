@@ -402,23 +402,35 @@ def _run_info(run_dir: Path) -> dict | None:
         if stp.exists():
             st = json.loads(stp.read_text())
             src = st.get("source", "")
+            # list output files with sizes
+            output_files = []
+            for f in sorted(sd.iterdir()):
+                if f.is_file():
+                    output_files.append({
+                        "name":     f.name,
+                        "size_kb":  round(f.stat().st_size / 1024, 1),
+                        "download": f"/api/runs/{run_dir.name}/files/{sd.name}/{f.name}",
+                    })
             scenes_info.append({
-                "scene":      sd.name,
-                "zones":      st.get("priority_zone_count", 0),
-                "seconds":    round(st.get("processing_seconds", 0), 1),
-                "source_file": Path(src).name if src else "",
-                "dims":       st.get("dimensions", []),
-                "crs":        st.get("crs", ""),
+                "scene":        sd.name,
+                "zones":        st.get("priority_zone_count", 0),
+                "seconds":      round(st.get("processing_seconds", 0), 1),
+                "source_file":  Path(src).name if src else "",
+                "dims":         st.get("dimensions", []),
+                "crs":          st.get("crs", ""),
+                "output_files": output_files,
             })
     # disk usage (bytes)
     total_bytes = sum(f.stat().st_size for f in run_dir.rglob("*") if f.is_file())
+    is_upload = any(sc["scene"].startswith("upload_") for sc in scenes_info)
     return {
-        "run_id":    run_dir.name,
-        "status":    data.get("status", "unknown"),
-        "timestamp": data.get("timestamp", ""),
-        "source":    data.get("source", ""),
-        "scenes":    scenes_info,
-        "disk_kb":   round(total_bytes / 1024, 1),
+        "run_id":      run_dir.name,
+        "status":      data.get("status", "unknown"),
+        "timestamp":   data.get("timestamp", ""),
+        "source":      data.get("source", ""),
+        "is_upload":   is_upload,
+        "scenes":      scenes_info,
+        "disk_kb":     round(total_bytes / 1024, 1),
         "dashboard_url": f"/dashboard?run_id={run_dir.name}"
                          + (f"&scene={scenes_info[0]['scene']}" if scenes_info else ""),
     }
