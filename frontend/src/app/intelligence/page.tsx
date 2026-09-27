@@ -74,9 +74,14 @@ const PIPELINE_STEPS = [
   'Finalising run output',
 ]
 
-type SceneId = typeof SCENES_FALLBACK[number]['id']
+type SceneId = typeof SCENES_FALLBACK[number]['id'] | (string & {})
 type Status  = 'idle' | 'running' | 'done' | 'error'
-type SceneEntry = typeof SCENES_FALLBACK[number]
+type SceneEntry = typeof SCENES_FALLBACK[number] | {
+  id: string; label: string; code: string; location: string
+  dims: string; bands: number; res: string; crs: string
+  validPixels: string; time: string; zones: number
+  desc: string; tags: string[]; f1: string; available: boolean
+}
 type Mode = 'scene' | 'upload'
 
 // ── Upload lifecycle stages ───────────────────────────────────────────────────
@@ -149,29 +154,48 @@ export default function IntelligencePage() {
       .catch(() => setBackendState('offline'))
   }, [])
 
-  // Load live scene catalog; merge all real fields from API into local state
+  // Load live scene catalog directly from API — API is the source of truth.
+  // SCENES_FALLBACK is only used when the API is unreachable.
   useEffect(() => {
     fetch(`${API_BASE}/api/scenes`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (!data?.scenes?.length) return
-        const updated = SCENES_FALLBACK.map(s => {
-          const live = data.scenes.find((l: { scene_id: string }) => l.scene_id === s.id)
-          if (!live) return s
+        // Build the scene list from API response, filling gaps from fallback
+        const fromApi: SceneEntry[] = data.scenes.map((live: {
+          scene_id: string; label?: string; location?: string
+          dimensions?: number[]; crs?: string; valid_pixels?: number
+          available?: boolean
+        }, idx: number) => {
+          // Try to find a matching fallback entry for static fields (desc, tags, f1, etc.)
+          const fb = SCENES_FALLBACK.find(s => s.id === live.scene_id)
           const [w, h] = Array.isArray(live.dimensions) && live.dimensions.length === 2
             ? live.dimensions : [null, null]
           return {
-            ...s,
-            available:   live.available   ?? s.available,
-            location:    live.location    || s.location,
-            dims:        w && h ? `${Number(w).toLocaleString()} × ${Number(h).toLocaleString()} px` : s.dims,
-            crs:         live.crs         || s.crs,
-            validPixels: live.valid_pixels ? Number(live.valid_pixels).toLocaleString() : s.validPixels,
+            id:          live.scene_id as SceneId,
+            label:       live.label    || fb?.label || `Scene ${String(idx + 1).padStart(2, '0')}`,
+            code:        fb?.code      || live.scene_id,
+            location:    live.location || fb?.location || 'Unknown',
+            dims:        w && h ? `${Number(w).toLocaleString()} × ${Number(h).toLocaleString()} px` : fb?.dims || '—',
+            bands:       fb?.bands     || 224,
+            res:         fb?.res       || '30 m/px',
+            crs:         live.crs      || fb?.crs || '',
+            validPixels: live.valid_pixels ? Number(live.valid_pixels).toLocaleString() : fb?.validPixels || '—',
+            time:        fb?.time      || '—',
+            zones:       fb?.zones     || 0,
+            desc:        fb?.desc      || 'Pre-computed EnMAP spectral analysis.',
+            tags:        fb?.tags      || [],
+            f1:          fb?.f1        || '—',
+            available:   live.available ?? true,
           }
         })
-        setScenes(updated)
+        setScenes(fromApi)
+        // If currently selected scene is not in the new list, switch to first
+        setSelected(prev =>
+          fromApi.find(s => s.id === prev) ? prev : (fromApi[0]?.id ?? prev)
+        )
       })
-      .catch(() => { /* silently use fallback */ })
+      .catch(() => { /* silently keep fallback */ })
   }, [])
   const [error, setError]       = useState<string | null>(null)
   const [elapsed, setElapsed]   = useState(0)
