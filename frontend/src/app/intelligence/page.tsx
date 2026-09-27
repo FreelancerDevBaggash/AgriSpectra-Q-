@@ -167,6 +167,7 @@ export default function IntelligencePage() {
           dimensions?: number[]; crs?: string; valid_pixels?: number
           available?: boolean; priority_zone_count?: number
           processing_seconds?: number
+          desc?: string; tags?: string[]; f1_score?: string
         }, idx: number) => {
           // Try to find a matching fallback entry for static fields (desc, tags, f1, etc.)
           const fb = SCENES_FALLBACK.find(s => s.id === live.scene_id)
@@ -186,9 +187,9 @@ export default function IntelligencePage() {
             validPixels: live.valid_pixels ? Number(live.valid_pixels).toLocaleString() : fb?.validPixels || '—',
             time:        secondsVal !== null ? `~${Math.round(secondsVal)} s` : fb?.time || '—',
             zones:       zonesVal,
-            desc:        fb?.desc      || 'Pre-computed EnMAP spectral analysis.',
-            tags:        fb?.tags      || [],
-            f1:          fb?.f1        || '—',
+            desc:        live.desc      || fb?.desc || 'Pre-computed EnMAP spectral analysis.',
+            tags:        live.tags      || fb?.tags || [],
+            f1:          live.f1_score  || fb?.f1   || '—',
             available:   live.available ?? true,
           }
         })

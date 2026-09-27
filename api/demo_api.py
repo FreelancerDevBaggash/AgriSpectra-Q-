@@ -131,18 +131,42 @@ def _build_scene_dir_map(run_dir: Path) -> dict:
 DEMO_INDEX    = _build_demo_index()
 SCENE_DIR_MAP = {k: k for k in DEMO_INDEX}   # scene_id → scene_id (flat)
 
+# ── Scene meta helpers (desc, tags, f1_score, label — editable from Admin) ────
+
+def _read_scene_meta(scene_dir: Path) -> dict:
+    """Read scene_meta.json if present, else return empty dict."""
+    p = scene_dir / "scene_meta.json"
+    if p.exists():
+        try:
+            return json.loads(p.read_text())
+        except Exception:
+            return {}
+    return {}
+
+def _write_scene_meta(scene_dir: Path, meta: dict) -> None:
+    """Write scene_meta.json — only known fields, sanitised."""
+    safe = {
+        "label":     str(meta.get("label", ""))[:80],
+        "desc":      str(meta.get("desc",  ""))[:500],
+        "tags":      [str(t)[:40] for t in meta.get("tags", []) if t][:10],
+        "f1_score":  str(meta.get("f1_score", ""))[:10],
+    }
+    (scene_dir / "scene_meta.json").write_text(json.dumps(safe, ensure_ascii=False, indent=2))
+
+
 def _build_scene_catalog() -> list:
-    """Build /api/scenes response from the live demo index."""
+    """Build /api/scenes response — merges scene_statistics.json + scene_meta.json."""
     entries = []
     for i, (scene_id, info) in enumerate(DEMO_INDEX.items(), start=1):
         stats_path = info["scene_dir"] / "scene_statistics.json"
+        meta       = _read_scene_meta(info["scene_dir"])
         if stats_path.exists():
             st      = json.loads(stats_path.read_text())
             loc_obj = st.get("location", {})
             parts   = [loc_obj.get("city"), loc_obj.get("state"), loc_obj.get("country")]
             entries.append({
                 "scene_id":            scene_id,
-                "label":               f"Scene {i:02d}",
+                "label":               meta.get("label") or f"Scene {i:02d}",
                 "location":            ", ".join(p for p in parts if p) or "Unknown",
                 "dimensions":          st.get("dimensions", []),
                 "bands":               st.get("bands", 224),
@@ -152,14 +176,23 @@ def _build_scene_catalog() -> list:
                 "nodata_percentage":   round(st.get("nodata_percentage", 0), 2),
                 "priority_zone_count": st.get("priority_zone_count", 0),
                 "processing_seconds":  round(st.get("processing_seconds", 0), 1),
+                "desc":                meta.get("desc", ""),
+                "tags":                meta.get("tags", []),
+                "f1_score":            meta.get("f1_score", ""),
                 "available":           True,
             })
         else:
             entries.append({
-                "scene_id": scene_id, "label": f"Scene {i:02d}",
+                "scene_id": scene_id,
+                "label":    meta.get("label") or f"Scene {i:02d}",
                 "location": "Unknown", "dimensions": [], "bands": 224,
                 "resolution_m": 30, "crs": "", "valid_pixels": 0,
-                "nodata_percentage": 0, "available": True,
+                "nodata_percentage": 0, "priority_zone_count": 0,
+                "processing_seconds": 0,
+                "desc":     meta.get("desc", ""),
+                "tags":     meta.get("tags", []),
+                "f1_score": meta.get("f1_score", ""),
+                "available": True,
             })
     return entries
 
@@ -488,14 +521,14 @@ def _admin_auth():
     return None
 
 def _scene_stats_summary(scene_dir: Path) -> dict:
-    """Read scene_statistics.json and return a compact summary dict."""
+    """Read scene_statistics.json + scene_meta.json and return a compact summary dict."""
     stp = scene_dir / "scene_statistics.json"
     if not stp.exists():
         return {}
-    st  = json.loads(stp.read_text())
-    loc = st.get("location", {})
+    st   = json.loads(stp.read_text())
+    meta = _read_scene_meta(scene_dir)
+    loc  = st.get("location", {})
     parts = [loc.get("city"), loc.get("state"), loc.get("country")]
-    location_str = ", ".join(p for p in parts if p)
     output_files = [
         {"name": f.name, "size_kb": round(f.stat().st_size / 1024, 1)}
         for f in sorted(scene_dir.iterdir()) if f.is_file()
@@ -504,12 +537,17 @@ def _scene_stats_summary(scene_dir: Path) -> dict:
         "scene":        scene_dir.name,
         "zones":        st.get("priority_zone_count", 0),
         "seconds":      round(st.get("processing_seconds", 0), 1),
-        "location":     location_str,
+        "location":     ", ".join(p for p in parts if p),
         "dims":         st.get("dimensions", []),
         "crs":          st.get("crs", ""),
         "valid_pixels": st.get("valid_pixels", 0),
         "nodata_pct":   round(st.get("nodata_percentage", 0), 2),
         "output_files": output_files,
+        # editable meta
+        "label":    meta.get("label", ""),
+        "desc":     meta.get("desc",  ""),
+        "tags":     meta.get("tags",  []),
+        "f1_score": meta.get("f1_score", ""),
     }
 
 
@@ -627,6 +665,46 @@ def admin_delete_demo_scene(run_id: str, scene: str):
     _rebuild_globals()
 
     return jsonify({"ok": True, "deleted": f"{run_id}/{scene}"})
+
+
+# ── POST /api/admin/demo/meta — save editable metadata for a demo scene ────────
+@app.post("/api/admin/demo/meta")
+def admin_set_scene_meta():
+    """
+    Body JSON:
+      { "run_id": "AGRQ-...", "scene": "scene_01_...",
+        "label": "...", "desc": "...", "tags": ["...", "..."], "f1_score": "98.47%" }
+    Writes scene_meta.json into demo_data/<run_id>/<scene>/.
+    Hot-reloads SCENE_CATALOG so /api/scenes reflects changes immediately.
+    """
+    auth_err = _admin_auth()
+    if auth_err: return auth_err
+
+    body     = request.get_json(silent=True) or {}
+    run_id   = body.get("run_id", "")
+    scene_id = body.get("scene", "")
+
+    if not run_id or not re.match(r'^AGRQ-[A-Z0-9a-z_-]+$', run_id):
+        return jsonify({"error": "invalid run_id"}), 400
+    if not scene_id:
+        return jsonify({"error": "scene is required"}), 400
+
+    scene_dir = DEMO_DATA_ROOT / run_id / scene_id
+    if not scene_dir.exists():
+        return jsonify({"error": f"demo scene not found: {run_id}/{scene_id}"}), 404
+
+    _write_scene_meta(scene_dir, body)
+
+    # Hot-reload catalog only (no need to rescan full index)
+    global SCENE_CATALOG
+    SCENE_CATALOG = _build_scene_catalog()
+
+    return jsonify({
+        "ok":       True,
+        "run_id":   run_id,
+        "scene":    scene_id,
+        "meta":     _read_scene_meta(scene_dir),
+    })
 
 
 # ── GET /api/admin/live-runs — list real runs available to promote to demo ─────

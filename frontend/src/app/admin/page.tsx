@@ -57,6 +57,11 @@ interface DemoSceneMeta {
   valid_pixels: number
   nodata_pct:   number
   output_files: { name: string; size_kb: number }[]
+  // editable meta
+  label:    string
+  desc:     string
+  tags:     string[]
+  f1_score: string
 }
 
 interface DemoData {
@@ -317,48 +322,141 @@ function RunCard({ run, dup, onDelete }: { run: RunInfo; dup: boolean; onDelete:
 // ── Demo Scene Card ───────────────────────────────────────────────────────────
 
 function DemoSceneCard({
-  scene, onRemove, removing,
-}: { scene: DemoSceneMeta; onRemove: (runId: string, sceneName: string) => void; removing: boolean }) {
-  const [confirm, setConfirm] = useState(false)
+  scene, onRemove, removing, onMetaSaved,
+}: {
+  scene: DemoSceneMeta
+  onRemove: (runId: string, sceneName: string) => void
+  removing: boolean
+  onMetaSaved: () => void
+}) {
+  const [confirm,  setConfirm]  = useState(false)
+  const [editing,  setEditing]  = useState(false)
+  const [saving,   setSaving]   = useState(false)
+  const [label,    setLabel]    = useState(scene.label    || '')
+  const [desc,     setDesc]     = useState(scene.desc     || '')
+  const [tagsRaw,  setTagsRaw]  = useState((scene.tags || []).join(', '))
+  const [f1,       setF1]       = useState(scene.f1_score || '')
+
+  const handleSaveMeta = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/demo/meta`, {
+        method: 'POST',
+        headers: HEADERS,
+        body: JSON.stringify({
+          run_id:   scene.run_id,
+          scene:    scene.scene,
+          label:    label.trim(),
+          desc:     desc.trim(),
+          tags:     tagsRaw.split(',').map(t => t.trim()).filter(Boolean),
+          f1_score: f1.trim(),
+        }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error ?? `HTTP ${res.status}`)
+      setEditing(false)
+      onMetaSaved()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Save failed')
+    } finally { setSaving(false) }
+  }
+
   return (
-    <div className="bg-white rounded-xl border border-emerald-200 px-5 py-4 flex flex-wrap items-center gap-3">
-      <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center flex-shrink-0">
-        <Star className="w-4 h-4 text-emerald-600" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <code className="text-sm font-mono font-semibold text-surface-800">{scene.scene}</code>
-          <span className="text-[11px] text-surface-400 font-mono">{scene.run_id}</span>
+    <div className="bg-white rounded-xl border border-emerald-200 overflow-hidden">
+      {/* ── Header row ── */}
+      <div className="px-5 py-4 flex flex-wrap items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center flex-shrink-0">
+          <Star className="w-4 h-4 text-emerald-600" />
         </div>
-        <div className="text-xs text-surface-500 mt-0.5 flex gap-3 flex-wrap items-center">
-          {scene.location && (
-            <span className="inline-flex items-center gap-1">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-              {scene.location}
-            </span>
-          )}
-          <span>{scene.zones} zones</span>
-          <span>{scene.seconds}s</span>
-          {scene.dims.length === 2 && <span>{scene.dims[0]} × {scene.dims[1]} px</span>}
-          <span className="text-surface-400">{scene.crs}</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {!confirm ? (
-          <button onClick={() => setConfirm(true)} disabled={removing}
-            className="inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40">
-            <StarOff className="w-3.5 h-3.5" /> Remove
-          </button>
-        ) : (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-red-600 font-medium">Remove from demo?</span>
-            <button onClick={() => { setConfirm(false); onRemove(scene.run_id, scene.scene) }}
-              className="py-1 px-2.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700">Yes</button>
-            <button onClick={() => setConfirm(false)}
-              className="py-1 px-2.5 text-xs rounded-lg border border-surface-200 text-surface-600 hover:bg-surface-50">No</button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-semibold text-surface-800">{label || scene.scene}</span>
+            <code className="text-[11px] font-mono text-surface-400">{scene.scene}</code>
+            <span className="text-[11px] text-surface-300 font-mono">{scene.run_id}</span>
           </div>
-        )}
+          <div className="text-xs text-surface-500 mt-0.5 flex gap-3 flex-wrap items-center">
+            {scene.location && (
+              <span className="inline-flex items-center gap-1">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                {scene.location}
+              </span>
+            )}
+            <span>{scene.zones} zones</span>
+            <span>{scene.seconds}s</span>
+            {scene.dims.length === 2 && <span>{scene.dims[0]} × {scene.dims[1]} px</span>}
+            {f1 && <span className="font-semibold text-emerald-700">F1 {f1}</span>}
+          </div>
+          {desc && <p className="text-xs text-surface-400 mt-1 truncate">{desc}</p>}
+          {scene.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {scene.tags.map(t => (
+                <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-surface-100 text-surface-500">{t}</span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button onClick={() => setEditing(e => !e)}
+            className="inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-medium rounded-lg border border-surface-200 text-surface-600 hover:bg-surface-50 transition-colors">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+          {!confirm ? (
+            <button onClick={() => setConfirm(true)} disabled={removing}
+              className="inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40">
+              <StarOff className="w-3.5 h-3.5" /> Remove
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-red-600 font-medium">Remove?</span>
+              <button onClick={() => { setConfirm(false); onRemove(scene.run_id, scene.scene) }}
+                className="py-1 px-2.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700">Yes</button>
+              <button onClick={() => setConfirm(false)}
+                className="py-1 px-2.5 text-xs rounded-lg border border-surface-200 text-surface-600 hover:bg-surface-50">No</button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* ── Inline meta editor ── */}
+      {editing && (
+        <div className="border-t border-surface-100 px-5 py-4 bg-surface-50 space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-surface-400">Edit Scene Metadata</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-surface-600 mb-1">Label</label>
+              <input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Sudan Scene 01"
+                className="w-full px-3 py-2 text-xs rounded-lg border border-surface-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-100 outline-none bg-white" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-surface-600 mb-1">F1 Score</label>
+              <input value={f1} onChange={e => setF1(e.target.value)} placeholder="e.g. 98.47%"
+                className="w-full px-3 py-2 text-xs rounded-lg border border-surface-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-100 outline-none bg-white" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-surface-600 mb-1">Description</label>
+            <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={2}
+              placeholder="Short description shown under the scene name..."
+              className="w-full px-3 py-2 text-xs rounded-lg border border-surface-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-100 outline-none bg-white resize-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-surface-600 mb-1">Tags <span className="font-normal text-surface-400">(comma-separated)</span></label>
+            <input value={tagsRaw} onChange={e => setTagsRaw(e.target.value)} placeholder="e.g. Nile Agriculture, Irrigated, Sudan"
+              className="w-full px-3 py-2 text-xs rounded-lg border border-surface-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-100 outline-none bg-white" />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button onClick={handleSaveMeta} disabled={saving}
+              className="inline-flex items-center gap-1.5 py-1.5 px-4 text-xs font-semibold rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-40 transition-colors">
+              {saving ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+              Save
+            </button>
+            <button onClick={() => setEditing(false)}
+              className="py-1.5 px-3 text-xs rounded-lg border border-surface-200 text-surface-600 hover:bg-surface-100">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -672,6 +770,7 @@ export default function AdminPage() {
                     scene={s}
                     onRemove={handleRemoveDemo}
                     removing={removing === `${s.run_id}/${s.scene}`}
+                    onMetaSaved={loadDemo}
                   />
                 ))}
               </div>
