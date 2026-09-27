@@ -141,16 +141,18 @@ def _build_scene_catalog() -> list:
             loc_obj = st.get("location", {})
             parts   = [loc_obj.get("city"), loc_obj.get("state"), loc_obj.get("country")]
             entries.append({
-                "scene_id":          scene_id,
-                "label":             f"Scene {i:02d}",
-                "location":          ", ".join(p for p in parts if p) or "Unknown",
-                "dimensions":        st.get("dimensions", []),
-                "bands":             st.get("bands", 224),
-                "resolution_m":      st.get("resolution_m", 30),
-                "crs":               st.get("crs", ""),
-                "valid_pixels":      st.get("valid_pixels", 0),
-                "nodata_percentage": round(st.get("nodata_percentage", 0), 2),
-                "available":         True,
+                "scene_id":            scene_id,
+                "label":               f"Scene {i:02d}",
+                "location":            ", ".join(p for p in parts if p) or "Unknown",
+                "dimensions":          st.get("dimensions", []),
+                "bands":               st.get("bands", 224),
+                "resolution_m":        st.get("resolution_m", 30),
+                "crs":                 st.get("crs", ""),
+                "valid_pixels":        st.get("valid_pixels", 0),
+                "nodata_percentage":   round(st.get("nodata_percentage", 0), 2),
+                "priority_zone_count": st.get("priority_zone_count", 0),
+                "processing_seconds":  round(st.get("processing_seconds", 0), 1),
+                "available":           True,
             })
         else:
             entries.append({

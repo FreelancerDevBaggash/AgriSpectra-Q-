@@ -165,12 +165,15 @@ export default function IntelligencePage() {
         const fromApi: SceneEntry[] = data.scenes.map((live: {
           scene_id: string; label?: string; location?: string
           dimensions?: number[]; crs?: string; valid_pixels?: number
-          available?: boolean
+          available?: boolean; priority_zone_count?: number
+          processing_seconds?: number
         }, idx: number) => {
           // Try to find a matching fallback entry for static fields (desc, tags, f1, etc.)
           const fb = SCENES_FALLBACK.find(s => s.id === live.scene_id)
           const [w, h] = Array.isArray(live.dimensions) && live.dimensions.length === 2
             ? live.dimensions : [null, null]
+          const zonesVal   = live.priority_zone_count ?? fb?.zones ?? 0
+          const secondsVal = live.processing_seconds  ?? null
           return {
             id:          live.scene_id as SceneId,
             label:       live.label    || fb?.label || `Scene ${String(idx + 1).padStart(2, '0')}`,
@@ -181,8 +184,8 @@ export default function IntelligencePage() {
             res:         fb?.res       || '30 m/px',
             crs:         live.crs      || fb?.crs || '',
             validPixels: live.valid_pixels ? Number(live.valid_pixels).toLocaleString() : fb?.validPixels || '—',
-            time:        fb?.time      || '—',
-            zones:       fb?.zones     || 0,
+            time:        secondsVal !== null ? `~${Math.round(secondsVal)} s` : fb?.time || '—',
+            zones:       zonesVal,
             desc:        fb?.desc      || 'Pre-computed EnMAP spectral analysis.',
             tags:        fb?.tags      || [],
             f1:          fb?.f1        || '—',
