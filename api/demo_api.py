@@ -83,45 +83,51 @@ ALLOWED_FILES = {
     "risk_map.tif", "priority_map.tif",
 }
 
-# ── Scene catalog — all three scenes shown as available
-SCENE_CATALOG = [
-    {
-        "scene_id":          "scene_01_DT0000205230",
-        "label":             "Scene 01",
-        "location":          "Al Ain Region, UAE",
-        "dimensions":        [1153, 1198],
-        "bands":             224,
-        "resolution_m":      30,
-        "crs":               "EPSG:32753",
-        "valid_pixels":      1028176,
-        "nodata_percentage": 25.56,
-        "available":         True,   # always True in demo mode
-    },
-    {
-        "scene_id":          "scene_02",
-        "label":             "Scene 02",
-        "location":          "Arabian Gulf Coast",
-        "dimensions":        [1210, 1244],
-        "bands":             224,
-        "resolution_m":      30,
-        "crs":               "EPSG:32645",
-        "valid_pixels":      1006261,
-        "nodata_percentage": 33.15,
-        "available":         True,
-    },
-    {
-        "scene_id":          "scene_03",
-        "label":             "Scene 03",
-        "location":          "Inland Desert Agriculture",
-        "dimensions":        [1152, 1214],
-        "bands":             224,
-        "resolution_m":      30,
-        "crs":               "EPSG:32636",
-        "valid_pixels":      1047911,
-        "nodata_percentage": 25.07,
-        "available":         True,
-    },
-]
+# ── Scene catalog — built dynamically from real scene_statistics.json files
+def _build_scene_catalog() -> list:
+    """
+    Read scene metadata directly from the pre-computed scene_statistics.json
+    files so the catalog always reflects the real data on disk.
+    Falls back to safe defaults if a file is missing.
+    """
+    entries = []
+    for i, (scene_id, scene_dir_name) in enumerate(SCENE_DIR_MAP.items(), start=1):
+        stats_path = DEMO_RUN_DIR / scene_dir_name / "scene_statistics.json"
+        if stats_path.exists():
+            st = json.loads(stats_path.read_text())
+            loc_obj = st.get("location", {})
+            # Build a human-readable location string from the location object
+            parts = [loc_obj.get("city"), loc_obj.get("state"), loc_obj.get("country")]
+            location_str = ", ".join(p for p in parts if p)
+            entries.append({
+                "scene_id":          scene_id,
+                "label":             f"Scene {i:02d}",
+                "location":          location_str or "Unknown",
+                "dimensions":        st.get("dimensions", []),
+                "bands":             st.get("bands", 224),
+                "resolution_m":      st.get("resolution_m", 30),
+                "crs":               st.get("crs", ""),
+                "valid_pixels":      st.get("valid_pixels", 0),
+                "nodata_percentage": round(st.get("nodata_percentage", 0), 2),
+                "available":         True,   # always True in demo mode
+            })
+        else:
+            # Minimal fallback — scene dir exists but stats file missing
+            entries.append({
+                "scene_id":          scene_id,
+                "label":             f"Scene {i:02d}",
+                "location":          "Unknown",
+                "dimensions":        [],
+                "bands":             224,
+                "resolution_m":      30,
+                "crs":               "",
+                "valid_pixels":      0,
+                "nodata_percentage": 0,
+                "available":         True,
+            })
+    return entries
+
+SCENE_CATALOG = _build_scene_catalog()
 
 app = Flask(__name__)
 CORS(app)
