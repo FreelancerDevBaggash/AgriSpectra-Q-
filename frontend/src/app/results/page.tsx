@@ -21,7 +21,7 @@ const PER_SCENE = [
 // Key findings — spec §6.11 required metrics
 const FINDINGS = [
   'AgriSpectra-Q achieves 96.40% mean F1 — highest numerical result among all six evaluated systems.',
-  'Scene 01 (DT0000205230) delivers 98.47% F1, reflecting high spectral contrast in the Al Ain oasis region.',
+  'Scene 01 (DT0000205230) delivers 98.47% F1, reflecting high spectral contrast in the Nile River agricultural zone.',
   'Calibration ECE of 0.73% after post-hoc scaling — well-calibrated probabilities for decision support.',
   'At 10% inspection budget, the system achieves ~49% positive recall — ~5× better than random sampling.',
   'Ablation studies confirm the quantum-inspired component provides measurable contribution.',

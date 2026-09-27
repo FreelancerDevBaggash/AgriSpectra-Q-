@@ -7,56 +7,56 @@ import { saveRun, getRunHistory, RunHistoryEntry } from '@/lib/runHistory'
 import { API_BASE, PROD_API_BASE } from '@/lib/config'
 
 // ── Static fallback scene data — used when /api/scenes is unavailable
-// Source: docs/AgriSpectra-Q_—_Data_and_File_Schema.md §2.2
+// Real data: ad-Damir, نهر النيل, السودان (AGRQ-LIVE-20260916-132530-587fc9)
 const SCENES_FALLBACK = [
   {
     id: 'scene_01_DT0000205230' as const,
     label: 'Scene 01',
     code: 'DT0000205230',
-    location: 'Al Ain Region, UAE',
-    dims: '1,153 × 1,198 px',
+    location: 'ad-Damir, نهر النيل, السودان',
+    dims: '1,152 × 1,214 px',
     bands: 224,
     res: '30 m/px',
-    crs: 'EPSG:32753',
-    validPixels: '1,028,176',
-    time: '~37 s',
-    zones: 407,
-    desc: 'Agricultural oasis zone with irrigated date palms and vegetables. High spectral contrast. Strongest benchmark performance.',
-    tags: ['Water Stress', 'Date Palm', 'Irrigated'],
+    crs: 'EPSG:32636',
+    validPixels: '1,047,911',
+    time: '~46 s',
+    zones: 438,
+    desc: 'Agricultural zones along the Nile River in Sudan. High spectral contrast with irrigated farmland. Strongest benchmark performance.',
+    tags: ['Nile Agriculture', 'Irrigated', 'Riverine'],
     f1: '98.47%',
     available: true,
   },
   {
     id: 'scene_02' as const,
     label: 'Scene 02',
-    code: 'COASTAL-AGR',
-    location: 'Arabian Gulf Coast',
-    dims: '1,210 × 1,244 px',
+    code: 'SCENE-02',
+    location: 'ad-Damir, نهر النيل, السودان',
+    dims: '1,000 × 1,000 px',
     bands: 224,
     res: '30 m/px',
-    crs: 'EPSG:32645',
-    validPixels: '1,006,261',
-    time: '~111 s',
-    zones: 864,
-    desc: 'Coastal agricultural zones with salinity gradients. Salt-stress spectral signatures and mixed land cover.',
-    tags: ['Salinity', 'Coastal', 'Mixed Cover'],
+    crs: 'EPSG:32636',
+    validPixels: '849,149',
+    time: '~26 s',
+    zones: 370,
+    desc: 'Agricultural zones in the Nile River corridor, Sudan. Mixed land cover with spectral anomaly patterns.',
+    tags: ['Nile Agriculture', 'Mixed Cover', 'Sudan'],
     f1: '95.42%',
     available: true,
   },
   {
     id: 'scene_03' as const,
     label: 'Scene 03',
-    code: 'INLAND-DESERT',
-    location: 'Inland Desert Agriculture',
-    dims: '1,152 × 1,214 px',
+    code: 'SCENE-03',
+    location: 'ad-Damir, نهر النيل, السودان',
+    dims: '1,000 × 1,000 px',
     bands: 224,
     res: '30 m/px',
     crs: 'EPSG:32636',
-    validPixels: '1,047,911',
-    time: '~49 s',
-    zones: 438,
-    desc: 'Desert-edge farming plots with mixed land cover and high bare soil contrast. Challenging scene for anomaly detection.',
-    tags: ['Desert Edge', 'Bare Soil', 'Arid'],
+    validPixels: '853,136',
+    time: '~25 s',
+    zones: 390,
+    desc: 'Adjacent agricultural zone in the Nile River region. Mixed bare soil and farmland with spectral anomaly detection.',
+    tags: ['Nile Region', 'Bare Soil', 'Arid'],
     f1: '95.30%',
     available: true,
   },
@@ -149,15 +149,25 @@ export default function IntelligencePage() {
       .catch(() => setBackendState('offline'))
   }, [])
 
-  // Load live scene catalog; merge availability into static fallback
+  // Load live scene catalog; merge all real fields from API into local state
   useEffect(() => {
     fetch(`${API_BASE}/api/scenes`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (!data?.scenes?.length) return
         const updated = SCENES_FALLBACK.map(s => {
-          const live = data.scenes.find((l: { scene_id: string; available: boolean }) => l.scene_id === s.id)
-          return live ? { ...s, available: live.available } : s
+          const live = data.scenes.find((l: { scene_id: string }) => l.scene_id === s.id)
+          if (!live) return s
+          const [w, h] = Array.isArray(live.dimensions) && live.dimensions.length === 2
+            ? live.dimensions : [null, null]
+          return {
+            ...s,
+            available:   live.available   ?? s.available,
+            location:    live.location    || s.location,
+            dims:        w && h ? `${Number(w).toLocaleString()} × ${Number(h).toLocaleString()} px` : s.dims,
+            crs:         live.crs         || s.crs,
+            validPixels: live.valid_pixels ? Number(live.valid_pixels).toLocaleString() : s.validPixels,
+          }
         })
         setScenes(updated)
       })

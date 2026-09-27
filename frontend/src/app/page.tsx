@@ -58,7 +58,7 @@ const CAPABILITIES = [
       </svg>
     ),
     title: 'Real EnMAP data',
-    desc: 'Actual EnMAP L2A GeoTIFF scenes — 224 spectral bands, 30 m/px, UAE / Gulf region. No synthetic or simulated inputs.',
+    desc: 'Actual EnMAP L2A GeoTIFF scenes — 224 spectral bands, 30 m/px, Nile River region, Sudan. No synthetic or simulated inputs.',
   },
   {
     icon: (
@@ -122,7 +122,7 @@ export default function HomePage() {
                 Arab Youth Space Hackathon 2026
               </span>
               <span className="badge bg-white/8 text-white/60 border border-white/10 text-xs">
-                Real EnMAP · UAE / Gulf Region
+                Real EnMAP · Nile River, Sudan
               </span>
             </div>
 

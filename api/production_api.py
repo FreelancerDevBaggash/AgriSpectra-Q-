@@ -465,7 +465,6 @@ def admin_delete_run(run_id: str):
     auth_err = _admin_auth()
     if auth_err:
         return auth_err
-    # Safety: only allow known run-id pattern
     import re
     if not re.match(r'^AGRQ-[A-Z0-9-]+$', run_id):
         return jsonify({"error": "invalid run_id"}), 400
@@ -477,6 +476,65 @@ def admin_delete_run(run_id: str):
         RUNS.pop(run_id, None)
         ABORTS.pop(run_id, None)
     return jsonify({"deleted": run_id})
+
+
+@app.get("/api/admin/live-runs")
+def admin_list_live_runs():
+    """
+    List all completed runs in results/live_matrix/ with scene metadata.
+    Used by the Admin panel to browse available runs for promotion to demo.
+    Requires X-Admin-Key header.
+    """
+    auth_err = _admin_auth()
+    if auth_err:
+        return auth_err
+
+    def _scene_summary(scene_dir: Path) -> dict | None:
+        stp = scene_dir / "scene_statistics.json"
+        if not stp.exists():
+            return None
+        st  = json.loads(stp.read_text())
+        loc = st.get("location", {})
+        parts = [loc.get("city"), loc.get("state"), loc.get("country")]
+        return {
+            "scene":        scene_dir.name,
+            "zones":        st.get("priority_zone_count", 0),
+            "seconds":      round(st.get("processing_seconds", 0), 1),
+            "location":     ", ".join(p for p in parts if p),
+            "dims":         st.get("dimensions", []),
+            "crs":          st.get("crs", ""),
+            "valid_pixels": st.get("valid_pixels", 0),
+        }
+
+    runs = []
+    if OUT.exists():
+        for run_dir in sorted(OUT.iterdir(), key=lambda d: d.stat().st_mtime, reverse=True):
+            if not run_dir.is_dir():
+                continue
+            summary_path = run_dir / "run_summary.json"
+            if not summary_path.exists():
+                continue
+            try:
+                summary = json.loads(summary_path.read_text())
+            except Exception:
+                continue
+            scenes_info = [
+                s for s in (
+                    _scene_summary(d) for d in sorted(run_dir.iterdir()) if d.is_dir()
+                ) if s
+            ]
+            if not scenes_info:
+                continue
+            total_bytes = sum(f.stat().st_size for f in run_dir.rglob("*") if f.is_file())
+            runs.append({
+                "run_id":    run_dir.name,
+                "status":    summary.get("status", "unknown"),
+                "timestamp": summary.get("timestamp", ""),
+                "scenes":    scenes_info,
+                "disk_kb":   round(total_bytes / 1024, 1),
+            })
+
+    return jsonify({"runs": runs, "total": len(runs)})
 
 
 # ── Entry-point ───────────────────────────────────────────────────────────────
