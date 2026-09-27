@@ -84,9 +84,42 @@ def _find_demo_run_dir() -> Path:
 DEMO_RUN_DIR = _find_demo_run_dir()
 DEMO_RUN_ID  = DEMO_RUN_DIR.name
 
-# Map scene_id → sub-directory name inside the demo run (built dynamically)
+ALLOWED_FILES = {
+    "zones.csv", "spectral_evidence.csv", "inspection_budget.csv",
+    "zones.geojson", "scene_statistics.json", "metrics.json", "manifest.json",
+    "risk_map.tif", "priority_map.tif",
+}
+
+# ── Multi-run demo index ───────────────────────────────────────────────────────
+# scene_id → {"run_dir": Path, "scene_dir": Path}
+# Built from ALL <run_id>/<scene_dir>/ folders under demo_data/.
+# Admin endpoints call _rebuild_demo_index() after any change.
+
+def _build_demo_index() -> dict:
+    """
+    Scan every run folder in demo_data/ and map each scene sub-directory
+    to its containing run.  Newer runs (by mtime) win on scene_id collision.
+    """
+    index: dict[str, dict] = {}
+    if not DEMO_DATA_ROOT.exists():
+        return index
+    for run_dir in sorted(DEMO_DATA_ROOT.iterdir(), key=lambda d: d.stat().st_mtime):
+        if not run_dir.is_dir():
+            continue
+        for scene_dir in sorted(run_dir.iterdir()):
+            if not scene_dir.is_dir():
+                continue
+            if not (scene_dir / "scene_statistics.json").exists():
+                continue
+            # scene_id == scene_dir name (e.g. "scene_01_DT0000205230")
+            index[scene_dir.name] = {
+                "run_dir":   run_dir,
+                "scene_dir": scene_dir,
+            }
+    return index
+
+# Backwards-compat shim: SCENE_DIR_MAP used in a few legacy spots
 def _build_scene_dir_map(run_dir: Path) -> dict:
-    """Discover available scene sub-directories in a run folder."""
     if not run_dir.exists():
         return {}
     return {
@@ -95,60 +128,49 @@ def _build_scene_dir_map(run_dir: Path) -> dict:
         if d.is_dir() and (d / "scene_statistics.json").exists()
     }
 
-SCENE_DIR_MAP = _build_scene_dir_map(DEMO_RUN_DIR)
+DEMO_INDEX    = _build_demo_index()
+SCENE_DIR_MAP = {k: k for k in DEMO_INDEX}   # scene_id → scene_id (flat)
 
-ALLOWED_FILES = {
-    "zones.csv", "spectral_evidence.csv", "inspection_budget.csv",
-    "zones.geojson", "scene_statistics.json", "metrics.json", "manifest.json",
-    # risk_map.tif and priority_map.tif are served if present (they're in the run)
-    "risk_map.tif", "priority_map.tif",
-}
-
-# ── Scene catalog — built dynamically from real scene_statistics.json files
 def _build_scene_catalog() -> list:
-    """
-    Read scene metadata directly from the pre-computed scene_statistics.json
-    files so the catalog always reflects the real data on disk.
-    Falls back to safe defaults if a file is missing.
-    """
+    """Build /api/scenes response from the live demo index."""
     entries = []
-    for i, (scene_id, scene_dir_name) in enumerate(SCENE_DIR_MAP.items(), start=1):
-        stats_path = DEMO_RUN_DIR / scene_dir_name / "scene_statistics.json"
+    for i, (scene_id, info) in enumerate(DEMO_INDEX.items(), start=1):
+        stats_path = info["scene_dir"] / "scene_statistics.json"
         if stats_path.exists():
-            st = json.loads(stats_path.read_text())
+            st      = json.loads(stats_path.read_text())
             loc_obj = st.get("location", {})
-            # Build a human-readable location string from the location object
-            parts = [loc_obj.get("city"), loc_obj.get("state"), loc_obj.get("country")]
-            location_str = ", ".join(p for p in parts if p)
+            parts   = [loc_obj.get("city"), loc_obj.get("state"), loc_obj.get("country")]
             entries.append({
                 "scene_id":          scene_id,
                 "label":             f"Scene {i:02d}",
-                "location":          location_str or "Unknown",
+                "location":          ", ".join(p for p in parts if p) or "Unknown",
                 "dimensions":        st.get("dimensions", []),
                 "bands":             st.get("bands", 224),
                 "resolution_m":      st.get("resolution_m", 30),
                 "crs":               st.get("crs", ""),
                 "valid_pixels":      st.get("valid_pixels", 0),
                 "nodata_percentage": round(st.get("nodata_percentage", 0), 2),
-                "available":         True,   # always True in demo mode
+                "available":         True,
             })
         else:
-            # Minimal fallback — scene dir exists but stats file missing
             entries.append({
-                "scene_id":          scene_id,
-                "label":             f"Scene {i:02d}",
-                "location":          "Unknown",
-                "dimensions":        [],
-                "bands":             224,
-                "resolution_m":      30,
-                "crs":               "",
-                "valid_pixels":      0,
-                "nodata_percentage": 0,
-                "available":         True,
+                "scene_id": scene_id, "label": f"Scene {i:02d}",
+                "location": "Unknown", "dimensions": [], "bands": 224,
+                "resolution_m": 30, "crs": "", "valid_pixels": 0,
+                "nodata_percentage": 0, "available": True,
             })
     return entries
 
 SCENE_CATALOG = _build_scene_catalog()
+
+def _rebuild_globals() -> None:
+    """Hot-reload all derived globals after demo_data changes. Called by admin endpoints."""
+    global DEMO_RUN_DIR, DEMO_RUN_ID, DEMO_INDEX, SCENE_DIR_MAP, SCENE_CATALOG
+    DEMO_RUN_DIR  = _find_demo_run_dir()
+    DEMO_RUN_ID   = DEMO_RUN_DIR.name
+    DEMO_INDEX    = _build_demo_index()
+    SCENE_DIR_MAP = {k: k for k in DEMO_INDEX}
+    SCENE_CATALOG = _build_scene_catalog()
 
 app = Flask(__name__)
 CORS(app)
@@ -254,23 +276,23 @@ def list_scenes():
 
 @app.get("/api/status")
 def status():
-    demo_ready = DEMO_RUN_DIR.exists()
     scenes_status = []
     for s in SCENE_CATALOG:
-        sid      = s["scene_id"]
-        scene_dir = DEMO_RUN_DIR / (SCENE_DIR_MAP.get(sid) or sid)
+        sid       = s["scene_id"]
+        info      = DEMO_INDEX.get(sid)
+        available = info["scene_dir"].exists() if info else False
         scenes_status.append({
             "scene_id":  sid,
             "label":     s["label"],
-            "available": scene_dir.exists(),
+            "available": available,
             "demo_mode": True,
-            "note":      "Pre-computed from real EnMAP GeoTIFF" if scene_dir.exists() else "Demo data missing",
+            "note":      "Pre-computed from real EnMAP GeoTIFF" if available else "Demo data missing",
         })
     return jsonify({
-        "status":           "ready" if demo_ready else "degraded",
+        "status":           "ready" if DEMO_INDEX else "degraded",
         "mode":             "demo",
         "demo_run_id":      DEMO_RUN_ID,
-        "demo_run_exists":  demo_ready,
+        "demo_run_exists":  bool(DEMO_INDEX),
         "all_scenes_ready": all(s["available"] for s in scenes_status),
         "scenes_on_disk":   scenes_status,
     })
@@ -279,39 +301,32 @@ def status():
 @app.post("/api/analyse")
 def analyse():
     body  = request.get_json(silent=True) or {}
-    scene = body.get("scene", "scene_01_DT0000205230")
+    scene = body.get("scene", next(iter(DEMO_INDEX), "scene_01_DT0000205230"))
 
-    if scene not in SCENE_DIR_MAP:
-        return jsonify({"error": f"scene must be one of: {sorted(SCENE_DIR_MAP)}"}), 400
+    if scene not in DEMO_INDEX:
+        return jsonify({"error": f"scene must be one of: {sorted(DEMO_INDEX)}"}), 400
 
-    scene_dir = DEMO_RUN_DIR / SCENE_DIR_MAP[scene]
+    info      = DEMO_INDEX[scene]
+    scene_dir = info["scene_dir"]
+    run_dir   = info["run_dir"]
+
     if not scene_dir.exists():
-        return jsonify({
-            "error": (
-                f"Demo data for {scene} not found at {scene_dir}. "
-                "Ensure the pre-computed results are in results/live_matrix/"
-                f"{DEMO_RUN_ID}/{SCENE_DIR_MAP[scene]}/"
-            )
-        }), 503
+        return jsonify({"error": f"Demo data for {scene} not found at {scene_dir}."}), 503
 
-    # Issue a fresh run_id that encodes the scene slug — survives server restarts.
-    # Format: AGRQ-DEMO-<scene_slug>-<hex8>
-    # _resolve_run() can recover the scene from the run_id after a cold start.
-    scene_slug = next((k for k, v in _SCENE_SLUG.items() if v == scene), "scene01")
+    scene_slug   = next((k for k, v in _SCENE_SLUG.items() if v == scene), scene.replace("_", "")[:12])
     synthetic_id = f"AGRQ-DEMO-{scene_slug}-{uuid.uuid4().hex[:8]}"
     DEMO_RUNS[synthetic_id] = {
-        "scene":    scene,
-        "run_dir":  DEMO_RUN_DIR,
+        "scene":     scene,
+        "run_dir":   run_dir,
         "scene_dir": scene_dir,
     }
 
-    # Small artificial delay so the progress bar looks believable (0.8s)
     time.sleep(0.8)
 
     return jsonify({
         "run_id": synthetic_id,
         "scene":  scene,
-        "path":   str(DEMO_RUN_DIR),
+        "path":   str(run_dir),
         "status": "completed",
         "mode":   "LIVE ANALYSIS",
         "scenes": [scene],
@@ -319,31 +334,29 @@ def analyse():
 
 
 def _resolve_run(rid: str) -> tuple[str | None, Path | None]:
-    """Return (scene, run_dir) for a run_id, checking registry then disk then demo fallback."""
-    # 1. In-memory demo registry (fresh synthetic IDs from this session)
+    """Return (scene, run_dir) for a run_id."""
+    # 1. In-memory registry — covers fresh synthetic IDs from this session
     if rid in DEMO_RUNS:
         entry = DEMO_RUNS[rid]
         return str(entry["scene"]), Path(entry["run_dir"])
 
-    # 2. Any AGRQ-DEMO-* id: map to the pre-computed demo run dir.
-    #    This handles server restarts — DEMO_RUNS is empty but the data is still on disk.
-    if rid.startswith("AGRQ-DEMO-") and DEMO_RUN_DIR.exists():
+    # 2. AGRQ-DEMO-* after server restart — recover scene from slug, use DEMO_INDEX
+    if rid.startswith("AGRQ-DEMO-"):
         scene = _scene_from_demo_id(rid)
-        # Re-register so subsequent calls hit path 1 (faster)
-        DEMO_RUNS[rid] = {"scene": scene, "run_dir": DEMO_RUN_DIR,
-                          "scene_dir": DEMO_RUN_DIR / SCENE_DIR_MAP[scene]}
-        return scene, DEMO_RUN_DIR
+        info  = DEMO_INDEX.get(scene)
+        if info:
+            DEMO_RUNS[rid] = {"scene": scene, "run_dir": info["run_dir"],
+                              "scene_dir": info["scene_dir"]}
+            return scene, info["run_dir"]
 
-    # 3. Real run on disk (run_id matches a directory in results/live_matrix/)
+    # 3. Real run on disk in results/live_matrix/
     run_dir = RESULTS / rid
     if run_dir.exists():
         summary_path = run_dir / "run_summary.json"
         if summary_path.exists():
             summary = json.loads(summary_path.read_text())
-            scenes = summary.get("scenes", [])
-            # "scenes" is always a list of strings in the current engine format.
-            # Older runs may have stored dicts — handle both gracefully.
-            first = scenes[0] if scenes else None
+            scenes  = summary.get("scenes", [])
+            first   = scenes[0] if scenes else None
             scene_val: str | None = first if isinstance(first, str) else (first.get("scene") if isinstance(first, dict) else None)
             return scene_val, run_dir
     return None, None
@@ -368,20 +381,30 @@ def get_run(rid: str):
 
 
 def _csv_index(rid: str, filename: str):
-    _, run_dir = _resolve_run(rid)
+    scene, run_dir = _resolve_run(rid)
     if run_dir is None:
         return jsonify({"error": "run not found"}), 404
-    assert run_dir is not None  # narrow type for pyright
 
     files = []
-    for scene_dir in sorted(p for p in run_dir.iterdir() if p.is_dir()):
-        target = scene_dir / filename
+    # For demo synthetic IDs, only serve the one scene registered for this run
+    if rid in DEMO_RUNS and scene:
+        scene_dir = DEMO_RUNS[rid]["scene_dir"]
+        target = Path(scene_dir) / filename
         if target.exists():
             files.append({
-                "scene":    scene_dir.name,
+                "scene":    Path(scene_dir).name,
                 "path":     str(target),
-                "download": f"/api/runs/{rid}/files/{scene_dir.name}/{filename}",
+                "download": f"/api/runs/{rid}/files/{Path(scene_dir).name}/{filename}",
             })
+    else:
+        for scene_dir in sorted(p for p in run_dir.iterdir() if p.is_dir()):
+            target = scene_dir / filename
+            if target.exists():
+                files.append({
+                    "scene":    scene_dir.name,
+                    "path":     str(target),
+                    "download": f"/api/runs/{rid}/files/{scene_dir.name}/{filename}",
+                })
     return jsonify({"run_id": rid, "live": True, "files": files})
 
 
@@ -431,9 +454,14 @@ def get_file(rid: str, scene: str, filename: str):
     _, run_dir = _resolve_run(rid)
     if run_dir is None:
         return jsonify({"error": "run not found"}), 404
-    assert run_dir is not None  # narrow type for pyright
 
-    target = run_dir / scene / filename
+    # For demo runs, resolve file path via DEMO_INDEX (scene may be in a different run_dir)
+    if rid in DEMO_RUNS:
+        info = DEMO_INDEX.get(scene)
+        target = (info["scene_dir"] / filename) if info else (run_dir / scene / filename)
+    else:
+        target = run_dir / scene / filename
+
     if not target.exists():
         return jsonify({"error": f"file not found: {scene}/{filename}"}), 404
 
@@ -523,7 +551,7 @@ def admin_set_demo():
 
     body    = request.get_json(silent=True) or {}
     run_id  = body.get("run_id", "")
-    if not run_id or not re.match(r'^AGRQ-[A-Z0-9a-z-]+$', run_id):
+    if not run_id or not re.match(r'^AGRQ-[A-Z0-9a-z_-]+$', run_id):
         return jsonify({"error": "invalid run_id"}), 400
 
     src_run = RESULTS / run_id
@@ -560,12 +588,8 @@ def admin_set_demo():
                 shutil.copy2(f, dst_scene / f.name)
                 copied.append(f"{scene_name}/{f.name}")
 
-    # Refresh globals so this session immediately serves the new demo
-    global DEMO_RUN_DIR, DEMO_RUN_ID, SCENE_DIR_MAP, SCENE_CATALOG
-    DEMO_RUN_DIR  = dst_run
-    DEMO_RUN_ID   = run_id
-    SCENE_DIR_MAP = _build_scene_dir_map(dst_run)
-    SCENE_CATALOG = _build_scene_catalog()
+    # Hot-reload all globals so this session serves the new scenes immediately
+    _rebuild_globals()
 
     return jsonify({
         "ok":           True,
@@ -582,7 +606,7 @@ def admin_delete_demo_scene(run_id: str, scene: str):
     auth_err = _admin_auth()
     if auth_err: return auth_err
 
-    if not re.match(r'^AGRQ-[A-Z0-9a-z-]+$', run_id):
+    if not re.match(r'^AGRQ-[A-Z0-9a-z_-]+$', run_id):
         return jsonify({"error": "invalid run_id"}), 400
 
     scene_dir = DEMO_DATA_ROOT / run_id / scene
@@ -597,12 +621,8 @@ def admin_delete_demo_scene(run_id: str, scene: str):
     if not remaining and run_dir.exists():
         shutil.rmtree(run_dir)
 
-    # Refresh globals
-    global DEMO_RUN_DIR, DEMO_RUN_ID, SCENE_DIR_MAP, SCENE_CATALOG
-    DEMO_RUN_DIR  = _find_demo_run_dir()
-    DEMO_RUN_ID   = DEMO_RUN_DIR.name
-    SCENE_DIR_MAP = _build_scene_dir_map(DEMO_RUN_DIR)
-    SCENE_CATALOG = _build_scene_catalog()
+    # Hot-reload all globals
+    _rebuild_globals()
 
     return jsonify({"ok": True, "deleted": f"{run_id}/{scene}"})
 
