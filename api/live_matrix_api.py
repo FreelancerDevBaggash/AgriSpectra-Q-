@@ -30,6 +30,18 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 
+# ── Independent-reference layer (non-blocking; does not touch model outputs) ──
+try:
+    import sys as _sys
+    _api_dir = str(Path(__file__).resolve().parent)
+    if _api_dir not in _sys.path:
+        _sys.path.insert(0, _api_dir)
+    from independent_reference_catalog import list_references, get_reference
+    from independent_validation_hook import start_after_analysis
+    _INDEPENDENT_REFS_AVAILABLE = True
+except ImportError:
+    _INDEPENDENT_REFS_AVAILABLE = False
+
 # ── Paths ─────────────────────────────────────────────────────────────────────
 ROOT    = Path(__file__).resolve().parents[1]        # project root (api/ is one level deep)
 ENGINE  = ROOT / "backend" / "engine" / "live_matrix_engine.py"
@@ -116,14 +128,22 @@ def run_analysis(scene: str) -> dict:
     if result.returncode != 0:
         raise RuntimeError(result.stderr[-2000:])
     run_path = OUT / run_id
+
+    # Launch non-blocking independent validation (does not block the response)
+    validation_status: str = "Not Available"
+    if _INDEPENDENT_REFS_AVAILABLE:
+        val = start_after_analysis(ROOT, run_path)
+        validation_status = val.get("status", "Pending")
+
     record = {
-        "run_id":    run_id,
-        "scene":     scene,
-        "path":      str(run_path),
-        "status":    "completed",
-        "mode":      "LIVE ANALYSIS",
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "scenes":    [scene],
+        "run_id":                        run_id,
+        "scene":                         scene,
+        "path":                          str(run_path),
+        "status":                        "completed",
+        "mode":                          "LIVE ANALYSIS",
+        "timestamp":                     time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "scenes":                        [scene],
+        "independent_validation_status": validation_status,
     }
     with LOCK:
         RUNS[run_id] = record
@@ -209,13 +229,20 @@ def run_analysis_on_file(tif_path: Path, scene_name: str, abort_event: threading
             ],
         }, indent=2, default=float))
 
+        # Launch non-blocking independent validation (does not block the response)
+        validation_status: str = "Not Available"
+        if _INDEPENDENT_REFS_AVAILABLE:
+            val = start_after_analysis(ROOT, run_dir)
+            validation_status = val.get("status", "Pending")
+
         record = {
-            "run_id": run_id,
-            "scene":  scene_name,
-            "path":   str(run_dir),
-            "status": "completed",
-            "mode":   "LIVE ANALYSIS",
-            "scenes": [scene_name],
+            "run_id":                      run_id,
+            "scene":                       scene_name,
+            "path":                        str(run_dir),
+            "status":                      "completed",
+            "mode":                        "LIVE ANALYSIS",
+            "scenes":                      [scene_name],
+            "independent_validation_status": validation_status,
         }
         with LOCK:
             RUNS[run_id] = record
@@ -424,6 +451,46 @@ def upload_info():
         "allowed_extensions": sorted(ALLOWED_GEOTIFF_EXTS),
         "stream_chunk_bytes": STREAM_CHUNK,
     })
+
+
+# ── Independent-reference endpoints ──────────────────────────────────────────
+
+@app.get("/api/runs/<rid>/independent-references")
+def independent_references(rid: str):
+    """List available independent corroboration references for a run/scene."""
+    if not _INDEPENDENT_REFS_AVAILABLE:
+        return jsonify({"error": "Independent-reference layer not installed."}), 503
+    scene = request.args.get("scene")
+    ref_root = ROOT / "results" / "independent_references" / rid
+    run_root = OUT / rid
+    if not scene:
+        roots = [x for x in (ref_root, run_root) if x.exists()]
+        scenes = sorted({x.name for root in roots for x in root.iterdir() if x.is_dir()})
+        scene = scenes[0] if len(scenes) == 1 else None
+    if not scene:
+        return jsonify({"error": "scene is required for multi-scene runs"}), 400
+    return jsonify({
+        "run_id":     rid,
+        "scene":      scene,
+        "references": list_references(ROOT, rid, scene),
+    })
+
+
+@app.get("/api/runs/<rid>/independent-references/<reference_id>")
+def independent_reference(rid: str, reference_id: str):
+    """Get a single independent corroboration artifact by reference_id."""
+    if not _INDEPENDENT_REFS_AVAILABLE:
+        return jsonify({"error": "Independent-reference layer not installed."}), 503
+    scene = request.args.get("scene")
+    ref_root = ROOT / "results" / "independent_references" / rid
+    run_root = OUT / rid
+    if not scene:
+        roots = [x for x in (ref_root, run_root) if x.exists()]
+        scenes = sorted({x.name for root in roots for x in root.iterdir() if x.is_dir()})
+        scene = scenes[0] if len(scenes) == 1 else None
+    if not scene:
+        return jsonify({"error": "scene is required for multi-scene runs"}), 400
+    return jsonify(get_reference(ROOT, rid, scene, reference_id))
 
 
 # ── Entry-point ───────────────────────────────────────────────────────────────

@@ -1,0 +1,3 @@
+# Required for strict polygon overlap and CRS transformation in independent_f1.py
+shapely>=2.0
+pyproj>=3.5

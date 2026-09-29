@@ -1,0 +1,9 @@
+{
+  "worldcover_item": "ESA_WorldCover_10m_2021_v200_N15E033",
+  "class_40": "Cropland",
+  "zones": 438,
+  "zones_with_data": 438,
+  "zone_area_weighted_cropland_fraction": 4.124153517490535e-06,
+  "zones_majority_cropland_pct": 0.0,
+  "note": "Independent land-cover corroboration, not ground truth or model accuracy."
+}

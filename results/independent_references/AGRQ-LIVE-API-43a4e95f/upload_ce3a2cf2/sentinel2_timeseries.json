@@ -1,0 +1,56 @@
+{
+  "interpretation": "Independent temporal corroboration only; not ground truth or accuracy.",
+  "dates": [
+    {
+      "date": "20260423",
+      "ndvi": {
+        "scene_mean": 0.06677111109524128,
+        "zone_mean": 0.060357955591568514,
+        "difference": -0.006413155503672767,
+        "zone_below_scene_median_pct": 77.24538619275462
+      },
+      "ndre": {
+        "scene_mean": 0.021578257573714534,
+        "zone_mean": 0.022032294865811857,
+        "difference": 0.0004540372920973229,
+        "zone_below_scene_median_pct": 51.16655274550011
+      }
+    },
+    {
+      "date": "20260426",
+      "ndvi": {
+        "scene_mean": 0.06153524763664445,
+        "zone_mean": 0.05585725305643969,
+        "difference": -0.005677994580204758,
+        "zone_below_scene_median_pct": 78.01777170198223
+      },
+      "ndre": {
+        "scene_mean": 0.01920996324428181,
+        "zone_mean": 0.020014987094884053,
+        "difference": 0.0008050238506022434,
+        "zone_below_scene_median_pct": 48.65345181134655
+      }
+    },
+    {
+      "date": "20260503",
+      "ndvi": {
+        "scene_mean": 0.06411720643254393,
+        "zone_mean": 0.05741390072218403,
+        "difference": -0.006703305710359896,
+        "zone_below_scene_median_pct": 81.98222829801777
+      },
+      "ndre": {
+        "scene_mean": 0.019428657478717637,
+        "zone_mean": 0.019327714062409095,
+        "difference": -0.00010094341630854237,
+        "zone_below_scene_median_pct": 53.098655730234675
+      }
+    }
+  ],
+  "n_dates": 3,
+  "zone_count": 438,
+  "ndvi_negative_difference_dates": 3,
+  "ndvi_mean_difference": -0.00626481859807914,
+  "ndre_negative_difference_dates": 1,
+  "ndre_mean_difference": 0.0003860392421303413
+}

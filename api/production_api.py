@@ -45,6 +45,18 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 
+# ── Independent-reference layer (non-blocking; does not touch model outputs) ──
+try:
+    import sys as _sys
+    _api_dir = str(Path(__file__).resolve().parent)
+    if _api_dir not in _sys.path:
+        _sys.path.insert(0, _api_dir)
+    from independent_reference_catalog import list_references, get_reference
+    from independent_validation_hook import start_after_analysis
+    _INDEPENDENT_REFS_AVAILABLE = True
+except ImportError:
+    _INDEPENDENT_REFS_AVAILABLE = False
+
 # ── Paths ─────────────────────────────────────────────────────────────────────
 ROOT    = Path(__file__).resolve().parents[1]
 ENGINE  = ROOT / "backend" / "engine" / "live_matrix_engine.py"
@@ -154,11 +166,24 @@ def _run_engine_async(run_id: str, run_dir: Path, tif_path: Path,
             ],
         }, indent=2, default=float))
 
+        # Launch non-blocking independent validation (does not block the response)
+        validation_status: str = "Not Available"
+        if _INDEPENDENT_REFS_AVAILABLE:
+            try:
+                val = start_after_analysis(ROOT, run_dir)
+                validation_status = val.get("status", "Pending")
+            except Exception:
+                pass
+
         with LOCK:
             RUNS[run_id] = {
-                "run_id": run_id, "scene": scene_name,
-                "path":   str(run_dir), "status": "completed",
-                "mode":   "LIVE ANALYSIS", "scenes": [scene_name],
+                "run_id":                        run_id,
+                "scene":                         scene_name,
+                "path":                          str(run_dir),
+                "status":                        "completed",
+                "mode":                          "LIVE ANALYSIS",
+                "scenes":                        [scene_name],
+                "independent_validation_status": validation_status,
             }
 
     except Exception as exc:
@@ -198,6 +223,8 @@ def home():
             "GET  /api/runs/<run_id>/inspection",
             "GET  /api/runs/<run_id>/report",
             "GET  /api/runs/<run_id>/files/<scene>/<filename>",
+            "GET  /api/runs/<run_id>/independent-references",
+            "GET  /api/runs/<run_id>/independent-references/<reference_id>",
         ],
     })
 
@@ -535,6 +562,46 @@ def admin_list_live_runs():
             })
 
     return jsonify({"runs": runs, "total": len(runs)})
+
+
+# ── Independent-reference endpoints ──────────────────────────────────────────
+
+@app.get("/api/runs/<rid>/independent-references")
+def independent_references(rid: str):
+    """List available independent corroboration references for a run/scene."""
+    if not _INDEPENDENT_REFS_AVAILABLE:
+        return jsonify({"error": "Independent-reference layer not installed."}), 503
+    scene = request.args.get("scene")
+    ref_root = ROOT / "results" / "independent_references" / rid
+    run_root = OUT / rid
+    if not scene:
+        roots = [x for x in (ref_root, run_root) if x.exists()]
+        scenes = sorted({x.name for root in roots for x in root.iterdir() if x.is_dir()})
+        scene = scenes[0] if len(scenes) == 1 else None
+    if not scene:
+        return jsonify({"error": "scene is required for multi-scene runs"}), 400
+    return jsonify({
+        "run_id":     rid,
+        "scene":      scene,
+        "references": list_references(ROOT, rid, scene),
+    })
+
+
+@app.get("/api/runs/<rid>/independent-references/<reference_id>")
+def independent_reference(rid: str, reference_id: str):
+    """Get a single independent corroboration artifact by reference_id."""
+    if not _INDEPENDENT_REFS_AVAILABLE:
+        return jsonify({"error": "Independent-reference layer not installed."}), 503
+    scene = request.args.get("scene")
+    ref_root = ROOT / "results" / "independent_references" / rid
+    run_root = OUT / rid
+    if not scene:
+        roots = [x for x in (ref_root, run_root) if x.exists()]
+        scenes = sorted({x.name for root in roots for x in root.iterdir() if x.is_dir()})
+        scene = scenes[0] if len(scenes) == 1 else None
+    if not scene:
+        return jsonify({"error": "scene is required for multi-scene runs"}), 400
+    return jsonify(get_reference(ROOT, rid, scene, reference_id))
 
 
 # ── Entry-point ───────────────────────────────────────────────────────────────

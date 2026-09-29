@@ -1,0 +1,23 @@
+{
+  "item": "LC09_L2SP_100016_20260624_02_T1",
+  "date": "2026-06-24T00:24:26.916363Z",
+  "cloud_cover": 12.34,
+  "zones": 63,
+  "qa_mask": "clear pixels excluding fill/dilated cloud/cirrus/cloud/shadow/snow",
+  "ndvi": {
+    "scene_mean": -0.13145706057548523,
+    "zone_mean": -0.368875116109848,
+    "difference": -0.2374180555343628,
+    "zone_valid_pixels": 50700,
+    "scene_valid_pixels": 1613584,
+    "zone_below_scene_median_pct": 75.63905325443787
+  },
+  "ndmi": {
+    "scene_mean": -0.3456295430660248,
+    "zone_mean": -0.8246124386787415,
+    "difference": -0.4789828956127167,
+    "zone_valid_pixels": 50700,
+    "scene_valid_pixels": 1613585,
+    "zone_below_scene_median_pct": 85.81656804733728
+  }
+}

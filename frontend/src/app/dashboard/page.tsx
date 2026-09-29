@@ -12,6 +12,7 @@ import {
 } from 'recharts'
 import { parseCSV } from '@/lib/utils'
 import ZoneMap from '@/components/ZoneMap'
+import IndependentReferencePanel from '@/components/IndependentReferencePanel'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -736,7 +737,14 @@ function DashboardContent() {
           )}
         </section>
 
-        {/* ── 5. SCIENTIFIC CAVEAT — always visible ── */}
+        {/* ── 5. INDEPENDENT REFERENCES — corroborating evidence, not ground truth ── */}
+        <IndependentReferencePanel
+          runId={runId}
+          scene={scene}
+          apiBase={BASE}
+        />
+
+        {/* ── 6. SCIENTIFIC CAVEAT — always visible ── */}
         <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4 text-sm">
           <AlertTriangle className="w-4 h-4 text-gold-600 flex-shrink-0 mt-0.5" />
           <p className="text-gold-800 text-xs leading-relaxed">

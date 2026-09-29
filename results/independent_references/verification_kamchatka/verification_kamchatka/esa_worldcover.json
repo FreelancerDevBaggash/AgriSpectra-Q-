@@ -1,0 +1,35 @@
+{
+  "run_id": "verification_kamchatka",
+  "scene": "verification_kamchatka",
+  "source_crs": "EPSG:32658",
+  "footprint_wgs84_bbox": [
+    162.97844984048058,
+    61.995268461430946,
+    163.75849428203955,
+    62.35307235135414
+  ],
+  "target_grid": {
+    "crs": "EPSG:32658",
+    "width": null
+  },
+  "independent_only": true,
+  "worldcover": {
+    "worldcover_item": "ESA_WorldCover_10m_2021_v200_N60E162",
+    "class_40": "Cropland",
+    "zones": 63,
+    "zones_with_data": 63,
+    "zone_area_weighted_cropland_fraction": 0.0,
+    "zones_majority_cropland_pct": 0.0,
+    "aligned_by_footprint": true
+  },
+  "selected": "ESA_WorldCover_10m_2021_v200_N60E162",
+  "result": {
+    "worldcover_item": "ESA_WorldCover_10m_2021_v200_N60E162",
+    "class_40": "Cropland",
+    "zones": 63,
+    "zones_with_data": 63,
+    "zone_area_weighted_cropland_fraction": 0.0,
+    "zones_majority_cropland_pct": 0.0,
+    "aligned_by_footprint": true
+  }
+}

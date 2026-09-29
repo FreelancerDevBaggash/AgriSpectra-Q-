@@ -66,6 +66,8 @@ python backend/engine/live_matrix_engine.py --scene scene_02 --run-id my-run-001
 | GET  | `/api/runs/<run_id>/inspection` | Inspection budget CSV index |
 | GET  | `/api/runs/<run_id>/report` | Download full report JSON |
 | GET  | `/api/runs/<run_id>/files/<scene>/<file>` | Download individual output file |
+| GET  | `/api/runs/<run_id>/independent-references` | Independent reference catalog for a run |
+| GET  | `/api/runs/<run_id>/independent-f1` | Strict F1 score vs. independent polygon references |
 
 ### POST /api/analyse
 
@@ -74,6 +76,27 @@ python backend/engine/live_matrix_engine.py --scene scene_02 --run-id my-run-001
 ```
 
 Valid scene values: `scene_01_DT0000205230`, `scene_02`, `scene_03`
+
+### Independent Reference Validation
+
+After analysis completes, two additional read-only endpoints become available:
+
+- **`/api/runs/<run_id>/independent-references`** — returns a catalog of all
+  independent geospatial references found for this run (Sentinel-2, Landsat,
+  WorldCover polygons).
+- **`/api/runs/<run_id>/independent-f1`** — computes a strict F1 score by
+  comparing engine-classified polygons against independently sourced ground
+  truth. Returns `null` if references are not yet available.
+
+The validation is triggered automatically (non-blocking) at the end of each
+analysis run. Raw artifacts land in:
+
+```
+results/independent_references/<run_id>/<upload_id>/
+├── sentinel2_ndvi.json
+├── landsat_ndvi.json
+└── worldcover_polygons.geojson
+```
 
 ## Output Files (per scene per run)
 

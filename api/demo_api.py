@@ -60,6 +60,16 @@ ROOT     = Path(__file__).resolve().parents[1]
 RESULTS  = ROOT / "results" / "live_matrix"
 _api_dir = Path(__file__).resolve().parent
 
+# ── Independent-reference layer (read-only catalog; no engine hook in demo mode) ──
+try:
+    import sys as _sys
+    if str(_api_dir) not in _sys.path:
+        _sys.path.insert(0, str(_api_dir))
+    from independent_reference_catalog import list_references, get_reference
+    _INDEPENDENT_REFS_AVAILABLE = True
+except ImportError:
+    _INDEPENDENT_REFS_AVAILABLE = False
+
 # Demo data root — all demo scenes live here as <run_id>/<scene_dir>/
 DEMO_DATA_ROOT = _api_dir / "demo_data"
 DEMO_DATA_ROOT.mkdir(parents=True, exist_ok=True)
@@ -740,6 +750,52 @@ def admin_list_live_runs():
             })
 
     return jsonify({"runs": runs, "total": len(runs)})
+
+
+# ── Independent-reference endpoints ──────────────────────────────────────────
+
+@app.get("/api/runs/<rid>/independent-references")
+def independent_references(rid: str):
+    """List available independent corroboration references for a run/scene."""
+    if not _INDEPENDENT_REFS_AVAILABLE:
+        return jsonify({"error": "Independent-reference layer not installed."}), 503
+    scene = request.args.get("scene")
+    _, run_dir = _resolve_run(rid)
+    if run_dir is None:
+        return jsonify({"error": "run not found"}), 404
+    ref_root = ROOT / "results" / "independent_references" / rid
+    if not scene:
+        # auto-detect scene from the reference artifacts directory first,
+        # then fall back to the run_dir itself
+        roots = [x for x in (ref_root, run_dir) if x.exists()]
+        scenes = sorted({x.name for root in roots for x in root.iterdir() if x.is_dir()})
+        scene = scenes[0] if len(scenes) == 1 else None
+    if not scene:
+        return jsonify({"error": "scene is required for multi-scene runs"}), 400
+    return jsonify({
+        "run_id":     rid,
+        "scene":      scene,
+        "references": list_references(ROOT, rid, scene),
+    })
+
+
+@app.get("/api/runs/<rid>/independent-references/<reference_id>")
+def independent_reference(rid: str, reference_id: str):
+    """Get a single independent corroboration artifact by reference_id."""
+    if not _INDEPENDENT_REFS_AVAILABLE:
+        return jsonify({"error": "Independent-reference layer not installed."}), 503
+    scene = request.args.get("scene")
+    _, run_dir = _resolve_run(rid)
+    if run_dir is None:
+        return jsonify({"error": "run not found"}), 404
+    ref_root = ROOT / "results" / "independent_references" / rid
+    if not scene:
+        roots = [x for x in (ref_root, run_dir) if x.exists()]
+        scenes = sorted({x.name for root in roots for x in root.iterdir() if x.is_dir()})
+        scene = scenes[0] if len(scenes) == 1 else None
+    if not scene:
+        return jsonify({"error": "scene is required for multi-scene runs"}), 400
+    return jsonify(get_reference(ROOT, rid, scene, reference_id))
 
 
 # ── Entry-point ───────────────────────────────────────────────────────────────

@@ -9,6 +9,9 @@ WORKDIR /app
 # api/demo_data/ is NOT excluded by .dockerignore (only results/ rules apply there)
 COPY api/ api/
 
+# Independent-reference fixture data (pre-computed, read-only)
+COPY results/independent_references/ results/independent_references/
+
 # Railway injects $PORT; fall back to 8765 for local runs
 ENV PORT=8765
 EXPOSE $PORT

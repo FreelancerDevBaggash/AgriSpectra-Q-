@@ -36,6 +36,16 @@ AgriSpectra-Q/
 │   ├── benchmark/                   ← Frozen 6-model validation scripts
 │   └── requirements.txt
 │
+├── api/                             ← Deployable API entrypoints
+│   ├── live_matrix_api.py           ← Production server (Docker/gunicorn)
+│   ├── demo_api.py                  ← Hackathon demo server (pre-computed)
+│   ├── production_api.py            ← VPS upload-only server
+│   ├── independent_reference_catalog.py  ← Independent reference reader
+│   ├── independent_validation_hook.py    ← Non-blocking validation trigger
+│   ├── independent_f1.py                 ← Strict F1 vs. polygon references
+│   ├── auto_independent_validation.py    ← Planetary Computer STAC query
+│   └── requirements_independent_f1.txt  ← shapely + pyproj install list
+│
 ├── frontend/                        ← Next.js 15 frontend
 │   ├── src/app/
 │   │   ├── page.tsx                 ← Home / landing
@@ -46,7 +56,8 @@ AgriSpectra-Q/
 │   │   └── technology/page.tsx      ← System architecture
 │   ├── src/components/
 │   │   ├── Navigation.tsx
-│   │   └── Footer.tsx
+│   │   ├── Footer.tsx
+│   │   └── IndependentReferencePanel.tsx  ← Independent validation UI
 │   └── src/lib/
 │       ├── api.ts                   ← API client
 │       ├── types.ts                 ← TypeScript types
@@ -60,7 +71,10 @@ AgriSpectra-Q/
 │
 ├── results/
 │   ├── live_matrix/                 ← Engine run outputs (auto-generated)
-│   └── industrial_validation/       ← Frozen benchmark results + figures
+│   ├── industrial_validation/       ← Frozen benchmark results + figures
+│   └── independent_references/      ← Independent validation artifacts (auto-generated)
+│
+├── legacy/                          ← Historical reference files (not deployed)
 │
 └── docs/                            ← Architecture & specification documents
 ```
@@ -125,6 +139,8 @@ NEXT_PUBLIC_API_URL=http://localhost:8765
 | `GET`  | `/api/runs/<run_id>/inspection` | Inspection budget |
 | `GET`  | `/api/runs/<run_id>/report` | Download report JSON |
 | `GET`  | `/api/runs/<run_id>/files/<scene>/<file>` | Individual output file |
+| `GET`  | `/api/runs/<run_id>/independent-references` | Independent reference catalog |
+| `GET`  | `/api/runs/<run_id>/independent-f1` | Strict F1 vs. independent references |
 
 ---
 

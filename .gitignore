@@ -41,3 +41,8 @@ Thumbs.db
 
 # ── Test result runs ─────────────────────────────
 results/test_corrected_run/
+
+# ── Local tooling / editor environments ──────────
+.venv_test/
+.kilo/
+.bob/

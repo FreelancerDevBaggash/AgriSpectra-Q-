@@ -20,6 +20,10 @@ results/live_matrix/AGRQ-LIVE-API-73b71110/
 results/live_matrix/AGRQ-LIVE-API-ceb0d53f/
 results/live_matrix/AGRQ-LIVE-API-e620df9a/
 results/live_matrix/AGRQ-LIVE-API-f7f9cd60/
+# results/independent_references/ is NOT excluded — required by demo image
+
+# Legacy reference files — never include in any Docker image
+legacy/
 
 # Python cache
 __pycache__/

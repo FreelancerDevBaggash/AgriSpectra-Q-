@@ -1,0 +1,4 @@
+{
+  "status": "Not Available",
+  "reason": "No explicitly labelled reference_polygons.geojson was provided. F1 is not inferred from satellite indices."
+}

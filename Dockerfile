@@ -14,9 +14,9 @@ WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend source and the api entrypoint
+# Copy backend source and the entire api layer
 COPY backend/ ./backend/
-COPY api/live_matrix_api.py ./api/live_matrix_api.py
+COPY api/ ./api/
 
 # Railway injects $PORT; fall back to 8765 for local runs
 ENV PORT=8765
