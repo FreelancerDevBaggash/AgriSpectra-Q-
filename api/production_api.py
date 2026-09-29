@@ -493,7 +493,7 @@ def admin_delete_run(run_id: str):
     if auth_err:
         return auth_err
     import re
-    if not re.match(r'^AGRQ-[A-Z0-9-]+$', run_id):
+    if not re.match(r'^AGRQ-[A-Za-z0-9_-]+$', run_id):
         return jsonify({"error": "invalid run_id"}), 400
     run_dir = OUT / run_id
     if not run_dir.exists():
