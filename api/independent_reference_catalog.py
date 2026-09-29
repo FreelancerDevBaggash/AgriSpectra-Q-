@@ -79,9 +79,24 @@ def _artifact_is_available(data: dict[str, Any] | None) -> bool:
     result = data.get("result", data)
     if not isinstance(result, dict):
         return False
+
+    # Format A — auto_independent_validation.py output:
+    #   { "result": { "ndvi": { "status": "Available", ... }, "ndre": {...} } }
     metrics = [v for k, v in result.items() if k in ("ndvi", "ndre", "ndmi") and isinstance(v, dict)]
-    if any(v.get("status") == "Available" for v in metrics) or bool(result.get("worldcover_item")):
+    if any(v.get("status") == "Available" for v in metrics):
         return True
+
+    # Format B — legacy/fixture format:
+    #   { "worldcover_item": "...", "zones": [...] }          ← esa_worldcover
+    #   { "dates": [...], "n_dates": N, "ndvi_mean_diff": N } ← sentinel2 / landsat
+    if bool(result.get("worldcover_item")):
+        return True
+    if isinstance(result.get("dates"), list) and len(result["dates"]) > 0:
+        return True
+    if isinstance(result.get("n_dates"), int) and result["n_dates"] > 0:
+        return True
+
+    # Format C — reference_polygons F1
     f1 = result.get("f1_score")
     return isinstance(f1, dict) and f1.get("status") == "Available"
 
