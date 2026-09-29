@@ -37,12 +37,43 @@ def search(collection, bbox, dt, limit=20):
 def parse_date(value):
     return date.fromisoformat(value[:10]) if value else None
 
+def _make_synthetic_target(scene_dir: Path, stats: dict) -> Path:
+    """Build a minimal single-band float32 raster from scene_statistics.json metadata.
+
+    Used when risk_map.tif / priority_map.tif were deleted (production_api disk-saving mode).
+    The synthetic raster contains all-NaN values — it is only used for CRS/transform/grid
+    metadata by read_asset() and zone_stats(). No pixel values are read from it.
+    """
+    import rasterio.transform as rt
+    crs  = stats['crs']
+    dims = stats['dimensions']            # [width, height]  or  [rows, cols]
+    tf_flat = stats.get('transform')      # affine as flat list [a,b,c,d,e,f,0,0,1]
+    if tf_flat and len(tf_flat) >= 6:
+        from rasterio.transform import Affine
+        transform = Affine(tf_flat[0], tf_flat[1], tf_flat[2],
+                           tf_flat[3], tf_flat[4], tf_flat[5])
+    else:
+        raise ValueError('scene_statistics.json missing transform — cannot build synthetic target')
+    # dims from engine: [H, W] = [height, width] — rasterio uses (height, width)
+    height, width = dims[0], dims[1]
+    synthetic = scene_dir / '_synthetic_target.tif'
+    import numpy as _np
+    with rasterio.open(synthetic, 'w', driver='GTiff', count=1, dtype='float32',
+                       crs=crs, transform=transform, width=width, height=height,
+                       nodata=float('nan')) as dst:
+        dst.write(_np.full((1, height, width), float('nan'), dtype='float32'))
+    return synthetic
+
+
 def scene_context(scene_dir: Path):
     stats=json.loads((scene_dir/'scene_statistics.json').read_text())
     geo=json.loads((scene_dir/'zones.geojson').read_text())
     target=scene_dir/'risk_map.tif'
     if not target.exists(): target=scene_dir/'priority_map.tif'
-    if not target.exists(): raise FileNotFoundError(f'No target grid raster in {scene_dir}; expected risk_map.tif or priority_map.tif')
+    if not target.exists():
+        # Fallback: build synthetic target from scene_statistics.json metadata
+        # (production_api deletes rasters to save disk space)
+        target = _make_synthetic_target(scene_dir, stats)
     with rasterio.open(target) as ds:
         bbox=list(transform_bounds(str(ds.crs),'EPSG:4326',*ds.bounds,densify_pts=21))
     return stats,geo,target,bbox
