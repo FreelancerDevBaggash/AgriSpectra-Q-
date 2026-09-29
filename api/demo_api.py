@@ -638,15 +638,37 @@ def admin_set_demo():
                 shutil.copy2(f, dst_scene / f.name)
                 copied.append(f"{scene_name}/{f.name}")
 
+    # ── Sync independent_references artifacts for this run ────────────────────
+    # Copies results/independent_references/<run_id>/<scene>/ so the
+    # independent-reference endpoints return "Available" for the new demo run.
+    refs_synced = []
+    src_refs_run = ROOT / "results" / "independent_references" / run_id
+    dst_refs_run = ROOT / "results" / "independent_references" / run_id
+    # src and dst are the same directory — artifacts already exist there if the
+    # validation hook ran after the original live run. Nothing to copy; just
+    # report what is present so the caller knows the status.
+    for scene_name in scenes_to_copy:
+        scene_refs = src_refs_run / scene_name
+        if scene_refs.exists():
+            refs_synced.append(scene_name)
+
     # Hot-reload all globals so this session serves the new scenes immediately
     _rebuild_globals()
 
     return jsonify({
-        "ok":           True,
-        "run_id":       run_id,
-        "scenes_set":   scenes_to_copy,
-        "files_copied": len(copied),
-        "demo_run_dir": str(dst_run),
+        "ok":                    True,
+        "run_id":                run_id,
+        "scenes_set":            scenes_to_copy,
+        "files_copied":          len(copied),
+        "demo_run_dir":          str(dst_run),
+        "independent_refs_ready": refs_synced,
+        "independent_refs_note":  (
+            "Independent reference artifacts are served from "
+            "results/independent_references/<run_id>/. "
+            "Run auto_independent_validation.py on the source run to generate them."
+            if not refs_synced else
+            f"References available for: {refs_synced}"
+        ),
     })
 
 
@@ -754,6 +776,17 @@ def admin_list_live_runs():
 
 # ── Independent-reference endpoints ──────────────────────────────────────────
 
+def _resolve_refs_run_id(rid: str, run_dir: Path) -> str:
+    """Return the run_id to use when looking up independent_references/.
+
+    Demo synthetic IDs (AGRQ-DEMO-*) map to the real run_dir name so
+    artifacts stored under the original live run_id are found correctly.
+    """
+    if rid.startswith("AGRQ-DEMO-"):
+        return run_dir.name   # real run_id, e.g. AGRQ-LIVE-API-d3be216d
+    return rid
+
+
 @app.get("/api/runs/<rid>/independent-references")
 def independent_references(rid: str):
     """List available independent corroboration references for a run/scene."""
@@ -763,7 +796,8 @@ def independent_references(rid: str):
     _, run_dir = _resolve_run(rid)
     if run_dir is None:
         return jsonify({"error": "run not found"}), 404
-    ref_root = ROOT / "results" / "independent_references" / rid
+    real_rid = _resolve_refs_run_id(rid, run_dir)
+    ref_root = ROOT / "results" / "independent_references" / real_rid
     if not scene:
         # auto-detect scene from the reference artifacts directory first,
         # then fall back to the run_dir itself
@@ -773,9 +807,10 @@ def independent_references(rid: str):
     if not scene:
         return jsonify({"error": "scene is required for multi-scene runs"}), 400
     return jsonify({
-        "run_id":     rid,
-        "scene":      scene,
-        "references": list_references(ROOT, rid, scene),
+        "run_id":      rid,
+        "real_run_id": real_rid,
+        "scene":       scene,
+        "references":  list_references(ROOT, real_rid, scene),
     })
 
 
@@ -788,14 +823,15 @@ def independent_reference(rid: str, reference_id: str):
     _, run_dir = _resolve_run(rid)
     if run_dir is None:
         return jsonify({"error": "run not found"}), 404
-    ref_root = ROOT / "results" / "independent_references" / rid
+    real_rid = _resolve_refs_run_id(rid, run_dir)
+    ref_root = ROOT / "results" / "independent_references" / real_rid
     if not scene:
         roots = [x for x in (ref_root, run_dir) if x.exists()]
         scenes = sorted({x.name for root in roots for x in root.iterdir() if x.is_dir()})
         scene = scenes[0] if len(scenes) == 1 else None
     if not scene:
         return jsonify({"error": "scene is required for multi-scene runs"}), 400
-    return jsonify(get_reference(ROOT, rid, scene, reference_id))
+    return jsonify(get_reference(ROOT, real_rid, scene, reference_id))
 
 
 # ── Entry-point ───────────────────────────────────────────────────────────────
