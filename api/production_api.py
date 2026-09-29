@@ -143,6 +143,18 @@ def _run_engine_async(run_id: str, run_dir: Path, tif_path: Path,
         if abort_event.is_set():
             _fail("Aborted after engine finished."); return
 
+        # Launch independent validation BEFORE deleting rasters —
+        # auto_independent_validation.py needs risk_map.tif or priority_map.tif
+        # to derive CRS and bbox. The subprocess runs non-blocking.
+        validation_status: str = "Not Available"
+        if _INDEPENDENT_REFS_AVAILABLE:
+            try:
+                val = start_after_analysis(ROOT, run_dir)
+                validation_status = val.get("status", "Pending")
+            except Exception:
+                pass
+
+        # Delete large rasters AFTER the hook is launched
         for large_file in ["risk_map.tif", "priority_map.tif"]:
             p = run_dir / scene_name / large_file
             if p.exists(): p.unlink()
@@ -165,15 +177,6 @@ def _run_engine_async(run_id: str, run_dir: Path, tif_path: Path,
                 "Not the frozen six-model benchmark",
             ],
         }, indent=2, default=float))
-
-        # Launch non-blocking independent validation (does not block the response)
-        validation_status: str = "Not Available"
-        if _INDEPENDENT_REFS_AVAILABLE:
-            try:
-                val = start_after_analysis(ROOT, run_dir)
-                validation_status = val.get("status", "Pending")
-            except Exception:
-                pass
 
         with LOCK:
             RUNS[run_id] = {
