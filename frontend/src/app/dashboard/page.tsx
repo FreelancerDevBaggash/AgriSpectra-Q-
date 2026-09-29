@@ -136,6 +136,8 @@ function DashboardContent() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'zones' | 'budget' | 'chart' | 'map'>('zones')
   const [techOpen, setTechOpen] = useState(false)
+  const [zoneSearch, setZoneSearch] = useState('')
+  const [zoneFilter, setZoneFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all')
   // frozen: true means the backend was unreachable — we are showing a frozen demo fallback (spec §23.6)
   const [frozen, setFrozen] = useState(false)
 
@@ -219,6 +221,18 @@ function DashboardContent() {
   const highCount = zones.filter(z => z.priority_category?.toLowerCase().includes('high')).length
   const medCount = zones.filter(z => z.priority_category?.toLowerCase().includes('medium')).length
   const avgRisk = zones.length ? (zones.reduce((a, z) => a + (z.mean_risk || 0), 0) / zones.length).toFixed(2) : '—'
+
+  const filteredZones = zones.filter(z => {
+    const matchesSearch = !zoneSearch.trim() ||
+      z.zone_id.toLowerCase().includes(zoneSearch.toLowerCase()) ||
+      (z.recommendation || '').toLowerCase().includes(zoneSearch.toLowerCase())
+    const matchesFilter =
+      zoneFilter === 'all' ||
+      (zoneFilter === 'high'   && z.priority_category?.toLowerCase().includes('high')) ||
+      (zoneFilter === 'medium' && z.priority_category?.toLowerCase().includes('medium')) ||
+      (zoneFilter === 'low'    && z.priority_category?.toLowerCase().includes('low'))
+    return matchesSearch && matchesFilter
+  })
 
   // ── Frozen Fallback State — spec §23.5 + §23.6 ──
   if (frozen) return (
@@ -312,6 +326,21 @@ function DashboardContent() {
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Quick-jump links — hidden on small screens */}
+              <div className="hidden md:flex items-center gap-1 mr-2">
+                <a
+                  href="#tech-details"
+                  className="text-xs text-surface-500 hover:text-surface-800 px-2.5 py-1.5 rounded hover:bg-surface-100 transition-colors"
+                >
+                  Tech Details
+                </a>
+                <a
+                  href="#indref-section"
+                  className="text-xs text-surface-500 hover:text-surface-800 px-2.5 py-1.5 rounded hover:bg-surface-100 transition-colors"
+                >
+                  References
+                </a>
+              </div>
               <button onClick={load} className="btn-outline py-2 px-3 sm:px-4 text-sm inline-flex items-center gap-1.5" aria-label="Refresh dashboard data">
                 <RefreshCw className="w-4 h-4" aria-hidden="true" /> <span className="hidden sm:inline">Refresh</span>
               </button>
@@ -453,7 +482,16 @@ function DashboardContent() {
         {/* ── 3. RANKED ZONES ── */}
         <section>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <p className="section-label">RANKED SPECTRAL-PRIORITY ZONES</p>
+            <div className="flex items-center gap-2">
+              <p className="section-label">RANKED SPECTRAL-PRIORITY ZONES</p>
+              {zones.length > 0 && (
+                <span className="text-xs text-surface-400 font-normal tabular-nums">
+                  {filteredZones.length < zones.length
+                    ? `${filteredZones.length} / ${zones.length}`
+                    : zones.length}
+                </span>
+              )}
+            </div>
             <div className="flex gap-1 bg-surface-50 border border-surface-200 rounded-lg p-0.5 self-start sm:self-auto overflow-x-auto">
               {([
                 { id: 'zones',  label: 'Zones',   icon: MapPin    },
@@ -476,53 +514,122 @@ function DashboardContent() {
             </div>
           </div>
 
+          {/* ── Search + filter toolbar — shown only on Zones tab ── */}
+          {activeTab === 'zones' && zones.length > 0 && (
+            <div className="flex flex-col sm:flex-row gap-2 mb-3">
+              {/* Search input */}
+              <div className="relative flex-1 min-w-0">
+                <svg
+                  width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 pointer-events-none"
+                  aria-hidden="true"
+                >
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  type="search"
+                  placeholder="Search zones by ID or recommendation…"
+                  value={zoneSearch}
+                  onChange={e => setZoneSearch(e.target.value)}
+                  className="input pl-8 text-sm w-full"
+                  aria-label="Search zones"
+                />
+              </div>
+              {/* Priority filter pills */}
+              <div className="flex gap-1 flex-shrink-0">
+                {([
+                  { id: 'all',    label: 'All'    },
+                  { id: 'high',   label: 'High'   },
+                  { id: 'medium', label: 'Medium' },
+                  { id: 'low',    label: 'Low'    },
+                ] as const).map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setZoneFilter(id)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                      zoneFilter === id
+                        ? 'bg-surface-800 text-white border-surface-800'
+                        : 'bg-white text-surface-600 border-surface-200 hover:border-surface-400'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Zones tab */}
           {activeTab === 'zones' && (
-            <div className="space-y-2">
+            <div>
               {zones.length === 0 ? (
                 <div className="border border-surface-200 rounded-lg p-10 text-center text-surface-400 text-sm">
                   No spectral-priority zones found for this scene.
                 </div>
-              ) : zones.map((zone, idx) => (
-                <div
-                  key={zone.zone_id || idx}
-                  className={`border-l-4 border border-surface-200 ${priorityBorder(zone.priority_category)} rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3 bg-white`}
-                >
-                  <div
-                    className="w-8 h-8 rounded-full bg-surface-100 flex items-center justify-center text-sm font-bold text-surface-600 flex-shrink-0"
-                    aria-label={`Rank ${zone.priority_rank ?? zone.rank ?? idx + 1}`}
+              ) : filteredZones.length === 0 ? (
+                <div className="border border-surface-200 rounded-lg p-8 text-center text-surface-400 text-sm">
+                  No zones match your search or filter.{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setZoneSearch(''); setZoneFilter('all') }}
+                    className="text-primary-600 hover:underline"
                   >
-                    <span aria-hidden="true">{zone.priority_rank ?? zone.rank ?? idx + 1}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="font-semibold text-surface-900 text-sm font-mono">{zone.zone_id}</span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${priorityColor(zone.priority_category)}`}>
-                        {zone.priority_category || 'Unknown'}
-                      </span>
-                      {(zone.priority_category || '').toLowerCase().includes('high') && (
-                        <span className="text-xs text-gold-600 font-medium">INSPECT FIRST</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-surface-600 leading-relaxed">{zone.recommendation || 'Spectral anomaly relative to scene baseline. Field verification required.'}</p>
-                    <div className="flex flex-wrap gap-3 text-xs text-surface-500 mt-1.5">
-                      <span>Mean risk <strong className="text-surface-800">{typeof zone.mean_risk === 'number' ? zone.mean_risk.toFixed(3) : '—'}</strong></span>
-                      <span>Max risk <strong className="text-surface-800">{typeof zone.max_risk === 'number' ? zone.max_risk.toFixed(3) : '—'}</strong></span>
-                      <span>Pixels <strong className="text-surface-800">{zone.pixel_count ?? '—'}</strong></span>
-                      {(zone.approx_area_m2 ?? zone.area_m2) != null && (
-                        <span>Area <strong className="text-surface-800">{((zone.approx_area_m2 ?? zone.area_m2)! / 10000).toFixed(2)} ha</strong></span>
-                      )}
-                    </div>
-                  </div>
-                  <a
-                    href={`/spectral-evidence?run_id=${runId}&scene=${scene}&zone_id=${encodeURIComponent(zone.zone_id)}`}
-                    className="text-xs text-primary-600 hover:underline inline-flex items-center gap-1 flex-shrink-0"
-                    aria-label={`View spectral evidence for zone ${zone.zone_id}`}
-                  >
-                    Evidence <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                  </a>
+                    Clear filters
+                  </button>
                 </div>
-              ))}
+              ) : (
+                /* Scrollable container — caps height at ~520px (~8 zones) so sections below are reachable */
+                <div
+                  className="space-y-2 overflow-y-auto pr-1"
+                  style={{ maxHeight: '520px' }}
+                  role="list"
+                  aria-label={`${filteredZones.length} spectral-priority zones`}
+                >
+                  {filteredZones.map((zone, idx) => (
+                    <div
+                      key={zone.zone_id || idx}
+                      role="listitem"
+                      className={`border-l-4 border border-surface-200 ${priorityBorder(zone.priority_category)} rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3 bg-white`}
+                    >
+                      <div
+                        className="w-8 h-8 rounded-full bg-surface-100 flex items-center justify-center text-sm font-bold text-surface-600 flex-shrink-0"
+                        aria-label={`Rank ${zone.priority_rank ?? zone.rank ?? idx + 1}`}
+                      >
+                        <span aria-hidden="true">{zone.priority_rank ?? zone.rank ?? idx + 1}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className="font-semibold text-surface-900 text-sm font-mono">{zone.zone_id}</span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${priorityColor(zone.priority_category)}`}>
+                            {zone.priority_category || 'Unknown'}
+                          </span>
+                          {(zone.priority_category || '').toLowerCase().includes('high') && (
+                            <span className="text-xs text-gold-600 font-medium">INSPECT FIRST</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-surface-600 leading-relaxed">{zone.recommendation || 'Spectral anomaly relative to scene baseline. Field verification required.'}</p>
+                        <div className="flex flex-wrap gap-3 text-xs text-surface-500 mt-1.5">
+                          <span>Mean risk <strong className="text-surface-800">{typeof zone.mean_risk === 'number' ? zone.mean_risk.toFixed(3) : '—'}</strong></span>
+                          <span>Max risk <strong className="text-surface-800">{typeof zone.max_risk === 'number' ? zone.max_risk.toFixed(3) : '—'}</strong></span>
+                          <span>Pixels <strong className="text-surface-800">{zone.pixel_count ?? '—'}</strong></span>
+                          {(zone.approx_area_m2 ?? zone.area_m2) != null && (
+                            <span>Area <strong className="text-surface-800">{((zone.approx_area_m2 ?? zone.area_m2)! / 10000).toFixed(2)} ha</strong></span>
+                          )}
+                        </div>
+                      </div>
+                      <a
+                        href={`/spectral-evidence?run_id=${runId}&scene=${scene}&zone_id=${encodeURIComponent(zone.zone_id)}`}
+                        className="text-xs text-primary-600 hover:underline inline-flex items-center gap-1 flex-shrink-0"
+                        aria-label={`View spectral evidence for zone ${zone.zone_id}`}
+                      >
+                        Evidence <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -642,7 +749,7 @@ function DashboardContent() {
         </section>
 
         {/* ── 4. TECHNICAL DETAILS DRAWER — spec §21 ── */}
-        <section>
+        <section id="tech-details">
           <button
             type="button"
             onClick={() => setTechOpen(o => !o)}
@@ -738,11 +845,13 @@ function DashboardContent() {
         </section>
 
         {/* ── 5. INDEPENDENT REFERENCES — corroborating evidence, not ground truth ── */}
-        <IndependentReferencePanel
-          runId={runId}
-          scene={scene}
-          apiBase={BASE}
-        />
+        <div id="indref-section">
+          <IndependentReferencePanel
+            runId={runId}
+            scene={scene}
+            apiBase={BASE}
+          />
+        </div>
 
         {/* ── 6. SCIENTIFIC CAVEAT — always visible ── */}
         <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4 text-sm">

@@ -87,14 +87,20 @@ def _artifact_is_available(data: dict[str, Any] | None) -> bool:
         return True
 
     # Format B — legacy/fixture format:
-    #   { "worldcover_item": "...", "zones": [...] }          ← esa_worldcover
-    #   { "dates": [...], "n_dates": N, "ndvi_mean_diff": N } ← sentinel2 / landsat
+    #   { "worldcover_item": "...", "zones": [...] }           ← esa_worldcover
+    #   { "dates": [...], "n_dates": N, "ndvi_mean_diff": N }  ← sentinel2 fixture
+    #   { "ndvi": { "scene_mean":..., "zone_mean":... }, ... } ← landsat fixture
     if bool(result.get("worldcover_item")):
         return True
     if isinstance(result.get("dates"), list) and len(result["dates"]) > 0:
         return True
     if isinstance(result.get("n_dates"), int) and result["n_dates"] > 0:
         return True
+    # landsat/sentinel fixture: ndvi or ndmi dict present with numeric values (no status key)
+    for k in ("ndvi", "ndre", "ndmi"):
+        v = result.get(k)
+        if isinstance(v, dict) and "scene_mean" in v:
+            return True
 
     # Format C — reference_polygons F1
     f1 = result.get("f1_score")
