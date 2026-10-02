@@ -1,3 +1,4 @@
 # Required for strict polygon overlap and CRS transformation in independent_f1.py
-shapely>=2.0
-pyproj>=3.5
+# Versions pinned to the production server environment (verified 2026-09-29).
+shapely==2.1.2
+pyproj==3.8.0
