@@ -94,7 +94,7 @@ export default function ProjectPage() {
               <h3 className="font-semibold text-surface-900 mb-2">Live Matrix</h3>
               <p className="text-sm text-surface-500 mb-4 leading-relaxed">
                 A real-time, windowed, georeferenced spectral-anomaly analysis run directly on 
-                three EnMAP GeoTIFF scenes. Creates risk rasters, priority rasters, connected zones, 
+                three EnMAP GeoTIFF scenes. Creates spectral-priority rasters, priority rasters, connected zones,
                 GeoJSON, spectral evidence, and inspection-budget outputs.
               </p>
               <div className="space-y-1.5">
