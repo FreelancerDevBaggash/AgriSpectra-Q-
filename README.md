@@ -114,6 +114,30 @@ NEXT_PUBLIC_API_URL=http://localhost:8765
 
 ---
 
+## Verified EnMAP Scenes
+
+Three real EnMAP L2A scenes have been processed with the live engine:
+
+| Scene | Location | CRS | Dimensions | Zones | Runtime |
+|-------|----------|-----|-----------|-------|---------|
+| **Sudan** (DT0000205230) | ad-Damer, River Nile State, Sudan | EPSG:32636 | 1152 × 1214 | 438 | 43.1 s |
+| **China** | Karamay City, Xinjiang, China | EPSG:32645 | 1210 × 1244 | 864 | 85.2 s |
+| **Russia** | Kamchatka Krai, Russia | EPSG:32658 | 1296 × 1322 | 63 | 20.1 s |
+
+> **Data provenance:** EnMAP L2A data courtesy of the German Aerospace Center (DLR) / ESA.
+> EnMAP data is freely available for scientific use at [enmap.org](https://www.enmap.org/).
+
+---
+
+## Notebook
+
+A reproducible demo notebook is available at [`notebooks/AgriSpectra_Q_Demo.ipynb`](notebooks/AgriSpectra_Q_Demo.ipynb).
+
+It demonstrates the full pipeline on the three verified scenes using pre-computed results
+(no GeoTIFF files required). Run with **Restart Kernel → Run All**.
+
+---
+
 ## Technology Stack
 
 | Layer | Technology |
@@ -121,9 +145,9 @@ NEXT_PUBLIC_API_URL=http://localhost:8765
 | Frontend | Next.js 15, React 19, TypeScript 5.7, Tailwind CSS 3.4 |
 | Charts | Recharts 2.15 |
 | Maps | MapLibre GL 5 |
-| Backend | Python 3.11, Flask 3.0 |
-| Engine | Rasterio 1.3, NumPy 1.26, SciPy 1.13 |
-| Benchmark | scikit-learn 1.4, XGBoost 2.0, pandas 2.2 |
+| Backend | Python 3.11, Flask 3.1.3 |
+| Engine | Rasterio 1.4.3, NumPy 2.5.3, SciPy 1.18.1 |
+| Benchmark | scikit-learn 1.9.1, XGBoost 3.4.1, pandas 2.2 |
 
 ---
 
@@ -164,7 +188,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8765
 
 ```
 results/live_matrix/<run_id>/<scene>/
-├── risk_map.tif              ← Georeferenced risk raster (float32)
+├── risk_map.tif              ← Spectral-priority raster (float32)
 ├── priority_map.tif          ← Priority raster (uint8: 0-3)
 ├── zones.csv                 ← Ranked high-priority zone table
 ├── zones.geojson             ← GeoJSON zone boundaries

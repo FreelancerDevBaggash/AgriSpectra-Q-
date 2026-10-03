@@ -67,7 +67,7 @@ const CAPABILITIES = [
       </svg>
     ),
     title: 'Geospatial outputs',
-    desc: 'Georeferenced risk rasters, priority maps, zone boundaries (GeoJSON), and inspection-budget analysis per run.',
+    desc: 'Georeferenced spectral-priority rasters, priority maps, zone boundaries (GeoJSON), and inspection-budget analysis per run.',
   },
   {
     icon: (
@@ -228,7 +228,7 @@ export default function HomePage() {
           <h2 className="section-title mb-4">Ready to run a real analysis?</h2>
           <p className="section-subtitle mb-8 mx-auto">
             Select a real EnMAP scene, execute the live engine, and receive
-            georeferenced spectral-priority zones in under 60 seconds.
+            georeferenced spectral-priority zones in 20–85 seconds depending on scene.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/intelligence" className="btn-primary-lg">

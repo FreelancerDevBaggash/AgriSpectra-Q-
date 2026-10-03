@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 const WORKFLOW = [
   { step: 'DETECT',     desc: 'Real EnMAP L2A hyperspectral GeoTIFF data (224 bands, 30 m/px) is ingested with memory-aware windowed processing and NoData handling.' },
-  { step: 'PRIORITISE', desc: 'Spectral anomaly scores are computed, then scene-relative percentile thresholds generate a risk raster and a ranked priority map.' },
+  { step: 'PRIORITISE', desc: 'Spectral anomaly scores are computed, then scene-relative percentile thresholds generate a spectral-priority raster and a ranked priority map.' },
   { step: 'INSPECT',    desc: 'Connected high-priority zones are extracted, ranked, and converted to georeferenced zone cards with inspection recommendations.' },
   { step: 'VERIFY',     desc: 'Field teams receive ranked zone cards with spectral evidence. All findings require independent ground-truth verification.' },
 ]

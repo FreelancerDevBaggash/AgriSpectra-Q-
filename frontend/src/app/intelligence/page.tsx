@@ -514,7 +514,7 @@ export default function IntelligencePage() {
           <p className="text-surface-500 max-w-2xl text-sm leading-relaxed">
             {backendState === 'upload_only'
               ? 'This server runs in upload-only mode. Upload any multi-band GeoTIFF to analyse it with the live spectral-anomaly engine.'
-              : 'Select one of the three verified EnMAP scenes below, or upload your own GeoTIFF. The engine returns ranked spectral-priority zones in under 60 seconds.'
+              : 'Select one of the three verified EnMAP scenes below, or upload your own GeoTIFF. The engine returns ranked spectral-priority zones in 20–85 seconds depending on scene.'
             }
           </p>
         </div>
