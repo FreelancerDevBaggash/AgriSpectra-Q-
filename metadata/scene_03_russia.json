@@ -1,0 +1,51 @@
+{
+  "scene_id": "ENMAP01-____L2A-DT0000203347_20260710T011059Z_005_V010506_20260711T065027Z",
+  "dt_id": "DT0000203347",
+  "acquisition_date": "2026-07-10",
+  "processing_level": "L2A",
+  "processing_level_description": "Surface reflectance, atmospherically corrected",
+  "provider": "ESA / DLR (German Aerospace Center)",
+  "licence": "ESA Earth Observation Data and Information System Terms and Conditions — free for scientific use",
+  "portal": "https://planning.enmap.org/",
+  "location": {
+    "country": "Russia",
+    "country_code": "RU",
+    "state": "Kamchatka Krai",
+    "city": "Far Eastern Federal District",
+    "display_name": "Kamchatka Krai, Far Eastern Federal District, Russia"
+  },
+  "crs": "EPSG:32658",
+  "crs_description": "WGS 84 / UTM zone 58N",
+  "dimensions": {
+    "height_px": 1296,
+    "width_px": 1322
+  },
+  "resolution_m": 30.0,
+  "bands": 224,
+  "spectral_range_nm": "400–2500",
+  "dtype": "int16",
+  "nodata_value": -32768,
+  "full_scene_stats": {
+    "valid_pixels": 1038316,
+    "total_pixels": 1713312,
+    "nodata_percentage": 39.40,
+    "priority_zones_detected": 63,
+    "processing_seconds": 20.1,
+    "q95_threshold": 1.4090,
+    "run_id": "AGRQ-LIVE-API-64988fb3"
+  },
+  "sample_clip": {
+    "file": "data/sample_input/scene_03_russia_sample.tif",
+    "col_off": 350,
+    "row_off": 100,
+    "width_px": 200,
+    "height_px": 200,
+    "valid_pixels": 40000,
+    "nodata_percentage": 0.0
+  },
+  "affine_transform": {
+    "a": 30.0, "b": 0.0, "c": 395325.0,
+    "d": 0.0,  "e": -30.0, "f": 6914145.0
+  },
+  "notes": "Volcanic/vegetated terrain in Kamchatka. Lowest zone count (63) — most spectrally uniform scene."
+}

@@ -1,0 +1,18 @@
+{
+  "run_id": "AGRQ-LIVE-API-4c6010c5",
+  "scene": "upload_f3b95c9c",
+  "source": "/opt/agrispectra/results/uploads/f3b95c9cd926_ENMAP01-____L2A-DT0000174684_20260109T055050Z_001_V010505_202601.tiff",
+  "live": true,
+  "leakage_control": "no labels; relative thresholds from full-scene unsupervised anomaly reference",
+  "crs": "EPSG:32645",
+  "outputs": [
+    "risk_map.tif",
+    "priority_map.tif",
+    "zones.geojson",
+    "zones.csv",
+    "spectral_evidence.csv",
+    "inspection_budget.csv",
+    "scene_statistics.json",
+    "metrics.json"
+  ]
+}

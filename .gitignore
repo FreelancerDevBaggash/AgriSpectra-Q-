@@ -35,9 +35,16 @@ Thumbs.db
 *.swp
 *.swo
 
-# ── Large upload TIFFs (root-level) ─────────────
+# ── Large upload TIFFs (root-level, uploads folder) ─────────────
 *.tiff
 *.TIFF
+
+# ── Allow committed sample input files ───────────
+!data/sample_input/
+!data/sample_input/*.tif
+!data/sample_input/*.tiff
+!data/sample_input/*.TIF
+!data/sample_input/*.TIFF
 
 # ── Test result runs ─────────────────────────────
 results/test_corrected_run/
@@ -46,3 +53,5 @@ results/test_corrected_run/
 .venv_test/
 .kilo/
 .bob/
+
+

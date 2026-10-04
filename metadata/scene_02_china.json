@@ -1,0 +1,50 @@
+{
+  "scene_id": "ENMAP01-____L2A-DT0000174684_20260109T055050Z_001_V010505_20260110T055831Z",
+  "dt_id": "DT0000174684",
+  "acquisition_date": "2026-01-09",
+  "processing_level": "L2A",
+  "processing_level_description": "Surface reflectance, atmospherically corrected",
+  "provider": "ESA / DLR (German Aerospace Center)",
+  "licence": "ESA Earth Observation Data and Information System Terms and Conditions — free for scientific use",
+  "portal": "https://planning.enmap.org/",
+  "location": {
+    "country": "China",
+    "country_code": "CN",
+    "state": "Xinjiang",
+    "city": "Karamay City",
+    "display_name": "Liushujie Subdistrict, Orku District, Karamay City, Xinjiang, China"
+  },
+  "crs": "EPSG:32645",
+  "crs_description": "WGS 84 / UTM zone 45N",
+  "dimensions": {
+    "height_px": 1210,
+    "width_px": 1244
+  },
+  "resolution_m": 30.0,
+  "bands": 224,
+  "spectral_range_nm": "400–2500",
+  "dtype": "int16",
+  "nodata_value": -32768,
+  "full_scene_stats": {
+    "valid_pixels": 1006261,
+    "total_pixels": 1505240,
+    "nodata_percentage": 33.15,
+    "priority_zones_detected": 864,
+    "processing_seconds": 85.2,
+    "q95_threshold": 1.7142,
+    "run_id": "AGRQ-LIVE-API-4c6010c5"
+  },
+  "sample_clip": {
+    "file": "data/sample_input/scene_02_china_sample.tif",
+    "note": "Not committed — file not available locally. Download using data/sample_input/download_sample.py",
+    "col_off": null,
+    "row_off": null,
+    "width_px": 200,
+    "height_px": 200
+  },
+  "affine_transform": {
+    "a": 30.0, "b": 0.0, "c": 352575.0,
+    "d": 0.0,  "e": -30.0, "f": 5100855.0
+  },
+  "notes": "Agricultural and arid land in Xinjiang province. Highest zone count (864) among the three scenes."
+}
