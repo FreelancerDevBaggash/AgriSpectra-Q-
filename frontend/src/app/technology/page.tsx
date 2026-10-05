@@ -54,9 +54,9 @@ const TECH_STACK = [
 ]
 
 const ARCHITECTURE_STEPS = [
-  { step: '1', title: 'Select an EnMAP scene',              detail: 'Choose from three pre-loaded hyperspectral scenes captured over agricultural zones in the UAE' },
+  { step: '1', title: 'Select an EnMAP scene',              detail: 'Choose from three pre-loaded hyperspectral scenes captured over agricultural zones in Sudan, China and Russia' },
   { step: '2', title: 'Live analysis engine activates',      detail: 'Two-pass spectral anomaly detection runs across all 224 bands of the selected scene' },
-  { step: '3', title: 'Risk raster computed',                detail: 'Per-pixel RMS spectral deviation scores identify crop stress signatures across the full scene' },
+  { step: '3', title: 'Spectral-anomaly raster computed',    detail: 'Per-pixel RMS spectral deviation scores identify scene-relative spectral anomalies across the full scene' },
   { step: '4', title: 'Priority zones extracted',            detail: 'High-risk connected regions are ranked by severity, area, and spectral confidence' },
   { step: '5', title: 'Georeferenced outputs generated',     detail: 'Zone boundaries, spectral evidence, and inspection budget are exported with full coordinate metadata' },
   { step: '6', title: 'Interactive dashboard rendered',      detail: 'Zones, risk maps, spectral charts, and budget recommendations are displayed in real time' },

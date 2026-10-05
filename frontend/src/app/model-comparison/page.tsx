@@ -16,12 +16,12 @@ type SortDir   = 'asc' | 'desc'
 // Brier and ECE: lower is better — displayed separately from the bar-chart metrics
 // brier/ece typed as number|null; null = not available in current frozen benchmark
 const MODELS: Array<{ model: string; f1: number; pr: number; roc: number; brier: number | null; ece: number | null; highlight: boolean }> = [
-  { model: 'AgriSpectra-Q',      f1: 96.40, pr: 99.47, roc: 99.87, brier: null, ece: 0.73, highlight: true  },
-  { model: 'Adaptive Classical', f1: 96.34, pr: 99.47, roc: 99.86, brier: null, ece: null, highlight: false },
-  { model: 'HSI-RF',             f1: 96.31, pr: 99.49, roc: 99.87, brier: null, ece: null, highlight: false },
-  { model: '48-band XGBoost',    f1: 95.22, pr: 99.23, roc: 99.80, brier: null, ece: null, highlight: false },
-  { model: 'Spectral XGBoost',   f1: 94.78, pr: 99.24, roc: 99.81, brier: null, ece: null, highlight: false },
-  { model: 'Current Hybrid',     f1: 89.98, pr: 96.16, roc: 98.75, brier: null, ece: null, highlight: false },
+  { model: 'AgriSpectra-Q',               f1: 96.40, pr: 99.47, roc: 99.87, brier: null, ece: 0.73, highlight: true  },
+  { model: 'Adaptive Classical',          f1: 96.34, pr: 99.47, roc: 99.86, brier: null, ece: null, highlight: false },
+  { model: 'HSI-RF',                      f1: 96.31, pr: 99.49, roc: 99.87, brier: null, ece: null, highlight: false },
+  { model: '48-band Gradient Boosting',   f1: 95.22, pr: 99.23, roc: 99.80, brier: null, ece: null, highlight: false },
+  { model: 'Spectral XGBoost',            f1: 94.78, pr: 99.24, roc: 99.81, brier: null, ece: null, highlight: false },
+  { model: 'Current Hybrid',              f1: 89.98, pr: 96.16, roc: 98.75, brier: null, ece: null, highlight: false },
 ]
 
 const METRIC_LABELS: Record<MetricKey, string> = {
@@ -112,7 +112,8 @@ export default function ModelComparisonPage() {
             <p className="text-sm text-surface-600 leading-relaxed">
               AgriSpectra-Q has the highest numerical mean F1 (96.40%). However, its advantage over HSI-RF
               is only +0.0008 with a 95% bootstrap CI of [−0.0012, +0.0027] — which crosses zero.{' '}
-              <strong className="text-surface-800">Statistical superiority is not established.</strong>
+              <strong className="text-surface-800">Statistical superiority over HSI-RF is not established.</strong>{' '}
+              This comparison applies to AgriSpectra-Q vs HSI-RF only and is not a claim of superiority over all other models.
             </p>
           </div>
         </div>

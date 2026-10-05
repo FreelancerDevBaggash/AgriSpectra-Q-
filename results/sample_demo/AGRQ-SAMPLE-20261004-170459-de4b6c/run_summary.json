@@ -1,0 +1,93 @@
+{
+  "run_id": "AGRQ-SAMPLE-20261004-170459-de4b6c",
+  "type": "sample_demo",
+  "note": "200x200 px clips from real EnMAP L2A scenes \u2014 for submission demo only",
+  "scenes": [
+    "scene_01_sudan_sample",
+    "scene_03_russia_sample"
+  ],
+  "scene_stats": [
+    {
+      "scene": "scene_01_sudan_sample",
+      "source": "D:\\asia\\AgriSpectra-Q-master-industrial-poc\\data\\sample_input\\scene_01_sudan_sample.tif",
+      "dimensions": [
+        200,
+        200
+      ],
+      "bands": 224,
+      "resolution_m": 30.0,
+      "valid_pixels": 40000,
+      "total_pixels": 40000,
+      "nodata_percentage": 0.0,
+      "crs": "EPSG:32636",
+      "transform": [
+        30.0,
+        0.0,
+        552195.0,
+        0.0,
+        -30.0,
+        1976175.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "thresholds": {
+        "low_medium_q50": 0.5967662334442139,
+        "medium_high_q80": 0.9554101228713989,
+        "high_priority_q95": 1.82109534740448
+      },
+      "priority_zone_count": 17,
+      "processing_seconds": 1.345464699988952,
+      "status": "LIVE ANALYSIS \u2014 spectral anomaly proxy, not disease label",
+      "location": {
+        "country": "Sudan",
+        "country_code": "SD",
+        "state": "River Nile State",
+        "county": "",
+        "city": "Berber",
+        "display_name": "Berber, River Nile State, Sudan"
+      }
+    },
+    {
+      "scene": "scene_03_russia_sample",
+      "source": "D:\\asia\\AgriSpectra-Q-master-industrial-poc\\data\\sample_input\\scene_03_russia_sample.tif",
+      "dimensions": [
+        200,
+        200
+      ],
+      "bands": 224,
+      "resolution_m": 30.0,
+      "valid_pixels": 40000,
+      "total_pixels": 40000,
+      "nodata_percentage": 0.0,
+      "crs": "EPSG:32658",
+      "transform": [
+        30.0,
+        0.0,
+        405825.0,
+        0.0,
+        -30.0,
+        6911145.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "thresholds": {
+        "low_medium_q50": 0.717161238193512,
+        "medium_high_q80": 1.0920428037643433,
+        "high_priority_q95": 1.780685544013977
+      },
+      "priority_zone_count": 25,
+      "processing_seconds": 1.132109300000593,
+      "status": "LIVE ANALYSIS \u2014 spectral anomaly proxy, not disease label",
+      "location": {
+        "country": "Russia",
+        "country_code": "RU",
+        "state": "Kamchatka Krai",
+        "county": "",
+        "city": "Far Eastern Federal District",
+        "display_name": "Kamchatka Krai, Far Eastern Federal District, Russia"
+      }
+    }
+  ]
+}

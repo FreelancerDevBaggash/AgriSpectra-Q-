@@ -1,0 +1,42 @@
+{
+  "sample_file": "data/sample_input/scene_02_china_sample.tif",
+  "source_scene_id": "DT0000174684",
+  "source_filename": "scene_02_source.tiff",
+  "country": "China",
+  "sample_method": "256x256 spatial crop from the real 224-band EnMAP GeoTIFF; all spectral bands retained",
+  "source_window": {
+    "row_off": 768,
+    "col_off": 768,
+    "height": 256,
+    "width": 256
+  },
+  "source_dimensions": {
+    "width": 1244,
+    "height": 1210,
+    "bands": 224
+  },
+  "sample_dimensions": {
+    "width": 256,
+    "height": 256,
+    "bands": 224
+  },
+  "crs": "EPSG:32645",
+  "transform": [
+    30.0,
+    0.0,
+    375615.0,
+    0.0,
+    -30.0,
+    5077815.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "resolution_m": [
+    30.0,
+    30.0
+  ],
+  "nodata": -32768.0,
+  "valid_fraction_all_224_bands": 1.0,
+  "sha256": "64b464c9d02be2e48687058f47d2d5e28e9026d13100cfa0c7afe5d918ae40b6"
+}

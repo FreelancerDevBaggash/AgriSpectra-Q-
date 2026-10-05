@@ -1,0 +1,18 @@
+{
+  "run_id": "AGRQ-SAMPLE-20261004-170459-de4b6c",
+  "scene": "scene_03_russia_sample",
+  "source": "D:\\asia\\AgriSpectra-Q-master-industrial-poc\\data\\sample_input\\scene_03_russia_sample.tif",
+  "live": true,
+  "leakage_control": "no labels; relative thresholds from full-scene unsupervised anomaly reference",
+  "crs": "EPSG:32658",
+  "outputs": [
+    "risk_map.tif",
+    "priority_map.tif",
+    "zones.geojson",
+    "zones.csv",
+    "spectral_evidence.csv",
+    "inspection_budget.csv",
+    "scene_statistics.json",
+    "metrics.json"
+  ]
+}

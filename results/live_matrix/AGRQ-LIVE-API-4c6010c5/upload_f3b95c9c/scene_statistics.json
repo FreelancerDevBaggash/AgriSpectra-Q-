@@ -1,0 +1,41 @@
+{
+  "scene": "upload_f3b95c9c",
+  "source": "/opt/agrispectra/results/uploads/f3b95c9cd926_ENMAP01-____L2A-DT0000174684_20260109T055050Z_001_V010505_202601.tiff",
+  "dimensions": [
+    1210,
+    1244
+  ],
+  "bands": 224,
+  "resolution_m": 30.0,
+  "valid_pixels": 1006261,
+  "total_pixels": 1505240,
+  "nodata_percentage": 33.14946453721666,
+  "crs": "EPSG:32645",
+  "transform": [
+    30.0,
+    0.0,
+    352575.0,
+    0.0,
+    -30.0,
+    5100855.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "thresholds": {
+    "low_medium_q50": 0.662199079990387,
+    "medium_high_q80": 1.1688470840454102,
+    "high_priority_q95": 1.714233636856079
+  },
+  "priority_zone_count": 864,
+  "processing_seconds": 85.2480657575652,
+  "status": "LIVE ANALYSIS \u2014 spectral anomaly proxy, not disease label",
+  "location": {
+    "country": "China",
+    "country_code": "CN",
+    "state": "Xinjiang",
+    "county": "",
+    "city": "Karamay City",
+    "display_name": "Liushujie Subdistrict, Orku District, Karamay City, Xinjiang, China"
+  }
+}

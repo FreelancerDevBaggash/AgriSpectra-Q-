@@ -1,0 +1,41 @@
+{
+  "scene": "scene_03_russia_sample",
+  "source": "D:\\asia\\AgriSpectra-Q-master-industrial-poc\\data\\sample_input\\scene_03_russia_sample.tif",
+  "dimensions": [
+    200,
+    200
+  ],
+  "bands": 224,
+  "resolution_m": 30.0,
+  "valid_pixels": 40000,
+  "total_pixels": 40000,
+  "nodata_percentage": 0.0,
+  "crs": "EPSG:32658",
+  "transform": [
+    30.0,
+    0.0,
+    405825.0,
+    0.0,
+    -30.0,
+    6911145.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "thresholds": {
+    "low_medium_q50": 0.717161238193512,
+    "medium_high_q80": 1.0920428037643433,
+    "high_priority_q95": 1.780685544013977
+  },
+  "priority_zone_count": 25,
+  "processing_seconds": 1.132109300000593,
+  "status": "LIVE ANALYSIS \u2014 spectral anomaly proxy, not disease label",
+  "location": {
+    "country": "Russia",
+    "country_code": "RU",
+    "state": "Kamchatka Krai",
+    "county": "",
+    "city": "Far Eastern Federal District",
+    "display_name": "Kamchatka Krai, Far Eastern Federal District, Russia"
+  }
+}

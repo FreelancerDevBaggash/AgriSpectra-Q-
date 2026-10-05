@@ -1,0 +1,60 @@
+{
+  "run_id": "AGRQ-LIVE-API-64988fb3",
+  "status": "completed",
+  "live": true,
+  "mode": "LIVE ANALYSIS",
+  "source": "user_upload",
+  "timestamp": "2026-09-29T08:48:30Z",
+  "scenes": [
+    "upload_05b712ec"
+  ],
+  "scene_stats": [
+    {
+      "scene": "upload_05b712ec",
+      "source": "/opt/agrispectra/results/uploads/05b712ec4836_ENMAP01-____L2A-DT0000203347_20260710T011059Z_005_V010506_202607.tiff",
+      "dimensions": [
+        1296,
+        1322
+      ],
+      "bands": 224,
+      "resolution_m": 30.0,
+      "valid_pixels": 1038316,
+      "total_pixels": 1713312,
+      "nodata_percentage": 39.39714424459759,
+      "crs": "EPSG:32658",
+      "transform": [
+        30.0,
+        0.0,
+        395325.0,
+        0.0,
+        -30.0,
+        6914145.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "thresholds": {
+        "low_medium_q50": 0.6850718259811401,
+        "medium_high_q80": 1.0717313289642334,
+        "high_priority_q95": 1.4089713096618652
+      },
+      "priority_zone_count": 63,
+      "processing_seconds": 20.071933863684535,
+      "status": "LIVE ANALYSIS \u2014 spectral anomaly proxy, not disease label",
+      "location": {
+        "country": "Russia",
+        "country_code": "RU",
+        "state": "Kamchatka Krai",
+        "county": "",
+        "city": "Far Eastern Federal District",
+        "display_name": "Kamchatka Krai, Far Eastern Federal District, Russia"
+      }
+    }
+  ],
+  "limitations": [
+    "Spectral wavelength metadata unavailable; band indices reported",
+    "Unsupervised spectral anomaly proxy \u2014 no disease/pest labels",
+    "Priority thresholds are scene-relative percentiles",
+    "Not the frozen six-model benchmark"
+  ]
+}

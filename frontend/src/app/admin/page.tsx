@@ -383,7 +383,7 @@ function DemoSceneCard({
             <span>{scene.zones} zones</span>
             <span>{scene.seconds}s</span>
             {scene.dims.length === 2 && <span>{scene.dims[0]} × {scene.dims[1]} px</span>}
-            {f1 && <span className="font-semibold text-emerald-700">F1 {f1}</span>}
+            {f1 && <span className="font-semibold text-emerald-700">Benchmark F1 ref. {f1}</span>}
           </div>
           {desc && <p className="text-xs text-surface-400 mt-1 truncate">{desc}</p>}
           {scene.tags?.length > 0 && (
@@ -428,9 +428,9 @@ function DemoSceneCard({
                 className="w-full px-3 py-2 text-xs rounded-lg border border-surface-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-100 outline-none bg-white" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-surface-600 mb-1">F1 Score</label>
-              <input value={f1} onChange={e => setF1(e.target.value)} placeholder="e.g. 98.47%"
-                className="w-full px-3 py-2 text-xs rounded-lg border border-surface-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-100 outline-none bg-white" />
+              <label className="block text-xs font-medium text-surface-600 mb-1">Frozen benchmark F1 reference <span className="font-normal text-surface-400">(read-only display)</span></label>
+              <input value={f1} readOnly placeholder="From frozen benchmark manifest"
+                className="w-full px-3 py-2 text-xs rounded-lg border border-surface-200 bg-surface-100 text-surface-500 cursor-not-allowed outline-none" />
             </div>
           </div>
           <div>

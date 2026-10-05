@@ -135,7 +135,7 @@ export default function HomePage() {
             {/* Sub — one focused sentence on the outcome, not the system */}
             <p className="text-base text-white/65 max-w-2xl leading-relaxed mb-10 animate-fade-up delay-200">
               AgriSpectra-Q analyses real EnMAP hyperspectral scenes and returns a ranked
-              list of spectral-anomaly zones — so field teams know exactly where to go first.
+              list of spectral-anomaly zones — so field teams know which areas to inspect first.
             </p>
 
             {/* CTAs — primary sm size (enterprise standard), secondary ghost */}

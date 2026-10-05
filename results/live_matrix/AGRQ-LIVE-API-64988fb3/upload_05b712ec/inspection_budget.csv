@@ -1,0 +1,7 @@
+budget_fraction,valid_pixels,selected_pixels,positive_recall,coverage_percentage,label
+0.05,1038316,51915,0.9999807381154172,5.0,pixel-level proxy inspection coverage
+0.1,1038316,103831,1.0,10.0,pixel-level proxy inspection coverage
+0.2,1038316,207663,1.0,20.0,pixel-level proxy inspection coverage
+0.3,1038316,311494,1.0,30.0,pixel-level proxy inspection coverage
+0.5,1038316,519158,1.0,50.0,pixel-level proxy inspection coverage
+1.0,1038316,1038316,1.0,100.0,pixel-level proxy inspection coverage
