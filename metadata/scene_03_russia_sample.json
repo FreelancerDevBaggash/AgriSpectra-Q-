@@ -1,0 +1,50 @@
+{
+  "sample_file": "data/sample_input/scene_03_russia_sample.tif",
+  "source_scene_id": "DT0000203347",
+  "source_filename": "scene_03_russia_source.tiff",
+  "country": "Russia",
+  "location": "Kamchatka Krai, Russia",
+  "product_level": "EnMAP L2A",
+  "sample_method": "256x256 spatial crop from the real 224-band EnMAP GeoTIFF; all spectral bands retained",
+  "source_window": {
+    "row_off": 896,
+    "col_off": 640,
+    "height": 256,
+    "width": 256
+  },
+  "source_dimensions": {
+    "width": 1322,
+    "height": 1296,
+    "bands": 224
+  },
+  "sample_dimensions": {
+    "width": 256,
+    "height": 256,
+    "bands": 224
+  },
+  "crs": "EPSG:32658",
+  "transform": [
+    30.0,
+    0.0,
+    414525.0,
+    0.0,
+    -30.0,
+    6887265.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "sample_bounds_wgs84": [
+    163.36217756626073,
+    62.03885171363164,
+    163.51265008377567,
+    62.10942631509741
+  ],
+  "resolution_m": [
+    30.0,
+    30.0
+  ],
+  "nodata": -32768.0,
+  "valid_fraction_all_224_bands": 1.0,
+  "sha256": "1001df298452ba40d67f5a9f2d8ab16e1c25b24432118992626d6a13d013dd4d"
+}

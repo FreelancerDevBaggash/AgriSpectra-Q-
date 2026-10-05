@@ -7,7 +7,7 @@ import Link from 'next/link'
 const EVIDENCE_ITEMS = [
   {
     label: '3 EnMAP scenes',
-    sub: 'Sudan, Nile River region — real EO data, no simulation',
+    sub: 'Sudan, China and Russia — real EO data, no simulation',
     icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
   },
   {
@@ -65,7 +65,7 @@ const PROTOCOL_STEPS = [
   { step: '4', title: 'Five random seeds',          desc: 'Seeds 11, 22, 33, 44, 55 per model per scene. 90 total evaluation runs. Mean and std computed per metric.' },
   { step: '5', title: 'Frozen test predictions',    desc: 'Test-set predictions locked before analysis. No post-hoc adjustment of thresholds or model parameters.' },
   { step: '6', title: 'Paired bootstrap',           desc: 'n = 10,000 replicates. 95% confidence interval for pairwise difference vs HSI-RF. CI reported verbatim.' },
-  { step: '7', title: 'Calibration',                desc: 'Post-hoc Platt scaling. Expected Calibration Error (ECE) reported before and after calibration.' },
+  { step: '7', title: 'Calibration',                desc: 'Post-hoc isotonic regression calibration. Expected Calibration Error (ECE) reported before and after calibration.' },
   { step: '8', title: 'Ablation study',             desc: 'Quantum-inspired component isolated. Measurable contribution confirmed on Scene 01. Not a quantum hardware claim.' },
 ]
 

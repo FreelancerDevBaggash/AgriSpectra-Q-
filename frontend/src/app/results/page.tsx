@@ -4,28 +4,27 @@ import Link from 'next/link'
 // All values are frozen scientific benchmark results
 
 const BENCHMARK = [
-  { model: 'AgriSpectra-Q',      f1: 96.40, pr: 99.47, roc: 99.87, highlight: true  },
-  { model: 'Adaptive Classical', f1: 96.34, pr: 99.47, roc: 99.86, highlight: false },
-  { model: 'HSI-RF',             f1: 96.31, pr: 99.49, roc: 99.87, highlight: false },
-  { model: '48-band XGBoost',    f1: 95.22, pr: 99.23, roc: 99.80, highlight: false },
-  { model: 'Spectral XGBoost',   f1: 94.78, pr: 99.24, roc: 99.81, highlight: false },
-  { model: 'Current Hybrid',     f1: 89.98, pr: 96.16, roc: 98.75, highlight: false },
+  { model: 'AgriSpectra-Q',                  f1: 96.40, pr: 99.47, roc: 99.87, highlight: true  },
+  { model: 'Adaptive Classical',             f1: 96.34, pr: 99.47, roc: 99.86, highlight: false },
+  { model: 'HSI-RF',                         f1: 96.31, pr: 99.49, roc: 99.87, highlight: false },
+  { model: '48-band Gradient Boosting',      f1: 95.22, pr: 99.23, roc: 99.80, highlight: false },
+  { model: 'Spectral XGBoost',               f1: 94.78, pr: 99.24, roc: 99.81, highlight: false },
+  { model: 'Current Hybrid',                 f1: 89.98, pr: 96.16, roc: 98.75, highlight: false },
 ]
 
 const PER_SCENE = [
-  { scene: 'Scene 01 (DT0000205230)', f1: 98.47, p: 98.23, r: 98.73, roc: 99.98 },
-  { scene: 'Scene 02',                f1: 95.42, p: 95.80, r: 95.10, roc: 99.83 },
-  { scene: 'Scene 03',                f1: 95.30, p: 94.81, r: 95.83, roc: 99.79 },
+  { scene: 'Scene 01 — Sudan (DT0000192416)',   f1: 98.47, p: 98.23, r: 98.73, roc: 99.98 },
+  { scene: 'Scene 02 — China (DT0000174684)',   f1: 95.42, p: 95.80, r: 95.10, roc: 99.83 },
+  { scene: 'Scene 03 — Russia (DT0000203347)',  f1: 95.30, p: 94.81, r: 95.83, roc: 99.79 },
 ]
 
-// Key findings — spec §6.11 required metrics
+// Key findings — frozen benchmark results
 const FINDINGS = [
-  'AgriSpectra-Q achieves 96.40% mean F1 — highest numerical result among all six evaluated systems.',
-  'Scene 01 (DT0000205230) delivers 98.47% F1, reflecting high spectral contrast in the Nile River agricultural zone.',
-  'Calibration ECE of 0.73% after post-hoc scaling — well-calibrated anomaly scores for the spectral-anomaly proxy target.',
+  'AgriSpectra-Q has the highest numerical mean F1 (96.40%) among all six evaluated systems.',
+  'Statistical superiority over HSI-RF was not established — paired bootstrap 95% CI [−0.0012, +0.0027] crosses zero. This comparison applies to AgriSpectra-Q vs HSI-RF only.',
+  'Calibration ECE of 0.73% after post-hoc calibration — well-calibrated anomaly scores for the spectral-anomaly proxy target.',
   'At 10% inspection budget, the system achieves ~49% positive recall — ~5× better than random sampling.',
-  'Ablation studies confirm the quantum-inspired component provides measurable contribution.',
-  'Paired bootstrap CI [−0.0012, +0.0027] vs HSI-RF at n=10,000 replicates.',
+  'Ablation studies confirm the quantum-inspired component provides measurable contribution (no quantum hardware used).',
 ]
 
 function ScoreBar({ value, max = 100 }: { value: number; max?: number }) {
@@ -217,7 +216,7 @@ export default function ResultsPage() {
               },
               {
                 label: '3 Real EnMAP Scenes',
-                sub: 'UAE & Gulf region',
+                sub: 'Sudan, China and Russia',
                 desc: 'No simulated data — all results on actual EO imagery',
                 icon: (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400" aria-hidden="true">

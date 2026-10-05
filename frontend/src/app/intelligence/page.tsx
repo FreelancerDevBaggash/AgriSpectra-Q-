@@ -7,57 +7,54 @@ import { saveRun, getRunHistory, RunHistoryEntry } from '@/lib/runHistory'
 import { API_BASE, PROD_API_BASE } from '@/lib/config'
 
 // ── Static fallback scene data — used when /api/scenes is unavailable
-// Real data: ad-Damir, نهر النيل, السودان (AGRQ-LIVE-20260916-132530-587fc9)
+// Canonical data from results/live_matrix/ server runs
 const SCENES_FALLBACK = [
   {
-    id: 'scene_01_DT0000205230' as const,
-    label: 'Scene 01',
-    code: 'DT0000205230',
-    location: 'ad-Damir, نهر النيل, السودان',
+    id: 'scene_01_DT0000192416' as const,
+    label: 'Scene 01 — Sudan',
+    code: 'DT0000192416',
+    location: 'ad-Damer, River Nile State, Sudan',
     dims: '1,152 × 1,214 px',
     bands: 224,
     res: '30 m/px',
     crs: 'EPSG:32636',
     validPixels: '1,047,911',
-    time: '~46 s',
+    time: '~43 s',
     zones: 438,
-    desc: 'Agricultural zones along the Nile River in Sudan. High spectral contrast with irrigated farmland. Strongest benchmark performance.',
+    desc: 'Agricultural zones along the Nile River in Sudan. High spectral contrast with irrigated farmland.',
     tags: ['Nile Agriculture', 'Irrigated', 'Riverine'],
-    f1: '98.47%',
     available: true,
   },
   {
-    id: 'scene_02' as const,
-    label: 'Scene 02',
-    code: 'SCENE-02',
-    location: 'ad-Damir, نهر النيل, السودان',
-    dims: '1,000 × 1,000 px',
+    id: 'scene_02_DT0000174684' as const,
+    label: 'Scene 02 — China',
+    code: 'DT0000174684',
+    location: 'Karamay City, Xinjiang, China',
+    dims: '1,210 × 1,244 px',
     bands: 224,
     res: '30 m/px',
-    crs: 'EPSG:32636',
-    validPixels: '849,149',
-    time: '~26 s',
-    zones: 370,
-    desc: 'Agricultural zones in the Nile River corridor, Sudan. Mixed land cover with spectral anomaly patterns.',
-    tags: ['Nile Agriculture', 'Mixed Cover', 'Sudan'],
-    f1: '95.42%',
+    crs: 'EPSG:32645',
+    validPixels: '—',
+    time: '~85 s',
+    zones: 864,
+    desc: 'Agricultural and arid-zone spectral analysis over Xinjiang, China.',
+    tags: ['Arid Agriculture', 'Xinjiang', 'China'],
     available: true,
   },
   {
-    id: 'scene_03' as const,
-    label: 'Scene 03',
-    code: 'SCENE-03',
-    location: 'ad-Damir, نهر النيل, السودان',
-    dims: '1,000 × 1,000 px',
+    id: 'scene_03_DT0000203347' as const,
+    label: 'Scene 03 — Russia',
+    code: 'DT0000203347',
+    location: 'Kamchatka Krai, Russia',
+    dims: '1,296 × 1,322 px',
     bands: 224,
     res: '30 m/px',
-    crs: 'EPSG:32636',
-    validPixels: '853,136',
-    time: '~25 s',
-    zones: 390,
-    desc: 'Adjacent agricultural zone in the Nile River region. Mixed bare soil and farmland with spectral anomaly detection.',
-    tags: ['Nile Region', 'Bare Soil', 'Arid'],
-    f1: '95.30%',
+    crs: 'EPSG:32658',
+    validPixels: '—',
+    time: '~20 s',
+    zones: 63,
+    desc: 'Spectral-anomaly analysis over Kamchatka Krai agricultural zones, Russia.',
+    tags: ['Kamchatka', 'Russia', 'Volcanic Soil'],
     available: true,
   },
 ]
@@ -80,7 +77,7 @@ type SceneEntry = typeof SCENES_FALLBACK[number] | {
   id: string; label: string; code: string; location: string
   dims: string; bands: number; res: string; crs: string
   validPixels: string; time: string; zones: number
-  desc: string; tags: string[]; f1: string; available: boolean
+  desc: string; tags: string[]; available: boolean
 }
 type Mode = 'scene' | 'upload'
 
@@ -167,9 +164,9 @@ export default function IntelligencePage() {
           dimensions?: number[]; crs?: string; valid_pixels?: number
           available?: boolean; priority_zone_count?: number
           processing_seconds?: number
-          desc?: string; tags?: string[]; f1_score?: string
+          desc?: string; tags?: string[]
         }, idx: number) => {
-          // Try to find a matching fallback entry for static fields (desc, tags, f1, etc.)
+          // Try to find a matching fallback entry for static fields (desc, tags, etc.)
           const fb = SCENES_FALLBACK.find(s => s.id === live.scene_id)
           const [w, h] = Array.isArray(live.dimensions) && live.dimensions.length === 2
             ? live.dimensions : [null, null]
@@ -189,7 +186,6 @@ export default function IntelligencePage() {
             zones:       zonesVal,
             desc:        live.desc      || fb?.desc || 'Pre-computed EnMAP spectral analysis.',
             tags:        live.tags      || fb?.tags || [],
-            f1:          live.f1_score  || fb?.f1   || '—',
             available:   live.available ?? true,
           }
         })
@@ -513,7 +509,7 @@ export default function IntelligencePage() {
           </h1>
           <p className="text-surface-500 max-w-2xl text-sm leading-relaxed">
             {backendState === 'upload_only'
-              ? 'This server runs in upload-only mode. Upload any multi-band GeoTIFF to analyse it with the live spectral-anomaly engine.'
+              ? 'This server runs in upload-only mode. Upload a compatible EnMAP-style multi-band GeoTIFF (224 bands recommended) to analyse it with the live spectral-anomaly engine.'
               : 'Select one of the three verified EnMAP scenes below, or upload your own GeoTIFF. The engine returns ranked spectral-priority zones in 20–85 seconds depending on scene.'
             }
           </p>
@@ -679,18 +675,13 @@ export default function IntelligencePage() {
                     </div>
                     {/* Mobile-only metadata row — visible below sm breakpoint */}
                     <div className="flex sm:hidden items-center gap-4 text-xs text-surface-500 mt-1">
-                      <span><strong className="text-surface-800">{s.f1}</strong> F1</span>
-                      <span><strong className="text-surface-800">{s.zones}</strong> zones</span>
+                      <span><strong className="text-surface-800">{s.zones}</strong> HP zones</span>
                       <span><strong className="text-surface-800">{s.time}</strong></span>
                     </div>
                   </div>
 
                   {/* Scene metadata — desktop only */}
                   <div className="hidden sm:flex items-center gap-8 flex-shrink-0 text-right">
-                    <div>
-                      <div className="text-sm font-bold text-surface-900 tabular-nums">{s.f1}</div>
-                      <div className="text-2xs text-surface-400">F1 Score</div>
-                    </div>
                     <div>
                       <div className="text-sm font-bold text-surface-900">{s.zones}</div>
                       <div className="text-2xs text-surface-400">HP Zones</div>
@@ -1190,9 +1181,9 @@ export default function IntelligencePage() {
               </svg>
               <p className="text-gold-800">
                 <strong>Scientific boundary:</strong>{' '}
-                The result is a spectral-anomaly prioritisation signal and requires field verification.
-                Output zones are inspection priority candidates — not confirmed disease or pest detections.
-                The engine works on <strong>any multi-band GeoTIFF</strong>; results depend on scene quality.
+                This live output is an unsupervised spectral-anomaly prioritisation signal.
+                HP zones are inspection candidates — not confirmed disease or pest detections.
+                Field verification is required. Results depend on scene quality and spectral band coverage.
               </p>
             </div>
           </div>

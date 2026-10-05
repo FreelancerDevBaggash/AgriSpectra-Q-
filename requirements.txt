@@ -1,26 +1,32 @@
-# AgriSpectra-Q — Backend Dependencies
+# AgriSpectra-Q — Python dependencies
 # =========================================
+# Install with: pip install -r requirements.txt
+# Tested with Python 3.11.
 # Versions pinned to the production server environment (verified 2026-09-29).
-# To reproduce: pip install -r backend/requirements.txt
+
+# Notebook
+jupyterlab>=4.0.0
 
 # Core scientific stack
 numpy==2.5.3
 scipy==1.18.1
 rasterio==1.4.3
+pandas==3.0.6
+matplotlib==3.11.2
 
-# Independent-reference layer (independent_f1.py + auto_independent_validation.py)
+# Geospatial
 shapely==2.1.2
 pyproj==3.8.0
-planetary-computer==1.0.0
 
-# API server
+# Benchmark / ML (used by backend/benchmark/ scripts)
+scikit-learn==1.9.1
+xgboost==3.4.1
+seaborn==0.13.2
+
+# API server (backend only — not needed to run the notebook)
 Flask==3.1.3
 flask-cors==6.0.5
 gunicorn==26.2.0
 
-# Benchmark / ML (used by benchmark/ scripts)
-scikit-learn==1.9.1
-xgboost==3.4.1
-pandas==3.0.6
-matplotlib==3.11.2
-seaborn==0.13.2
+# Independent-reference layer (backend only)
+planetary-computer==1.0.0

@@ -1,0 +1,42 @@
+{
+  "sample_file": "data/sample_input/scene_01_sudan_sample.tif",
+  "source_scene_id": "DT0000192416",
+  "source_filename": "scene_01_source.tiff",
+  "country": "Sudan",
+  "sample_method": "256x256 spatial crop from the real 224-band EnMAP GeoTIFF; all spectral bands retained",
+  "source_window": {
+    "row_off": 768,
+    "col_off": 768,
+    "height": 256,
+    "width": 256
+  },
+  "source_dimensions": {
+    "width": 1214,
+    "height": 1152,
+    "bands": 224
+  },
+  "sample_dimensions": {
+    "width": 256,
+    "height": 256,
+    "bands": 224
+  },
+  "crs": "EPSG:32636",
+  "transform": [
+    30.0,
+    0.0,
+    569235.0,
+    0.0,
+    -30.0,
+    1954635.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "resolution_m": [
+    30.0,
+    30.0
+  ],
+  "nodata": -32768.0,
+  "valid_fraction_all_224_bands": 1.0,
+  "sha256": "d72dc9d014edf0ec1b6216bf6276dedd62fa14b7a6cd47ef7e9333223798cf5a"
+}
