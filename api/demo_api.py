@@ -834,6 +834,99 @@ def independent_reference(rid: str, reference_id: str):
     return jsonify(get_reference(ROOT, real_rid, scene, reference_id))
 
 
+# ── Atlas endpoints — serve pre-generated atlas PNGs ─────────────────────────
+# The atlas PNG lives at results/figures/<scene>_advanced_atlas.png.
+# We pick the right figure based on the scene registered for this demo run.
+
+FIGURES_DIR = ROOT / "results" / "figures"
+
+_SCENE_ATLAS_MAP: dict[str, str] = {
+    # live-API uploads (upload_* scene dirs)
+    "upload_0af7d3e7": "scene_01_sudan_sample_advanced_atlas.png",
+    "upload_f3b95c9c": "scene_01_sudan_sample_advanced_atlas.png",
+    "upload_05b712ec": "scene_03_russia_sample_advanced_atlas.png",
+    # sample-demo (scene_* dirs)
+    "scene_01_sudan_sample":  "scene_01_sudan_sample_advanced_atlas.png",
+    "scene_03_russia_sample": "scene_03_russia_sample_advanced_atlas.png",
+    # legacy scene ids
+    "scene_01_DT0000205230":  "scene_01_sudan_sample_advanced_atlas.png",
+    "scene_02":               "scene_01_sudan_sample_advanced_atlas.png",
+    "scene_03":               "scene_03_russia_sample_advanced_atlas.png",
+}
+_DEFAULT_ATLAS = "enmap_sample_advanced_atlas.png"
+
+
+def _atlas_path_for_run(rid: str) -> Path:
+    """Return the best-match atlas PNG for the given run_id."""
+    scene, _ = _resolve_run(rid)
+    filename  = _SCENE_ATLAS_MAP.get(scene or "", _DEFAULT_ATLAS)
+    path = FIGURES_DIR / filename
+    if not path.exists():
+        # fallback to any atlas PNG in figures/
+        for candidate in sorted(FIGURES_DIR.glob("*atlas*.png")):
+            return candidate
+    return path
+
+
+@app.get("/api/runs/<rid>/atlas")
+def get_atlas_status(rid: str):
+    """Return atlas status — always atlas_ready if the PNG exists."""
+    _, run_dir = _resolve_run(rid)
+    if run_dir is None:
+        return jsonify({"error": "run not found"}), 404
+    atlas = _atlas_path_for_run(rid)
+    if atlas.exists():
+        return jsonify({
+            "run_id":       rid,
+            "status":       "atlas_ready",
+            "image_url":    f"/api/runs/{rid}/atlas/image",
+            "download_url": f"/api/runs/{rid}/atlas/image",
+            "source":       "pre_generated",
+        })
+    return jsonify({"run_id": rid, "status": "atlas_unavailable"}), 404
+
+
+@app.get("/api/runs/<rid>/atlas/image")
+def get_atlas_image(rid: str):
+    """Stream the atlas PNG for a run."""
+    _, run_dir = _resolve_run(rid)
+    if run_dir is None:
+        return jsonify({"error": "run not found"}), 404
+    atlas = _atlas_path_for_run(rid)
+    if not atlas.exists():
+        return jsonify({"error": "atlas image not found"}), 404
+    return send_file(atlas, mimetype="image/png",
+                     as_attachment=False, download_name="advanced_spectral_atlas.png")
+
+
+@app.get("/api/runs/<rid>/artifacts")
+def get_artifacts(rid: str):
+    """List artifacts for a demo run, including the atlas if available."""
+    _, run_dir = _resolve_run(rid)
+    if run_dir is None:
+        return jsonify({"error": "run not found"}), 404
+    scene, _ = _resolve_run(rid)
+    artifacts = []
+    if rid in DEMO_RUNS and scene:
+        scene_dir = Path(DEMO_RUNS[rid]["scene_dir"])
+        for f in sorted(scene_dir.iterdir()):
+            if f.is_file() and f.name in ALLOWED_FILES:
+                artifacts.append({
+                    "name":         f.name,
+                    "size_bytes":   f.stat().st_size,
+                    "download_url": f"/api/runs/{rid}/files/{scene_dir.name}/{f.name}",
+                })
+    atlas = _atlas_path_for_run(rid)
+    if atlas.exists():
+        artifacts.append({
+            "name":         "advanced_spectral_atlas.png",
+            "kind":         "spectral_atlas",
+            "size_bytes":   atlas.stat().st_size,
+            "download_url": f"/api/runs/{rid}/atlas/image",
+        })
+    return jsonify({"run_id": rid, "artifacts": artifacts})
+
+
 # ── Entry-point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
