@@ -55,3 +55,14 @@ results/test_corrected_run/
 .bob/
 
 
+
+
+# -- Integration work-in-progress docs (not for public repo) --
+# Contains internal contracts, TIF artifacts, and intermediate files.
+docs/integration-package/
+
+# -- Large executed notebooks (outputs bloat repo) --
+notebooks/*.executed.ipynb
+
+# -- Bob editor internal files --
+.bob/

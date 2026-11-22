@@ -844,7 +844,91 @@ function DashboardContent() {
           )}
         </section>
 
-        {/* ── 5. INDEPENDENT REFERENCES — corroborating evidence, not ground truth ── */}
+        {/* ── 5. ADVANCED SPECTRAL ATLAS — spec §5, Atlas integration contract ── */}
+        {/* Atlas is shown only when the run has completed analysis.
+            The image is linked to run_id and scene — never from a different run.
+            Disclaimer is mandatory and must appear with the image. */}
+        <section id="advanced-atlas">
+          <p className="section-label mb-3">ADVANCED SPECTRAL ATLAS</p>
+          <div className="bg-white border border-surface-200 rounded-lg p-5">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+              <div>
+                <h3 className="text-sm font-semibold text-surface-900 mb-1">Advanced Spectral Atlas</h3>
+                <p className="text-xs text-surface-500 leading-relaxed max-w-lg">
+                  Four synchronized views of relative spectral evidence and inspection priority.
+                </p>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                {/* Atlas download — uses correct /atlas/image endpoint from ATLAS API contract */}
+                  <a
+                    href={`${BASE}/api/runs/${runId}/atlas/image`}
+                    download={`${runId}_advanced_spectral_atlas.png`}
+                    className="btn-outline py-1.5 px-3 text-xs inline-flex items-center gap-1.5"
+                    aria-label="Download Advanced Spectral Atlas PNG"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download Atlas
+                  </a>
+              </div>
+            </div>
+
+            {/* Panel legend — always shown regardless of atlas availability */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {[
+                { n: 1, title: 'Spectral anomaly score',           sub: 'RMS standardized deviation' },
+                { n: 2, title: 'Relative spectral-priority classes', sub: 'P50 / P80 / P95 thresholds' },
+                { n: 3, title: 'Threshold ambiguity proxy',         sub: 'Not measurement uncertainty' },
+                { n: 4, title: 'P95 high-priority footprint',       sub: 'Inspection candidate areas' },
+              ].map(({ n, title, sub }) => (
+                <div key={n} className="flex items-start gap-2 text-xs">
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary-100 text-primary-700 font-bold flex-shrink-0 mt-0.5">{n}</span>
+                  <div>
+                    <span className="font-medium text-surface-800 block leading-tight">{title}</span>
+                    <span className="text-surface-400">{sub}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Atlas metadata */}
+            <div className="flex flex-wrap gap-3 text-xs text-surface-500 mb-4 pb-4 border-b border-surface-100">
+              <span>Scene <code className="code font-mono">{scene}</code></span>
+              <span className="text-surface-200">|</span>
+              <span>Run <code className="code font-mono">{runId}</code></span>
+              {sceneStats?.crs && (
+                <>
+                  <span className="text-surface-200">|</span>
+                  <span>CRS <code className="code font-mono">{sceneStats.crs}</code></span>
+                </>
+              )}
+            </div>
+
+            {/* Generate atlas command for reproducibility */}
+            <details className="text-xs">
+              <summary className="cursor-pointer text-surface-500 hover:text-surface-800 font-medium mb-2">
+                Regenerate from source (command line)
+              </summary>
+              <div className="bg-surface-800 rounded-lg p-3 mt-2">
+                <pre className="text-green-400 font-mono leading-relaxed text-xs whitespace-pre-wrap break-all">{`python deliverables/agrispectraq_integration_package/tools/generate_spectral_atlas.py \\
+  results/sample_demo/AGRQ-SAMPLE-20261004-170459-de4b6c/${scene} \\
+  --output results/figures/${scene}_advanced_atlas.png \\
+  --title "${scene}"`}</pre>
+              </div>
+            </details>
+
+            {/* Mandatory atlas caveat */}
+            <div className="mt-4 flex items-start gap-2 text-xs text-surface-500 border-t border-surface-100 pt-4">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-surface-400 flex-shrink-0 mt-0.5">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span className="font-medium text-surface-600">
+                Relative prioritisation only; field verification required.
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* ── 6. INDEPENDENT REFERENCES — corroborating evidence, not ground truth ── */}
         <div id="indref-section">
           <IndependentReferencePanel
             runId={runId}
@@ -853,13 +937,13 @@ function DashboardContent() {
           />
         </div>
 
-        {/* ── 6. SCIENTIFIC CAVEAT — always visible ── */}
+        {/* ── 7. SCIENTIFIC CAVEAT — always visible — approved global disclaimer ── */}
         <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4 text-sm">
           <AlertTriangle className="w-4 h-4 text-gold-600 flex-shrink-0 mt-0.5" />
           <p className="text-gold-800 text-xs leading-relaxed">
-            <strong>Field verification required.</strong> High-priority spectral zones are spectral-anomaly prioritisation
-            signals — not confirmed disease, pest, or biological diagnoses. Do not act on this output without
-            on-site agronomic inspection.
+            <strong>AgriSpectra-Q produces relative hyperspectral evidence for agricultural inspection prioritization.</strong>{' '}
+            Its outputs are not confirmed crop diagnoses.
+            Independent field observations and agronomic review are required before intervention.
           </p>
         </div>
 

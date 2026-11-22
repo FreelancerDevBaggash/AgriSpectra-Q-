@@ -258,10 +258,26 @@ export default function ModelComparisonPage() {
           </div>
         </div>
 
+        {/* Track separation note — mandatory per integration guide §2 */}
+        <div className="flex items-start gap-3 bg-surface-50 border border-surface-200 rounded-lg p-4">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-surface-400 flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p className="text-xs text-surface-500 leading-relaxed">
+            <strong className="text-surface-700">Benchmark track only.</strong>{' '}
+            This table evaluates a scene-local spectral-anomaly proxy — not an independently labelled disease or pest outcome.
+            F1, PR-AUC, and ROC-AUC metrics here are <strong className="text-surface-700">not</strong> applicable to the Planet Tanager experiment,
+            which uses a separate geospatial-integrity verification protocol.
+            Live engine zone counts are also separate and are not F1 scores.
+          </p>
+        </div>
+
         {/* CTA */}
         <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-surface-100">
           <Link href="/research" className="btn-outline inline-flex items-center gap-2 text-sm">
             Research &amp; Validation
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </Link>
+          <Link href="/tanager" className="btn-outline inline-flex items-center gap-2 text-sm">
+            Tanager Experiment
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </Link>
           <Link href="/intelligence" className="btn-primary inline-flex items-center gap-2">

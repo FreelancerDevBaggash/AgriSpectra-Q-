@@ -282,6 +282,168 @@ class ApiClient {
     return this.request('/api/upload/info')
   }
 
+  /**
+   * Request generation of the Advanced Spectral Atlas for a completed run.
+   * Only call this after canGenerateAtlas(run) returns true.
+   * Returns immediately with status 'atlas_queued' — poll GET /atlas for readiness.
+   */
+  async requestAtlas(runId: string, title?: string): Promise<{ run_id: string; status: string; job_id?: string }> {
+    return this.request(`/api/runs/${runId}/atlas`, {
+      method: 'POST',
+      body: JSON.stringify({ title, format: 'png' }),
+    })
+  }
+
+  /**
+   * Get the current atlas status and image URL for a run.
+   * Returns null image_url until status is 'atlas_ready'.
+   * Cache key must be run_id — never reuse an atlas image from a different run.
+   */
+  async getAtlas(runId: string): Promise<{
+    run_id: string
+    scene_id?: string
+    status: 'not_generated' | 'queued' | 'generating' | 'ready' | 'failed'
+    format?: string
+    image_url: string | null
+    download_url?: string | null
+    crs?: string
+    generated_at?: string
+    panels?: string[]
+    disclaimer?: string
+  }> {
+    return this.request(`/api/runs/${runId}/atlas`)
+  }
+
+  /**
+   * Get the full list of artifacts for a run, with metadata and download URLs.
+   * Prefer this over building download URLs manually.
+   */
+  async getArtifacts(runId: string): Promise<{
+    run_id: string
+    artifacts: Array<{
+      name: string
+      kind: string
+      mime_type: string
+      size_bytes?: number
+      sha256?: string
+      ready: boolean
+      download_url: string
+    }>
+  }> {
+    return this.request(`/api/runs/${runId}/artifacts`)
+  }
+
+}
+
+// ── Planet Tanager API client ─────────────────────────────────────────────────
+// These endpoints are proposed contracts — do NOT show as live features until
+// the backend implements and tests them.
+
+export class TanagerApiClient {
+  private baseUrl: string
+
+  constructor(baseUrl: string = API_BASE) {
+    this.baseUrl = baseUrl
+  }
+
+  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const url = `${this.baseUrl}${endpoint}`
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...options?.headers },
+      })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+      return await response.json()
+    } catch (error) {
+      if (error instanceof Error) throw error
+      throw new Error('An unknown error occurred')
+    }
+  }
+
+  /**
+   * Initiate a new Tanager experiment run.
+   * The HDF5 file must be provided through the approved secure ingestion workflow.
+   * Never expose a raw Google Drive URL here.
+   */
+  async createRun(payload: { source_reference: string; title?: string }): Promise<{ run_id: string; status: string }> {
+    return this.request('/api/tanager/runs', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  }
+
+  /**
+   * Get the current status and provenance of a Tanager run.
+   */
+  async getRun(runId: string): Promise<{
+    run_id: string
+    status: string
+    scene_id?: string
+    crs?: string
+    created_at?: string
+    provenance?: Record<string, unknown>
+    validation?: {
+      geospatial_integrity: string
+      independent_scene_validation: string
+      cross_sensor_consistency: string
+    }
+  }> {
+    return this.request(`/api/tanager/runs/${runId}`)
+  }
+
+  /**
+   * Get all artifacts for a Tanager run.
+   */
+  async getArtifacts(runId: string): Promise<{ run_id: string; artifacts: Array<{ name: string; download_url: string }> }> {
+    return this.request(`/api/tanager/runs/${runId}/artifacts`)
+  }
+
+  /**
+   * Get corrected multipart zones for a Tanager run.
+   */
+  async getZones(runId: string): Promise<unknown> {
+    return this.request(`/api/tanager/runs/${runId}/zones`)
+  }
+
+  /**
+   * Get spectral evidence for a Tanager run.
+   */
+  async getEvidence(runId: string): Promise<unknown> {
+    return this.request(`/api/tanager/runs/${runId}/evidence`)
+  }
+
+  /**
+   * Get the validation status report for a Tanager run.
+   * Always exposes BLOCKED states — these are never hidden.
+   */
+  async getValidation(runId: string): Promise<{
+    geospatial_integrity: 'PASS' | 'FAIL' | 'PENDING'
+    independent_scene_validation: 'BLOCKED' | 'PASS' | 'FAIL' | 'PENDING'
+    cross_sensor_consistency: 'BLOCKED' | 'PASS' | 'FAIL' | 'PENDING'
+    geospatial_metrics?: {
+      zones_checked: number
+      iou: number
+      precision: number
+      recall: number
+      f1: number
+      rasterize_back_false_positives: number
+      rasterize_back_false_negatives: number
+    }
+  }> {
+    return this.request(`/api/tanager/runs/${runId}/validation`)
+  }
+
+  /**
+   * Get a specific file by name from a Tanager run.
+   * Returns a URL — do not build file URLs manually.
+   */
+  getFileUrl(runId: string, filename: string): string {
+    return `${this.baseUrl}/api/tanager/runs/${runId}/files/${encodeURIComponent(filename)}`
+  }
 }
 
 // Demo API — 3 pre-loaded EnMAP scenes, ~0.8 s response (default)
@@ -289,6 +451,9 @@ export const apiClient = new ApiClient(API_BASE)
 
 // Production API — upload-only, runs real engine on user's GeoTIFF
 export const prodApiClient = new ApiClient(PROD_API_BASE)
+
+// Tanager API client (proposed — not yet live)
+export const tanagerApiClient = new TanagerApiClient(API_BASE)
 
 // Export class for custom instances
 export { ApiClient }

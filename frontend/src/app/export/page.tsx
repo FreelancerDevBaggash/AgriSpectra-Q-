@@ -51,11 +51,22 @@ const ARTIFACT_GROUPS: { group: string; files: ArtifactEntry[] }[] = [
     ],
   },
   {
+    group: 'Atlas',
+    files: [
+      {
+        key:   'advanced_spectral_atlas.png',
+        label: 'Advanced Spectral Atlas',
+        sub:   'Four-panel atlas: anomaly score · priority classes · ambiguity proxy · P95 footprint. Relative prioritisation only; field verification required.',
+        ext:   'PNG',
+      },
+    ],
+  },
+  {
     group: 'Metadata',
     files: [
       { key: 'scene_statistics.json', label: 'Scene Statistics', sub: 'Dimensions, CRS, valid pixels, thresholds, timing', ext: 'JSON' },
       { key: 'metrics.json',          label: 'Engine Metrics',   sub: 'Risk definition and zone count',                    ext: 'JSON' },
-      { key: 'manifest.json',         label: 'Run Manifest',     sub: 'Run identity, leakage-control, and output list',    ext: 'JSON' },
+      { key: 'manifest.json',         label: 'Run Manifest',     sub: 'Run identity, leakage-control, SHA-256, and output list', ext: 'JSON' },
     ],
   },
 ]
@@ -65,6 +76,7 @@ function ExtIcon({ ext, className = 'w-4 h-4' }: { ext: string; className?: stri
   if (ext === 'GeoTIFF') return <Map className={className} aria-hidden="true" />
   if (ext === 'GeoJSON') return <Map className={className} aria-hidden="true" />
   if (ext === 'CSV')     return <BarChart3 className={className} aria-hidden="true" />
+  if (ext === 'PNG')     return <FileText className={className} aria-hidden="true" />
   return <FileJson className={className} aria-hidden="true" />
 }
 
@@ -73,6 +85,7 @@ function extBadgeClass(ext: string): string {
   if (ext === 'GeoTIFF') return 'bg-primary-50 text-primary-700 border-primary-200'
   if (ext === 'GeoJSON') return 'bg-teal-50 text-teal-700 border-teal-200'
   if (ext === 'CSV')     return 'bg-accent-50 text-accent-700 border-accent-200'
+  if (ext === 'PNG')     return 'bg-purple-50 text-purple-700 border-purple-200'
   return 'bg-surface-100 text-surface-600 border-surface-200'
 }
 
@@ -470,14 +483,15 @@ function ExportContent() {
           </section>
         )}
 
-        {/* ── Scientific caveat ── */}
+        {/* ── Scientific caveat — approved global disclaimer ── */}
         <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4">
           <AlertTriangle className="w-4 h-4 text-gold-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <p className="text-xs text-gold-800 leading-relaxed">
-            These are outputs of a <strong>Live Analysis</strong> run —
-            spectral-anomaly prioritisation products only.
-            They do <strong>not</strong> constitute a disease map, pest map, or biological diagnosis.
-            All zones require <strong>field verification</strong> by a qualified agronomist before any action is taken.
+            <strong>AgriSpectra-Q produces relative hyperspectral evidence for agricultural inspection prioritization.</strong>{' '}
+            Its outputs are not confirmed crop diagnoses.
+            Independent field observations and agronomic review are required before intervention.
+            The Advanced Spectral Atlas, if generated, is a relative-prioritisation visualization only —
+            it does not identify disease, pests, crop stress, or biological severity.
           </p>
         </div>
 

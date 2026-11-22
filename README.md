@@ -1,4 +1,4 @@
-# AgriSpectra-Q
+﻿# AgriSpectra-Q
 
 AgriSpectra-Q is a hyperspectral spectral-anomaly prioritisation proof of concept that converts real EnMAP imagery into ranked inspection candidates. It does not diagnose disease or pests; every priority zone requires field verification.
 
@@ -87,19 +87,128 @@ Input: EnMAP L2A GeoTIFF (224 bands, 30 m)
 
 ---
 
-## Two separate evaluation modes
+## Three separate tracks — do not mix
+
+### EnMAP Live Matrix engine
+
+The live engine is an unsupervised spectral-anomaly prioritisation pipeline. It uses RMS standardised deviation over 32 selected EnMAP bands and returns priority zones. Live zone counts are not F1 scores and live outputs are not part of the frozen six-model benchmark.
 
 ### Frozen six-model benchmark
 
 The frozen benchmark contains 90 precomputed runs: 6 models × 3 real EnMAP scenes × 5 random seeds. Its target is a scene-local spectral-anomaly proxy, not an independently labelled disease or pest outcome. The benchmark uses sampled pixels (up to 7,000 per scene) and grouped spatial splits; it is not an exhaustive full-raster disease evaluation.
 
-### Live Matrix engine
-
-The live engine is an unsupervised spectral-anomaly prioritisation pipeline. It uses RMS standardised deviation over 32 selected EnMAP bands and returns priority zones. Live zone counts are not F1 scores and live outputs are not part of the frozen six-model benchmark.
-
 ### Reviewer sample demo
 
 The files in `data/sample_input/` are 256 × 256 spatial crops from the real EnMAP L2A scenes. Outputs generated from them are pipeline-verification outputs only. They are not full-scene benchmark results.
+
+---
+
+## Advanced Spectral Map Atlas
+
+The project can generate an optional four-panel Advanced Spectral Atlas from an actual Live Matrix or sample-demo run:
+
+1. A continuous relative spectral-anomaly score (RMS standardised deviation).
+2. Scene-relative spectral-priority classes (P50 / P80 / P95).
+3. A threshold ambiguity proxy — **explicitly labelled as not measurement uncertainty**.
+4. The P95 high-priority footprint with scene provenance and CRS.
+
+**Generate atlas for a sample-demo scene:**
+
+```bash
+python deliverables/agrispectraq_integration_package/tools/generate_spectral_atlas.py \
+  results/sample_demo/AGRQ-SAMPLE-20261004-170459-de4b6c/scene_01_sudan_sample \
+  --output results/figures/scene_01_sudan_sample_advanced_atlas.png \
+  --title "scene 01 sudan sample"
+```
+
+**Validate before publishing:**
+
+```bash
+python deliverables/agrispectraq_integration_package/tools/validate_spectral_atlas.py \
+  results/sample_demo/AGRQ-SAMPLE-20261004-170459-de4b6c/scene_01_sudan_sample
+```
+
+The atlas is derived from actual generated artifacts. It is a visualization of relative prioritisation, not a disease, pest, crop-stress, or biological-severity map. Field verification is required. The EnMAP Live Matrix track, the frozen six-model benchmark, and the separate Tanager TRUST validation track must remain explicitly separated. Atlas figures must retain the scene ID, source run, CRS, and threshold metadata.
+
+---
+
+## Planet Tanager Scientific Experiment
+
+AgriSpectra-Q includes a separate Planet Tanager experiment track based on a real hyperspectral HDF5 scene supplied through the project's documented data workflow. **This track is independent from the EnMAP Live Matrix engine and the frozen six-model benchmark — do not mix their results.**
+
+### What the Tanager track evaluates
+
+- HDF5 structure and metadata integrity.
+- Valid-band and valid-pixel handling.
+- Relative spectral-anomaly outputs (baseline and TRUST).
+- Reference ambiguity and a separately identified ambiguity-v2 formulation.
+- Corrected multipart raster-to-polygon conversion.
+- Rasterize-back agreement between the source mask and corrected GeoJSON.
+- Spatial autocorrelation and internal spatial holdout diagnostics.
+- Reproducibility of the generated artifacts.
+
+### Scene metadata (from actual experiment)
+
+| Property | Value |
+|----------|-------|
+| Scene ID | `20250501_143138_87_4001` |
+| Dimensions | 426 × 752 × 784 (bands × rows × cols) |
+| CRS | `EPSG:32721` |
+| Good bands | 352 / 426 |
+| Valid pixel fraction | 71.6659% |
+| Data source | Google Drive supplied HDF5 |
+
+### Current geospatial result — corrected 128-zone output
+
+| Metric | Value |
+|--------|-------|
+| Rasterize-back false positives | 0 |
+| Rasterize-back false negatives | 0 |
+| IoU | 1.0 |
+| Precision | 1.0 |
+| Recall | 1.0 |
+| F1 | 1.0 |
+
+> These metrics validate geospatial representation of the tested scene. They are **not** field-label accuracy and do not establish disease, pest, crop-stress, or agronomic diagnostic performance.
+
+### Important limitations
+
+Independent-scene validation and cross-sensor consistency remain **BLOCKED** until distinct, documented data are available. Ambiguity is an uncertainty-related proxy, not calibrated probability. The Tanager track does not establish commercial value, field accuracy, or a confirmed agricultural diagnosis.
+
+### Generate Tanager atlas
+
+```bash
+python "docs/integration-package/deliverables/agrispectraq_integration_package/tools/generate_spectral_atlas.py" \
+  "docs/integration-package/AgriSpectra_Q_Google_Colab_Content_Handoff/deliverables/tanager_trust_final" \
+  --output "results/figures/planet_tanager_advanced_atlas.png" \
+  --title "Planet Tanager scientific experiment"
+```
+
+### Tanager output files
+
+The verified experiment deliverables are in:
+
+```
+docs/integration-package/AgriSpectra_Q_Google_Colab_Content_Handoff/deliverables/tanager_trust_final/
+```
+
+| File | Description |
+|------|-------------|
+| `baseline_anomaly_score.tif` | Baseline spectral anomaly score map |
+| `trust_anomaly_score.tif` | TRUST-refined anomaly score map |
+| `ambiguity_proxy.tif` | Reference threshold ambiguity proxy |
+| `ambiguity_v2_rank_robust.tif` | Rank-robust ambiguity v2 |
+| `trust_priority_classes.tif` | Priority classes (INSPECT/MONITOR/ABSTAIN) |
+| `valid_pixel_mask.tif` | Valid pixel mask |
+| `zones.geojson` | Initial zone polygons |
+| `zones_corrected_exact_multipart.geojson` | Corrected multipart zones (rasterize-back verified) |
+| `zones.csv` | Zone statistics table |
+| `TANAGER_HDF5_METADATA.json` | Full scene metadata and provenance |
+| `repair_metrics.json` | Geometry repair statistics |
+| `TANAGER_GEOSPATIAL_INTEGRITY_REPORT.md` | Geospatial integrity report |
+| `tanager_advanced_atlas.png` | Four-panel Advanced Spectral Atlas |
+
+The API seed run (`TANAGER-TRUST-20250501-87-4001`) serves these files via `GET /api/tanager/runs/TANAGER-TRUST-20250501-87-4001/files/<filename>`.
 
 ---
 
@@ -254,7 +363,9 @@ AgriSpectra-Q/
 ├── README.md                              ← this file
 ├── requirements.txt                       ← pinned Python dependencies
 ├── notebooks/
-│   └── AgriSpectra_Q_Demo.ipynb           ← demo notebook (runs end-to-end)
+│   ├── AgriSpectra_Q_Demo.ipynb           ← demo notebook (runs end-to-end)
+│   ├── AgriSpectra_Q_Hackathon_Colab.ipynb         ← hackathon notebook (Planet Tanager + EnMAP)
+│   └── AgriSpectra_Q_Hackathon_Colab.executed.ipynb ← executed version with outputs
 ├── data/
 │   └── sample_input/
 │       ├── scene_01_sudan_sample.tif      ← 256×256 crop, DT0000192416
@@ -285,7 +396,7 @@ AgriSpectra-Q/
 
 ## Scientific Boundaries
 
-> Output zones are **spectral-anomaly candidates** for field inspection.  
-> They are **not** a confirmed disease or pest diagnosis.  
-> All priority zones require independent field verification.  
+> AgriSpectra-Q produces relative hyperspectral evidence for agricultural inspection prioritization.
+> Its outputs are **not** confirmed crop diagnoses.
+> Independent field observations and agronomic review are required before intervention.
 > The benchmark evaluates a scene-local spectral-anomaly proxy — not an independently labelled biological outcome.

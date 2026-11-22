@@ -23,6 +23,7 @@ const PRIMARY_NAV = [
 const SCIENCE_LINKS = [
   { href: '/model-comparison', label: 'Model Comparison',   desc: 'Benchmark across 6 evaluated models'     },
   { href: '/research',         label: 'Research & Evidence', desc: 'Protocol, limitations, scientific basis'  },
+  { href: '/tanager',          label: 'Tanager Experiment',  desc: 'Planet Tanager hyperspectral TRUST track' },
   { href: '/technology',       label: 'Technology Stack',    desc: 'Architecture, quantum layer, pipeline'    },
 ]
 

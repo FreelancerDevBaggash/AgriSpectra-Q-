@@ -175,6 +175,99 @@ export default function ResearchPage() {
           </p>
         </div>
 
+        {/* ── Planet Tanager Experiment — independent track ── */}
+        <section>
+          <div className="flex flex-wrap items-center gap-3 mb-5">
+            <p className="section-label">PLANET TANAGER</p>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100 border border-purple-300 text-xs font-bold text-purple-800 tracking-wide">
+              PLANET TANAGER — SCIENTIFIC EXPERIMENT
+            </span>
+          </div>
+          <h2 className="text-lg font-semibold text-surface-900 mb-3">Separate Scientific Experiment Track</h2>
+          <p className="text-sm text-surface-500 mb-5 leading-relaxed max-w-2xl">
+            This experiment processes a real Planet Tanager hyperspectral HDF5 scene and evaluates a reproducible
+            workflow for relative spectral-anomaly prioritisation, ambiguity analysis, and geospatial integrity.
+            The output is a research and inspection-prioritisation signal, not an agricultural diagnosis.
+          </p>
+
+          {/* Tanager validation status — MUST NOT be hidden */}
+          <div className="grid sm:grid-cols-3 gap-3 mb-5">
+            {[
+              { label: 'Geospatial integrity', status: 'PASS',    color: 'bg-green-50 border-green-300 text-green-800' },
+              { label: 'Independent scene validation', status: 'BLOCKED', color: 'bg-gold-50 border-gold-300 text-gold-800' },
+              { label: 'Cross-sensor consistency',    status: 'BLOCKED', color: 'bg-gold-50 border-gold-300 text-gold-800' },
+            ].map(({ label, status, color }) => (
+              <div key={label} className={`border rounded-lg p-4 ${color}`}>
+                <div className="text-xs font-bold tracking-widest mb-1">{status}</div>
+                <div className="text-xs font-medium">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Geospatial integrity metrics */}
+          <div className="bg-white border border-surface-200 rounded-lg p-5 mb-5">
+            <p className="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-3">
+              Geospatial integrity result — corrected 128-zone output
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
+              {[
+                { label: 'Zones checked',   value: '128' },
+                { label: 'False positives', value: '0'   },
+                { label: 'False negatives', value: '0'   },
+                { label: 'IoU / F1 / Precision / Recall', value: '1.0' },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <div className="text-xl font-bold text-surface-900 tabular-nums">{value}</div>
+                  <div className="text-xs text-surface-500 mt-0.5">{label}</div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-surface-400 italic leading-relaxed">
+              These metrics validate raster-to-vector representation for the tested scene.
+              They are not agricultural ground-truth accuracy.
+            </p>
+          </div>
+
+          {/* Tanager scene metadata */}
+          <div className="bg-white border border-surface-200 rounded-lg p-5 mb-5">
+            <p className="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-3">Scene provenance</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1.5 text-xs">
+              {[
+                { k: 'Scene ID',       v: '20250501_143138_87_4001' },
+                { k: 'Dimensions',     v: '426 × 752 × 784' },
+                { k: 'CRS',            v: 'EPSG:32721' },
+                { k: 'Good bands',     v: '352 / 426' },
+                { k: 'Valid pixels',   v: '71.67%' },
+                { k: 'Source',         v: 'Google Drive supplied HDF5' },
+              ].map(({ k, v }) => (
+                <div key={k}>
+                  <span className="text-surface-400">{k} </span>
+                  <strong className="text-surface-700 font-mono">{v}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-600 flex-shrink-0 mt-0.5">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <p className="text-xs text-surface-600 leading-relaxed">
+              Planet Tanager results are a separate experiment track. Geospatial integrity metrics validate
+              raster-to-vector representation for the tested scene — they are not agricultural ground-truth accuracy.
+              Independent-scene and cross-sensor validations remain blocked until distinct documented data are available.
+            </p>
+          </div>
+
+          <div className="mt-4">
+            <Link href="/tanager" className="btn-outline inline-flex items-center gap-2 text-sm">
+              View full Tanager experiment
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </Link>
+          </div>
+        </section>
+
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <Link href="/model-comparison" className="btn-outline inline-flex items-center gap-2 text-sm">
@@ -183,6 +276,10 @@ export default function ResearchPage() {
           </Link>
           <Link href="/results" className="btn-outline inline-flex items-center gap-2 text-sm">
             Benchmark Results
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </Link>
+          <Link href="/tanager" className="btn-outline inline-flex items-center gap-2 text-sm">
+            Tanager Experiment
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </Link>
           <Link href="/intelligence" className="btn-primary inline-flex items-center gap-2">

@@ -1,4 +1,8 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
+
+// ── Project page — sourced from:
+//   docs/integration-package/APPROVED_ENGLISH_COPY.md
+//   docs/integration-package/دليل_دمج_AgriSpectraQ_للموقع_GitHub_Colab.md §9, §10, §12
 
 const WORKFLOW = [
   { step: 'DETECT',     desc: 'Real EnMAP L2A hyperspectral GeoTIFF data (224 bands, 30 m/px) is ingested with memory-aware windowed processing and NoData handling.' },
@@ -13,11 +17,55 @@ const LIVE_SCENES = [
   { scene: 'Scene 03',                dims: '1,152 × 1,214', valid: '1,047,911', nodata: '25.07%', crs: 'EPSG:32636', time: '49.11 s', zones: 438 },
 ]
 
+// Approved decision labels — with caveats per APPROVED_ENGLISH_COPY.md
 const ZONE_CATEGORIES = [
-  { name: 'HIGH PRIORITY',          dot: 'bg-gold-400',    border: 'border-l-gold-400',    text: 'text-gold-700',    desc: 'Inspect this zone first.' },
-  { name: 'MEDIUM PRIORITY',        dot: 'bg-teal-500',    border: 'border-l-teal-500',    text: 'text-teal-700',    desc: 'Include in the next inspection cycle.' },
-  { name: 'LOW PRIORITY',           dot: 'bg-primary-500', border: 'border-l-primary-500', text: 'text-primary-700', desc: 'Continue monitoring.' },
-  { name: 'ABSTAIN / HUMAN REVIEW', dot: 'bg-surface-400', border: 'border-l-surface-400', text: 'text-surface-600', desc: 'Insufficient confidence for automated prioritisation.' },
+  {
+    name: 'INSPECT',
+    dot: 'bg-gold-400', border: 'border-l-gold-400', text: 'text-gold-700',
+    desc: 'Area ranked for field investigation under the current configuration and available spectral evidence.',
+    caveat: 'Does not confirm disease or pests.',
+  },
+  {
+    name: 'MONITOR',
+    dot: 'bg-teal-500', border: 'border-l-teal-500', text: 'text-teal-700',
+    desc: 'Area that may warrant continued observation rather than immediate field inspection.',
+    caveat: 'Does not mean the crop is healthy.',
+  },
+  {
+    name: 'ABSTAIN',
+    dot: 'bg-surface-400', border: 'border-l-surface-400', text: 'text-surface-600',
+    desc: 'Area where the available evidence is insufficient, ambiguous, or unreliable for a defensible prioritization decision.',
+    caveat: 'Does not mean the area is free of agricultural problems.',
+  },
+]
+
+// What is scientifically supported vs what is NOT yet implemented
+const SUPPORTED = [
+  'Processing hyperspectral observations (EnMAP L2A, 224 bands)',
+  'Relative spectral anomaly scoring (RMS standardised deviation)',
+  'Scene-relative priority maps (P50 / P80 / P95 thresholds)',
+  'Connected priority zones with GeoJSON and CSV outputs',
+  'Evidence Passports with per-zone spectral metadata',
+  'Corrected raster-to-polygon conversion',
+  'Rasterize-back geospatial integrity verification',
+  'Sensitivity, robustness, ablation, and negative-control analysis',
+  'Spatial autocorrelation and internal spatial holdout diagnostics',
+  'Reproducibility manifests with SHA-256 and CRS provenance',
+  'Four-panel Advanced Spectral Atlas',
+  'Planet Tanager TRUST experiment (independent track)',
+]
+
+const NOT_YET_IMPLEMENTED = [
+  'Disease diagnosis — no field-labelled disease or pest target exists',
+  'Confirmed pest detection — no agricultural ground truth available',
+  'Crop-stress accuracy — benchmark target is a spectral-anomaly proxy',
+  'Calibrated measurement uncertainty — ambiguity proxy is not calibrated probability',
+  'Independent-scene generalisation — all scenes used during development',
+  'Cross-sensor consistency — no compatible reference data available',
+  'Multi-season accuracy — single acquisition dates per scene',
+  'Verified cost saving — inspection ROI not measured against operational baselines',
+  'Validated information gain — no controlled field experiment completed',
+  'Confirmed customers or partnerships',
 ]
 
 const ROADMAP = [
@@ -163,22 +211,74 @@ export default function ProjectPage() {
           <p className="text-xs text-surface-400 mt-2">Total live processing time: ~197.66 s · Run ID: <code className="font-mono">AGRQ-LIVE-20260916-132530-587fc9</code></p>
         </section>
 
-        {/* Zone Categories — priority cards with colored left border */}
+        {/* Value proposition — approved copy */}
+        <section>
+          <p className="section-label mb-2">VALUE PROPOSITION</p>
+          <h2 className="text-lg font-semibold text-surface-900 mb-4">What AgriSpectra-Q Delivers</h2>
+          <div className="bg-primary-50 border border-primary-200 rounded-lg p-5">
+            <p className="text-sm text-primary-900 leading-relaxed">
+              AgriSpectra-Q transforms hyperspectral satellite data into evidence-based agricultural inspection priorities,
+              helping farm operators, agronomists, and agricultural monitoring teams decide where field investigation may be most valuable.
+            </p>
+          </div>
+        </section>
+
+        {/* Decision output labels with caveats */}
         <section>
           <p className="section-label mb-2">PRIORITY SYSTEM</p>
-          <h2 className="text-lg font-semibold text-surface-900 mb-4">Priority Zone Categories</h2>
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">Inspection-Prioritisation Categories</h2>
+          <p className="text-xs text-surface-400 mb-4">These are inspection-prioritisation categories, not disease classifications.</p>
           <div className="flex flex-col divide-y divide-surface-100 border-t border-b border-surface-100">
-            {ZONE_CATEGORIES.map(({ name, dot, border, text, desc }) => (
-              <div key={name} className={`flex items-center gap-4 py-3 pl-4 border-l-4 ${border}`}>
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />
-                <span className={`text-xs font-bold tracking-wide flex-shrink-0 w-44 ${text}`}>{name}</span>
-                <span className="text-sm text-surface-500 leading-relaxed">{desc}</span>
+            {ZONE_CATEGORIES.map(({ name, dot, border, text, desc, caveat }) => (
+              <div key={name} className={`flex gap-4 py-3.5 pl-4 border-l-4 ${border}`}>
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${dot}`} />
+                <div className="flex-1 min-w-0">
+                  <span className={`text-xs font-bold tracking-wide block mb-0.5 ${text}`}>{name}</span>
+                  <span className="text-sm text-surface-600 leading-relaxed">{desc}</span>
+                  <span className="text-xs text-surface-400 italic block mt-0.5">{caveat}</span>
+                </div>
               </div>
             ))}
           </div>
           <p className="text-xs text-surface-400 mt-3">
             Zone categories are scene-relative percentile thresholds for operational screening. They are not validated biological severity levels.
           </p>
+        </section>
+
+        {/* What is supported and what is not */}
+        <section>
+          <p className="section-label mb-2">SCIENTIFIC SCOPE</p>
+          <h2 className="text-lg font-semibold text-surface-900 mb-5">What Is and Is Not Implemented</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-white border border-surface-200 rounded-lg p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-primary-500 flex-shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
+                <p className="text-xs font-semibold text-surface-500 uppercase tracking-wide">Supported — available for publication as technology</p>
+              </div>
+              <div className="space-y-1.5">
+                {SUPPORTED.map(item => (
+                  <div key={item} className="flex items-start gap-2 text-xs text-surface-600">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-primary-500 flex-shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white border border-surface-200 rounded-lg p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-500 flex-shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <p className="text-xs font-semibold text-surface-500 uppercase tracking-wide">Not yet implemented — do not present as complete</p>
+              </div>
+              <div className="space-y-1.5">
+                {NOT_YET_IMPLEMENTED.map(item => (
+                  <div key={item} className="flex items-start gap-2 text-xs text-surface-600">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-500 flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* AI Architecture */}
