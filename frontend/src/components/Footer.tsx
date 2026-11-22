@@ -20,8 +20,8 @@ export default function Footer() {
               />
             </div>
             <p className="text-sm text-surface-400 leading-relaxed mb-5 max-w-sm">
-              Transforming real EnMAP hyperspectral satellite data into ranked inspection priorities 
-              for agricultural field teams across the Arab region.
+              AgriSpectra-Q transforms hyperspectral satellite observations into spatially explicit inspection priorities,
+              helping agricultural teams decide where field investigation may be most valuable.
             </p>
             <div className="flex items-center gap-3 flex-wrap">
               <span className="badge badge-live text-xs">
@@ -32,7 +32,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Quick Links — mirrors primary nav + science group, no Dashboard
+          {/* Quick Links — mirrors primary nav + science group + Tanager, no Dashboard
                (Dashboard requires run_id and is reached via Intelligence flow only) */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-widest text-surface-500 mb-4">Navigation</h3>
@@ -44,6 +44,7 @@ export default function Footer() {
                 { href: '/results',          label: 'Benchmark Results'   },
                 { href: '/model-comparison', label: 'Model Comparison'    },
                 { href: '/research',         label: 'Research & Evidence' },
+                { href: '/tanager',          label: 'Tanager Experiment'  },
                 { href: '/technology',       label: 'Technology Stack'    },
                 { href: '/team',             label: 'Team'                },
               ].map(({ href, label }) => (
@@ -89,8 +90,9 @@ export default function Footer() {
           <p className="text-xs text-surface-500">
             © {year} AgriSpectra-Q. Built for the Arab Youth Space Hackathon 2026.
           </p>
-          <p className="text-xs text-surface-600">
-            Spectral-anomaly priority candidates only — all zones require field verification.
+          <p className="text-xs text-surface-600 max-w-md text-center md:text-right leading-relaxed">
+            Relative hyperspectral evidence for inspection prioritization only —
+            outputs are not confirmed crop diagnoses. Field verification required.
           </p>
         </div>
       </div>

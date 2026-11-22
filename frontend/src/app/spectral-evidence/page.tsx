@@ -331,26 +331,85 @@ function SpectralEvidenceContent() {
           </>
         )}
 
-        {/* Interpretation + recommendation */}
+        {/* Evidence Passport — per دليل_دمج §11 */}
         {zoneRecord && (
-          <section className="border-t border-surface-200 pt-6 space-y-3">
-            <h2 className="text-sm font-semibold text-surface-700 uppercase tracking-wide">Interpretation</h2>
-            <p className="text-sm text-surface-700 leading-relaxed">
-              <strong className="text-surface-900">Spectral-priority candidate.</strong>{' '}
-              {zoneRecord.recommendation || 'Zone exhibits spectral anomaly relative to the scene baseline.'}
-            </p>
-            <p className="text-xs text-surface-500">
-              The underlying cause is not determined by the current analysis. Field verification required.
-            </p>
+          <section className="border-t border-surface-200 pt-6">
+            <h2 className="text-sm font-semibold text-surface-700 uppercase tracking-wide mb-4">Evidence Passport</h2>
+            <div className="bg-white border border-surface-200 rounded-lg p-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-3 text-xs mb-4">
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Zone ID</span>
+                  <code className="font-mono font-semibold text-surface-800">{zoneRecord.zone_id}</code>
+                </div>
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Scene ID</span>
+                  <code className="font-mono text-surface-700">{scene}</code>
+                </div>
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Priority rank</span>
+                  <strong className="text-surface-800">#{zoneRecord.rank}</strong>
+                </div>
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Priority category</span>
+                  <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide ${priorityColor(zoneRecord.priority_category)}`}>
+                    {zoneRecord.priority_category}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Pixel count</span>
+                  <strong className="text-surface-800">{zoneRecord.pixel_count?.toLocaleString()}</strong>
+                </div>
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Mean anomaly</span>
+                  <strong className="text-surface-800 font-mono">{zoneRecord.mean_risk?.toFixed(4)} σ</strong>
+                </div>
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Max anomaly</span>
+                  <strong className="text-surface-800 font-mono">{zoneRecord.max_risk?.toFixed(4)} σ</strong>
+                </div>
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Threshold type</span>
+                  <code className="font-mono text-surface-700">{zoneRecord.threshold_type ?? 'scene-relative percentile'}</code>
+                </div>
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Band indices</span>
+                  <span className="text-surface-700">32 of 224 (evenly spaced)</span>
+                </div>
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Physical wavelengths</span>
+                  <span className="text-surface-500 italic text-xs">Not verified in current artifact</span>
+                </div>
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Source artifact</span>
+                  <code className="font-mono text-xs text-surface-700">spectral_evidence.csv</code>
+                </div>
+                <div>
+                  <span className="text-surface-400 block mb-0.5">Run ID</span>
+                  <code className="font-mono text-xs text-surface-600 truncate block">{runId}</code>
+                </div>
+              </div>
+              <div className="border-t border-surface-100 pt-3">
+                <p className="text-sm text-surface-700 leading-relaxed mb-2">
+                  <strong className="text-surface-900">Recommendation:</strong>{' '}
+                  {zoneRecord.recommendation || 'Zone exhibits spectral anomaly relative to the scene baseline.'}
+                </p>
+                <p className="text-xs text-surface-400 italic leading-relaxed">
+                  This zone is a relative spectral-anomaly candidate for inspection prioritization.
+                  The current evidence does not determine the underlying agricultural cause.
+                  Field verification is required.
+                </p>
+              </div>
+            </div>
           </section>
         )}
 
-        {/* Scientific caveat — always visible */}
+        {/* Scientific caveat — approved global disclaimer */}
         <div className="flex items-start gap-3 bg-gold-50 border border-gold-200 rounded-lg p-4 text-sm">
           <AlertTriangle className="w-4 h-4 text-gold-600 flex-shrink-0 mt-0.5" />
           <p className="text-gold-800 text-xs leading-relaxed">
-            <strong>Field verification required.</strong> Spectral evidence available for this priority candidate.
-            The underlying cause is not determined by the current analysis.
+            <strong>AgriSpectra-Q produces relative hyperspectral evidence for agricultural inspection prioritization.</strong>{' '}
+            Its outputs are not confirmed crop diagnoses.
+            Independent field observations and agronomic review are required before intervention.
             Physical wavelength axis is not verified in the current artifact — band indices only.
           </p>
         </div>

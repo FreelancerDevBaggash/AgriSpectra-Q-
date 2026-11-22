@@ -37,9 +37,25 @@ const TECH_STACK = [
     ],
   },
   {
+    layer: 'Atlas Tools',
+    items: [
+      { name: 'generate_spectral_atlas.py', desc: 'Four-panel atlas generator — anomaly score, priority classes, ambiguity proxy, P95 footprint' },
+      { name: 'validate_spectral_atlas.py', desc: 'Pre-publication validator — checks CRS, dimensions, transform, scene ID, and manifest' },
+    ],
+  },
+  {
+    layer: 'Planet Tanager',
+    items: [
+      { name: 'h5py',                    desc: 'HDF5 structure inspection and valid-band/pixel extraction' },
+      { name: 'run_tanager_experiment.py', desc: 'Tile-by-tile Tanager TRUST experiment runner' },
+      { name: 'GeoJSON multipart',        desc: 'Corrected multipart raster-to-polygon output with rasterize-back validation' },
+    ],
+  },
+  {
     layer: 'Data',
     items: [
       { name: 'EnMAP GeoTIFF', desc: '224-band hyperspectral L2A scenes at 30 m/px resolution' },
+      { name: 'Planet Tanager HDF5', desc: 'Real hyperspectral HDF5 scene — Google Drive supplied, 426 bands, EPSG:32721' },
       { name: 'GeoJSON',       desc: 'Georeferenced zone boundaries with coordinate metadata' },
     ],
   },
@@ -66,9 +82,12 @@ const SCIENTIFIC_DESIGN = [
   { title: 'No Label Leakage',      desc: 'The live engine uses only unsupervised spectral anomaly statistics. No disease labels, no test-set data, no ground truth.' },
   { title: 'Frozen Benchmark',      desc: 'The six-model scientific validation is completely separate from the live engine. Benchmark results are pre-computed and immutable.' },
   { title: 'Scene-Relative Thresholds', desc: 'Priority thresholds are percentile-based within each scene. They are not absolute disease severity levels.' },
-  { title: 'Reproducible Runs',     desc: 'Every run writes a manifest.json with the run ID, source path, CRS, and leakage-control statement.' },
+  { title: 'Reproducible Runs',     desc: 'Every run writes a manifest.json with the run ID, source path, CRS, SHA-256, and leakage-control statement.' },
   { title: 'Windowed Streaming',    desc: 'Full GeoTIFF scenes are processed block-by-block with constant memory footprint regardless of scene size.' },
   { title: 'Honest Uncertainty',    desc: 'The system explicitly reports limitations: wavelength metadata unavailable, proxy labels only, thresholds are relative.' },
+  { title: 'Three Independent Tracks', desc: 'EnMAP Live Matrix, frozen benchmark, and Planet Tanager are separate experiment tracks. Results must not be mixed across tracks.' },
+  { title: 'Atlas Validation Gate', desc: 'The spectral atlas validator (validate_spectral_atlas.py) must pass before any atlas image is published to the website.' },
+  { title: 'Geospatial Integrity',  desc: 'Rasterize-back validation confirms that GeoJSON zones match the source raster mask exactly (IoU = 1.0 for the Tanager corrected output).' },
 ]
 
 export default function TechnologyPage() {
@@ -159,6 +178,10 @@ export default function TechnologyPage() {
           <Link href="/intelligence" className="btn-primary inline-flex items-center gap-2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Run Live Analysis
+          </Link>
+          <Link href="/tanager" className="btn-outline inline-flex items-center gap-2 text-sm">
+            Tanager Experiment
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </Link>
           <Link href="/results" className="btn-outline inline-flex items-center gap-2 text-sm">
             Benchmark Results
