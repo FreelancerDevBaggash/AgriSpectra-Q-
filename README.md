@@ -1,4 +1,4 @@
-# AgriSpectra-Q
+﻿# AgriSpectra-Q
 
 AgriSpectra-Q is a hyperspectral spectral-anomaly prioritisation proof of concept that converts real EnMAP imagery into ranked inspection candidates. It does not diagnose disease or pests; every priority zone requires field verification.
 
@@ -178,8 +178,8 @@ Independent-scene validation and cross-sensor consistency remain **BLOCKED** unt
 ### Generate Tanager atlas
 
 ```bash
-python "docs/اضافات للمشروع/deliverables/agrispectraq_integration_package/tools/generate_spectral_atlas.py" \
-  "docs/اضافات للمشروع/AgriSpectra_Q_Google_Colab_Content_Handoff/deliverables/tanager_trust_final" \
+python "docs/integration-package/deliverables/agrispectraq_integration_package/tools/generate_spectral_atlas.py" \
+  "docs/integration-package/AgriSpectra_Q_Google_Colab_Content_Handoff/deliverables/tanager_trust_final" \
   --output "results/figures/planet_tanager_advanced_atlas.png" \
   --title "Planet Tanager scientific experiment"
 ```
@@ -189,7 +189,7 @@ python "docs/اضافات للمشروع/deliverables/agrispectraq_integration_p
 The verified experiment deliverables are in:
 
 ```
-docs/اضافات للمشروع/AgriSpectra_Q_Google_Colab_Content_Handoff/deliverables/tanager_trust_final/
+docs/integration-package/AgriSpectra_Q_Google_Colab_Content_Handoff/deliverables/tanager_trust_final/
 ```
 
 | File | Description |

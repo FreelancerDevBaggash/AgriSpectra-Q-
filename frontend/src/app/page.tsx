@@ -1,8 +1,8 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 import Image from 'next/image'
 
 // ── Static data — sourced from docs/AgriSpectra-Q_—_UX_UI_Product_Specification.md §6.1
-// and docs/اضافات للمشروع/APPROVED_ENGLISH_COPY.md (approved copy)
+// and docs/integration-package/APPROVED_ENGLISH_COPY.md (approved copy)
 
 // Workflow strip — DETECT → PRIORITISE → INSPECT → VERIFY (spec §1, §6.1)
 const WORKFLOW = [
@@ -81,7 +81,7 @@ const CAPABILITIES = [
 ]
 
 // Customer segments — market-entry hypothesis, NOT confirmed customers
-// Source: docs/اضافات للمشروع/APPROVED_ENGLISH_COPY.md — Target customer hypothesis
+// Source: docs/integration-package/APPROVED_ENGLISH_COPY.md — Target customer hypothesis
 const CUSTOMER_SEGMENTS = [
   {
     icon: (
@@ -126,7 +126,7 @@ const CUSTOMER_SEGMENTS = [
 ]
 
 // Decision output labels — approved definitions
-// Source: docs/اضافات للمشروع/APPROVED_ENGLISH_COPY.md — Decision labels
+// Source: docs/integration-package/APPROVED_ENGLISH_COPY.md — Decision labels
 const DECISION_LABELS = [
   {
     label: 'INSPECT',
@@ -254,7 +254,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Static atlas preview — project example, not live run ─────────── */}
-      {/* Source: docs/اضافات للمشروع — ATLAS_FRONTEND_INTEGRATION_CONTRACT §Recommended display locations §1 */}
+      {/* Source: docs/integration-package — ATLAS_FRONTEND_INTEGRATION_CONTRACT §Recommended display locations §1 */}
       <section className="py-16 bg-surface-50 border-t border-surface-100">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">

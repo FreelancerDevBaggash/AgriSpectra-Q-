@@ -65,7 +65,7 @@ UPLOADS.mkdir(parents=True, exist_ok=True)
 TANAGER_DATA.mkdir(parents=True, exist_ok=True)
 
 # ── Tanager static seed — the verified experiment deliverables from the handoff package ──
-_TANAGER_SEED_DIR = ROOT / "docs" / "اضافات للمشروع" / "AgriSpectra_Q_Google_Colab_Content_Handoff" / "deliverables" / "tanager_trust_final"
+_TANAGER_SEED_DIR = ROOT / "docs" / "integration-package" / "AgriSpectra_Q_Google_Colab_Content_Handoff" / "deliverables" / "tanager_trust_final"
 _TANAGER_SEED_RUN_ID = "TANAGER-TRUST-20250501-87-4001"
 
 ALLOWED_SCENES       = {"scene_01_DT0000205230", "scene_02", "scene_03"}

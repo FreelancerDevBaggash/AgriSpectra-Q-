@@ -1,8 +1,8 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 
 // ── Project page — sourced from:
-//   docs/اضافات للمشروع/APPROVED_ENGLISH_COPY.md
-//   docs/اضافات للمشروع/دليل_دمج_AgriSpectraQ_للموقع_GitHub_Colab.md §9, §10, §12
+//   docs/integration-package/APPROVED_ENGLISH_COPY.md
+//   docs/integration-package/دليل_دمج_AgriSpectraQ_للموقع_GitHub_Colab.md §9, §10, §12
 
 const WORKFLOW = [
   { step: 'DETECT',     desc: 'Real EnMAP L2A hyperspectral GeoTIFF data (224 bands, 30 m/px) is ingested with memory-aware windowed processing and NoData handling.' },
